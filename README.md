@@ -14,6 +14,12 @@ Dependencies
 * ViewPagerIndicator 2.4.1 (https://github.com/JakeWharton/Android-ViewPagerIndicator)
 * Android Support Library v4 R11
 
+Requirements
+------------
+* Min API: 16
+* Target API: 17
+* With a bit of work the app could be made to work back to API 14 (ICS) but taking it back any farther would be a huge amount of work.
+
 "Inspirations"
 --------------
 * A fair portion of the code for this app is based on Apollo Music player by Andrew Neil (https://github.com/adneal/Apollo-CM). A lot of Apollo, in turn is based on the original Android music player from Gingerbread, particularly the music service itself. But a very significant portion of this app is original work.
