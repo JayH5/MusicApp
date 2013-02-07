@@ -1,0 +1,141 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <!-- All customizations to the theme can go here. -->
+    </style>
+    
+    <style name="AlbumGridLayout">
+        <item name="android:drawSelectorOnTop">false</item>
+    </style>
+    
+    <!-- Theme the view pager indicator -->
+    <style name="ViewPageIndicator" >
+        <item name="android:textColor">?android:textColorSecondaryInverse</item>
+        <item name="android:textSize">@dimen/vpi_text_size</item>
+        <item name="android:background">@color/now_background</item>
+        <item name="footerIndicatorStyle">none</item>
+        <item name="footerPadding">4dp</item>
+        <item name="footerLineHeight">0dp</item>
+        <item name="selectedColor">@color/now_dark_grey_text</item>
+        <item name="topPadding">2dp</item>
+        <item name="selectedBold">true</item>
+    </style>
+    
+    <!-- List items -->
+    <style name="ListItemText">
+        <item name="android:paddingLeft">@dimen/list_item_padding_horizontal</item>
+        <item name="android:paddingRight">@dimen/list_item_padding_horizontal</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+    
+    <style name="ListItemText.Title" parent="ListItemText">
+        <item name="android:textSize">@dimen/title_text_size</item> 
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+    
+    <style name="ListItemText.Subtitle" parent="ListItemText">
+        <item name="android:textSize">@dimen/subtitle_text_size</item>
+        <item name="android:textColor">?android:textColorSecondary</item>
+        <item name="android:singleLine">true</item>
+    </style>
+    
+    <style name="ListItemText.TrackNumber" >
+        <item name="android:layout_width">@dimen/track_number_width</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:gravity">center</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textSize">@dimen/track_number_text_size</item>
+    </style>
+    
+    <!-- Google Now styled summary fragments -->
+    <style name="NowText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textColor">@color/now_dark_grey_text</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    
+    <!-- Styles for the music player -->
+    <style name="MusicPlayerTitleText" parent="ListItemText">
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textSize">@dimen/music_player_title_text_size</item>
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+    
+    <style name="MusicPlayerSubtitleText" parent="ListItemText">
+        <item name="android:textSize">@dimen/title_text_size</item>
+        <item name="android:textColor">?android:textColorSecondary</item>
+        <item name="android:singleLine">true</item>
+    </style>
+    
+    
+    <!-- Gridview text styles -->
+    <style name="GridViewText.Title" parent="ListItemText.Title">
+        <item name="android:shadowColor">#000000</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">2.0</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">?android:textColorPrimaryInverse</item>
+    </style>
+    
+    <style name="GridViewText.Subtitle" parent="ListItemText.Subtitle">
+        <item name="android:shadowColor">#000000</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">1.5</item>
+        <item name="android:textColor">?android:textColorSecondaryInverse</item>
+    </style>
+    
+    <!-- Notification bar event text -->
+    <style name="NotificationText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:fadingEdge">horizontal</item>
+        <item name="android:singleLine">true</item>
+    </style>
+    
+    <!-- Notification bar actions -->
+    <style name="NotificationAction">
+        <item name="android:layout_width">@dimen/notification_action_width</item>
+        <item name="android:layout_height">@dimen/notification_action_height</item>
+        <item name="android:gravity">center|right</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:padding">@dimen/notification_action_padding</item>
+        <item name="android:background">?android:selectableItemBackground</item>
+    </style>
+
+    <style name="NotificationAction.Previous" parent="@style/NotificationAction">
+        <item name="android:src">@drawable/btn_playback_previous</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="NotificationAction.Play" parent="@style/NotificationAction">
+        <item name="android:src">@drawable/btn_playback_play</item>
+    </style>
+
+    <style name="NotificationAction.Next" parent="@style/NotificationAction">
+        <item name="android:src">@drawable/btn_playback_next</item>
+    </style>
+
+    <style name="NotificationAction.Remove" parent="@style/NotificationAction">
+        <item name="android:src">@drawable/btn_notification_remove</item>
+    </style>
+    
+    <style name="TransparentImageButton">
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">?android:selectableItemBackground</item>
+    </style>
+
+</resources>

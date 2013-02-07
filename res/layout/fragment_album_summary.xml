@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  	android:layout_width="match_parent"
+   	android:layout_height="@dimen/image_thumbnail_size"
+   	android:background="@color/now_background" >
+
+   	<ImageView
+      	android:id="@+id/albumThumb"
+       	android:layout_width="@dimen/image_thumbnail_size"
+       	android:layout_height="@dimen/image_thumbnail_size"
+       	android:layout_alignParentLeft="true"
+       	android:layout_alignParentTop="true"
+       	android:padding="@dimen/image_thumbnail_spacing"
+       	android:scaleType="centerCrop" />
+
+   	<RelativeLayout
+       	android:layout_width="match_parent"
+       	android:layout_height="match_parent"
+       	android:layout_alignParentRight="true"
+       	android:layout_alignParentTop="true"
+       	android:layout_toRightOf="@+id/albumThumb"
+       	android:orientation="vertical" >
+        
+       	<LinearLayout
+       	    android:layout_width="match_parent"
+       	    android:layout_height="match_parent"
+       	    android:layout_above="@+id/album_detail_buttons"
+       	    android:layout_alignParentLeft="true"
+       	    android:layout_alignParentTop="true"
+       	    android:gravity="center_horizontal"
+       	    android:orientation="vertical"
+       	    android:divider="?android:attr/dividerHorizontal"
+       	    android:dividerPadding="@dimen/button_bar_divider_padding"
+       	    android:showDividers="end" >
+            
+           	<TextView
+           		android:id="@+id/albumTracks"
+           		style="@style/NowText" />
+        
+       		<TextView
+           		android:id="@+id/albumDuration"
+           		style="@style/NowText" />
+       		
+       		<TextView
+           		android:id="@+id/albumYear"
+           		style="@style/NowText" />
+           
+       	</LinearLayout>
+        
+        
+       	<LinearLayout
+           	android:id="@+id/album_detail_buttons"
+           	android:layout_width="match_parent"
+           	android:layout_height="@dimen/button_bar_height"
+           	android:gravity="center_vertical"
+           	android:divider="?android:attr/dividerVertical"
+           	android:dividerPadding="@dimen/button_bar_divider_padding"
+           	android:showDividers="middle"
+           	android:orientation="horizontal"
+           	android:layout_alignParentLeft="true"
+       		android:layout_alignParentBottom="true" >
+           
+           	<ImageButton
+               	android:id="@+id/browse_artist_button"
+               	android:src="@drawable/btn_browse_artist"
+               	style="@style/TransparentImageButton" />
+           
+           	<ImageButton
+               	android:id="@+id/add_to_queue_button"
+               	android:src="@drawable/btn_add_to_queue"
+               	style="@style/TransparentImageButton" />
+           
+       	</LinearLayout>
+        
+    </RelativeLayout>
+    
+</RelativeLayout>

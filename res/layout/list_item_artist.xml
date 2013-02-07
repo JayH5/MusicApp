@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/artist_image_thumb_size" >
+    
+    <LinearLayout 
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_toLeftOf="@+id/artistImage"
+        android:orientation="vertical"
+        android:gravity="center_vertical" >
+        
+        <TextView 
+        	android:id="@+id/artistName"
+        	style="@style/ListItemText.Title" />
+        
+        <TextView 
+            android:id="@+id/artistAlbums"
+            style="@style/ListItemText.Subtitle" />
+        
+        <TextView 
+            android:id="@+id/artistTracks" 
+            style="@style/ListItemText.Subtitle" />
+                
+    </LinearLayout>
+    
+    
+    <ImageView
+        android:id="@+id/artistImage"
+        android:layout_width="@dimen/artist_image_thumb_size"
+        android:layout_height="@dimen/artist_image_thumb_size"
+        android:layout_alignParentRight="true"
+        android:scaleType="centerCrop" />
+                    
+</RelativeLayout>

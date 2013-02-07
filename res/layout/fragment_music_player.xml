@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+    
+    <include 
+        android:id="@+id/music_player_actionbar"
+        layout="@layout/action_bar"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"/>
+    
+    <ImageView
+        android:id="@+id/music_player_album_art"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/music_player_actionbar"
+        android:scaleType="fitXY" />
+    
+    <SeekBar
+        android:id="@+id/seekBar1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/music_player_album_art"
+        android:layout_alignParentLeft="true" />
+    
+    <LinearLayout
+        android:id="@+id/music_player_info_holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/music_player_action_holder"
+        android:layout_alignParentLeft="true"
+        android:layout_marginBottom="20dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/music_player_track_name"
+            style="@style/MusicPlayerTitleText"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/music_player_album_name"
+            style="@style/MusicPlayerSubtitleText"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/music_player_artist_name"
+            style="@style/MusicPlayerSubtitleText"
+            android:layout_gravity="center" />
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/music_player_action_holder"
+        android:background="@drawable/ab_bottom_solid_dark"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:divider="?android:listDivider"
+        android:dividerPadding="8dp"
+        android:gravity="center_vertical"
+        android:showDividers="middle" >
+        
+        <ImageButton
+            android:id="@+id/action_button_previous"
+            style="@style/TransparentImageButton"
+            android:src="@drawable/btn_playback_previous" />
+        
+        <ImageButton
+            android:id="@+id/action_button_play"
+            style="@style/TransparentImageButton"
+            android:src="@drawable/btn_playback_play" />
+        
+        <ImageButton
+            android:id="@+id/action_button_next"
+            style="@style/TransparentImageButton"
+            android:src="@drawable/btn_playback_next" />
+           
+    </LinearLayout>
+
+</RelativeLayout>

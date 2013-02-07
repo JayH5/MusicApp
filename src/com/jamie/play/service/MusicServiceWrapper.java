@@ -1,0 +1,609 @@
+/*
+ * Copyright (C) 2012 Andrew Neal Licensed under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law
+ * or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+package com.jamie.play.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.WeakHashMap;
+
+import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.net.Uri;
+import android.os.IBinder;
+import android.os.RemoteException;
+
+import com.jamie.play.IMusicService;
+
+public final class MusicServiceWrapper {
+
+    public static IMusicService mService = null;
+
+    private static final WeakHashMap<Context, ServiceBinder> mConnectionMap;
+
+    private static final List<Track> sEmptyList;
+
+    //private static ContentValues[] mContentValuesCache = null;
+
+    static {
+        mConnectionMap = new WeakHashMap<Context, ServiceBinder>();
+        sEmptyList = new ArrayList<Track>(0);
+    }
+
+    /* This class is never initiated */
+    public MusicServiceWrapper() {
+    }
+
+    /**
+     * @param context The {@link Context} to use
+     * @param callback The {@link ServiceConnection} to use
+     * @return The new instance of {@link ServiceToken}
+     */
+    public static final ServiceToken bindToService(final Context context,
+            final ServiceConnection callback) {
+        Activity realActivity = ((Activity)context).getParent();
+        if (realActivity == null) {
+            realActivity = (Activity)context;
+        }
+        final ContextWrapper contextWrapper = new ContextWrapper(realActivity);
+        contextWrapper.startService(new Intent(contextWrapper, MusicService.class));
+        final ServiceBinder binder = new ServiceBinder(callback);
+        if (contextWrapper.bindService(
+                new Intent().setClass(contextWrapper, MusicService.class), binder, 0)) {
+            mConnectionMap.put(contextWrapper, binder);
+            return new ServiceToken(contextWrapper);
+        }
+        return null;
+    }
+
+    /**
+     * @param token The {@link ServiceToken} to unbind from
+     */
+    public static void unbindFromService(final ServiceToken token) {
+        if (token == null) {
+            return;
+        }
+        final ContextWrapper mContextWrapper = token.mWrappedContext;
+        final ServiceBinder mBinder = mConnectionMap.remove(mContextWrapper);
+        if (mBinder == null) {
+            return;
+        }
+        mContextWrapper.unbindService(mBinder);
+        if (mConnectionMap.isEmpty()) {
+            mService = null;
+        }
+    }
+
+    public static final class ServiceBinder implements ServiceConnection {
+        private final ServiceConnection mCallback;
+
+        /**
+         * Constructor of <code>ServiceBinder</code>
+         * 
+         * @param context The {@link ServiceConnection} to use
+         */
+        public ServiceBinder(final ServiceConnection callback) {
+            mCallback = callback;
+        }
+
+        @Override
+        public void onServiceConnected(final ComponentName className, final IBinder service) {
+            mService = IMusicService.Stub.asInterface(service);
+            if (mCallback != null) {
+                mCallback.onServiceConnected(className, service);
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(final ComponentName className) {
+            if (mCallback != null) {
+                mCallback.onServiceDisconnected(className);
+            }
+            mService = null;
+        }
+    }
+
+    public static final class ServiceToken {
+        public ContextWrapper mWrappedContext;
+
+        /**
+         * Constructor of <code>ServiceToken</code>
+         * 
+         * @param context The {@link ContextWrapper} to use
+         */
+        public ServiceToken(final ContextWrapper context) {
+            mWrappedContext = context;
+        }
+    }
+
+    /**
+     * Changes to the next track
+     */
+    public static void next() {
+        try {
+            if (mService != null) {
+                mService.next();
+            }
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * Changes to the previous track.
+     * 
+     * @NOTE The AIDL isn't used here in order to properly use the previous
+     *       action. When the user is shuffling, because {@link
+     *       MusicPlaybackService.#openCurrentAndNext()} is used, the user won't
+     *       be able to travel to the previously skipped track. To remedy this,
+     *       {@link MusicPlaybackService.#openCurrent()} is called in {@link
+     *       MusicPlaybackService.#prev()}. {@code #startService(Intent intent)}
+     *       is called here to specifically invoke the onStartCommand used by
+     *       {@link MusicPlaybackService}, which states if the current position
+     *       less than 2000 ms, start the track over, otherwise move to the
+     *       previously listened track.
+     */
+    public static void previous(final Context context) {
+        final Intent previous = new Intent(context, MusicService.class);
+        previous.setAction(MusicService.ACTION_PREVIOUS);
+        context.startService(previous);
+    }
+
+    /**
+     * Plays or pauses the music.
+     */
+    public static void playOrPause() {
+        try {
+            if (mService != null) {
+                if (mService.isPlaying()) {
+                    mService.pause();
+                } else {
+                    mService.play();
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+    }
+
+    /**
+     * Cycles through the repeat options.
+     */
+    public static void cycleRepeat() {
+        try {
+            if (mService != null) {
+                switch (mService.getRepeatMode()) {
+                    case MusicService.REPEAT_NONE:
+                        mService.setRepeatMode(MusicService.REPEAT_ALL);
+                        break;
+                    case MusicService.REPEAT_ALL:
+                        mService.setRepeatMode(MusicService.REPEAT_CURRENT);
+                        if (mService.getShuffleMode() != MusicService.SHUFFLE_NONE) {
+                            mService.setShuffleMode(MusicService.SHUFFLE_NONE);
+                        }
+                        break;
+                    default:
+                        mService.setRepeatMode(MusicService.REPEAT_NONE);
+                        break;
+                }
+            }
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * Cycles through the shuffle options.
+     */
+    public static void cycleShuffle() {
+        try {
+            if (mService != null) {
+                switch (mService.getShuffleMode()) {
+                    case MusicService.SHUFFLE_NONE:
+                        mService.setShuffleMode(MusicService.SHUFFLE_NORMAL);
+                        if (mService.getRepeatMode() == MusicService.REPEAT_CURRENT) {
+                            mService.setRepeatMode(MusicService.REPEAT_ALL);
+                        }
+                        break;
+                    case MusicService.SHUFFLE_NORMAL:
+                        mService.setShuffleMode(MusicService.SHUFFLE_NONE);
+                        break;
+                    case MusicService.SHUFFLE_AUTO:
+                        mService.setShuffleMode(MusicService.SHUFFLE_NONE);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * @return True if we're playing music, false otherwise.
+     */
+    public static final boolean isPlaying() {
+        if (mService != null) {
+            try {
+                return mService.isPlaying();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return The current shuffle mode.
+     */
+    public static final int getShuffleMode() {
+        if (mService != null) {
+            try {
+                return mService.getShuffleMode();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * @return The current repeat mode.
+     */
+    public static final int getRepeatMode() {
+        if (mService != null) {
+            try {
+                return mService.getRepeatMode();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * @return The current track name.
+     */
+    public static final String getTrackName() {
+        if (mService != null) {
+            try {
+                return mService.getTrackName();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return The current artist name.
+     */
+    public static final String getArtistName() {
+        if (mService != null) {
+            try {
+                return mService.getArtistName();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return The current album name.
+     */
+    public static final String getAlbumName() {
+        if (mService != null) {
+            try {
+                return mService.getAlbumName();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return The current album Id.
+     */
+    public static final long getCurrentAlbumId() {
+        if (mService != null) {
+            try {
+                return mService.getAlbumId();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * @return The current song Id.
+     */
+    public static final long getCurrentAudioId() {
+        if (mService != null) {
+            try {
+                return mService.getAudioId();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * @return The current artist Id.
+     */
+    public static final long getCurrentArtistId() {
+        if (mService != null) {
+            try {
+                return mService.getArtistId();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * @return The queue.
+     */
+    public static final List<Track> getQueue() {
+        try {
+            if (mService != null) {
+                return mService.getQueue();
+            } else {
+            }
+        } catch (final RemoteException ignored) {
+        }
+        return sEmptyList;
+    }
+
+    /**
+     * @param id The ID of the track to remove.
+     * @return removes track from a playlist or the queue.
+     */
+    public static final int removeTrack(final long id) {
+        try {
+            if (mService != null) {
+                return mService.removeTrack(id);
+            }
+        } catch (final RemoteException ingored) {
+        }
+        return 0;
+    }
+
+    /**
+     * @return The position of the current track in the queue.
+     */
+    public static final int getQueuePosition() {
+        try {
+            if (mService != null) {
+                return mService.getQueuePosition();
+            }
+        } catch (final RemoteException ignored) {
+        }
+        return 0;
+    }
+
+    /**
+     * @param context The {@link Context} to use.
+     * @param list The list of songs to play.
+     * @param position Specify where to start.
+     * @param forceShuffle True to force a shuffle, false otherwise.
+     */
+    public static void playAll(final Context context, final List<Track> list, int position,
+            final boolean forceShuffle) {
+        if (list.size() == 0 || mService == null) {
+            return;
+        }
+        try {
+            if (forceShuffle) {
+                mService.setShuffleMode(MusicService.SHUFFLE_NORMAL);
+            } else {
+                mService.setShuffleMode(MusicService.SHUFFLE_NONE);
+            }
+            final long currentId = mService.getAudioId();
+            final int currentQueuePosition = getQueuePosition();
+            if (position != -1 && currentQueuePosition == position 
+            		&& currentId == list.get(position).getId()) {
+                
+            	final List<Track> playlist = getQueue();
+                if (list.equals(playlist)) {
+                    mService.play();
+                    return;
+                }
+            }
+            if (position < 0) {
+                position = 0;
+            }
+            mService.open(list, forceShuffle ? -1 : position);
+            mService.play();
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * @param list The list to enqueue.
+     */
+    public static void playNext(final List<Track> list) {
+        if (mService == null) {
+            return;
+        }
+        try {
+            mService.enqueue(list, MusicService.NEXT);
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * @param context The {@link Context} to use.
+     */
+    /*public static void shuffleAll(final Context context) {
+        Cursor cursor = SongLoader.makeSongCursor(context);
+        final long[] mTrackList = getSongListForCursor(cursor);
+        final int position = 0;
+        if (mTrackList.length == 0 || mService == null) {
+            return;
+        }
+        try {
+            mService.setShuffleMode(MusicService.SHUFFLE_NORMAL);
+            final long mCurrentId = mService.getAudioId();
+            final int mCurrentQueuePosition = getQueuePosition();
+            if (position != -1 && mCurrentQueuePosition == position
+                    && mCurrentId == mTrackList[position]) {
+                final long[] mPlaylist = getQueue();
+                if (Arrays.equals(mTrackList, mPlaylist)) {
+                    mService.play();
+                    return;
+                }
+            }
+            mService.open(mTrackList, -1);
+            mService.play();
+            cursor.close();
+            cursor = null;
+        } catch (final RemoteException ignored) {
+        }
+    }*/
+    
+    /**
+     * @param context The {@link Context} to use.
+     * @param list The list to enqueue.
+     */
+    public static void addToQueue(final Context context, final List<Track> list) {
+        if (mService == null) {
+            return;
+        }
+        try {
+            mService.enqueue(list, MusicService.LAST);
+            // TODO: Toast or something to notify user tracks have been added to queue
+        } catch (final RemoteException ignored) {
+        }
+    }
+    
+
+    /**
+     * @return The path to the currently playing file as {@link String}
+     */
+    public static final Uri getUri() {
+        try {
+            if (mService != null) {
+                return mService.getUri();
+            }
+        } catch (final RemoteException ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * @param from The index the item is currently at.
+     * @param to The index the item is moving to.
+     */
+    public static void moveQueueItem(final int from, final int to) {
+        try {
+            if (mService != null) {
+                mService.moveQueueItem(from, to);
+            } else {
+            }
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * Called when one of the lists should refresh or requery.
+     */
+    public static void refresh() {
+        try {
+            if (mService != null) {
+                mService.refresh();
+            }
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * Seeks the current track to a desired position
+     * 
+     * @param position The position to seek to
+     */
+    public static void seek(final long position) {
+        if (mService != null) {
+            try {
+                mService.seek(position);
+            } catch (final RemoteException ignored) {
+            }
+        }
+    }
+
+    /**
+     * @return The current position time of the track
+     */
+    public static final long position() {
+        if (mService != null) {
+            try {
+                return mService.position();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * @return The total length of the current track
+     */
+    public static final long duration() {
+        if (mService != null) {
+            try {
+                return mService.duration();
+            } catch (final RemoteException ignored) {
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * @param position The position to move the queue to
+     */
+    public static void setQueuePosition(final int position) {
+        if (mService != null) {
+            try {
+                mService.setQueuePosition(position);
+            } catch (final RemoteException ignored) {
+            }
+        }
+    }
+
+    /**
+     * Clears the qeueue
+     */
+    public static void clearQueue() {
+        try {
+            mService.removeTracks(0, Integer.MAX_VALUE);
+        } catch (final RemoteException ignored) {
+        }
+    }
+
+    /**
+     * Used to build and show a notification when Apollo is sent into the
+     * background
+     * 
+     * @param context The {@link Context} to use.
+     */
+    public static void startBackgroundService(final Context context) {
+        final Intent startBackground = new Intent(context, MusicService.class);
+        startBackground.setAction(MusicService.START_BACKGROUND);
+        context.startService(startBackground);
+    }
+
+    /**
+     * Used to kill the current foreground notification
+     * 
+     * @param context The {@link Cotext} to use.
+     */
+    public static void killForegroundService(final Context context) {
+        final Intent killForeground = new Intent(context, MusicService.class);
+        killForeground.setAction(MusicService.KILL_FOREGROUND);
+        context.startService(killForeground);
+    }
+    
+}

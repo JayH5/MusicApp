@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  	android:layout_width="match_parent"
+   	android:layout_height="@dimen/artist_image_thumb_size"
+   	android:background="@color/now_background" >
+   	    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_toLeftOf="@+id/artistThumb"
+        android:gravity="center"
+        android:orientation="vertical" >
+            
+       	<TextView
+       		android:id="@+id/artistAlbums"
+       		style="@style/NowText" />
+        
+    	<TextView
+       		android:id="@+id/artistTracks"
+       		style="@style/NowText" />
+       		
+    	<TextView
+    	    android:id="@+id/artistDuration"
+       		style="@style/NowText" />
+           
+    </LinearLayout>
+    
+   	<ImageView
+      	android:id="@+id/artistThumb"
+       	android:layout_width="@dimen/artist_image_thumb_size"
+       	android:layout_height="@dimen/artist_image_thumb_size"
+       	android:layout_alignParentRight="true"
+       	android:padding="@dimen/image_thumbnail_spacing"
+       	android:scaleType="centerCrop" />
+    
+</RelativeLayout>
