@@ -26,12 +26,10 @@ public class ImageFetcher extends ImageWorker {
 	public static final String KEY_ARTIST = "artist";
 	
 	private ImageResizer mResizer;
-	//private ImageDownloader mDownloader;
 
 	public ImageFetcher(Context context) {
 		super(context);
 		mResizer = new ImageResizer(context);
-		//mDownloader = new ImageDownloader(context, mResizer);
 	}
 	
 	public static Uri getAlbumArtUri(long albumId) {
@@ -50,6 +48,8 @@ public class ImageFetcher extends ImageWorker {
         if (data == null || data.isEmpty()) {
         	return null;
         }
+        
+        Log.w(TAG, "Disk cache miss. Finding image from elsewhere...");
     	
     	Bitmap bitmap = null;
     	
@@ -61,6 +61,7 @@ public class ImageFetcher extends ImageWorker {
     		}
         }
         
+    	// See if a bitmap has been downloaded by the download service
     	if (bitmap == null) {
     		String key = data.getString(ImageWorker.KEY);
     		File downloadCacheFile = new File(AppUtils.getCacheDir(mContext, 

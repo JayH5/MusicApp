@@ -99,7 +99,7 @@ public class ImageCache {
 
         // No existing ImageCache, create one and store it in RetainFragment
         if (imageCache == null) {
-        	Log.d(TAG, "Failed to restore cache from retain frag");
+        	Log.d(TAG, "Couldn't restore cache from retain frag. Creating new instance.");
             imageCache = new ImageCache(activity, cacheDir);
             mRetainFragment.setObject(imageCache);
         }
@@ -141,7 +141,6 @@ public class ImageCache {
     private void initDiskCache(Context context, String cacheDir) {
         // Set up disk cache
         if (mDiskCache == null || mDiskCache.isClosed()) {
-        	Log.d(TAG, "Setting up disk cache...");
             File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
             if (diskCacheDir != null) {
                 if (!diskCacheDir.exists()) {
@@ -150,13 +149,11 @@ public class ImageCache {
                 if (diskCacheDir.getUsableSpace() > DISK_CACHE_SIZE) {
                     try {
                         mDiskCache = DiskLruCache.open(diskCacheDir, 1, 1, DISK_CACHE_SIZE);
-                    } catch (final IOException e) {
+                    } catch (final IOException ioe) {
                         diskCacheDir = null;
                     }
                 }
             }
-        } else {
-        	Log.d(TAG, "Disk cache wasn't null or closed somehow...");
         }
     }
 
@@ -167,7 +164,6 @@ public class ImageCache {
      */
     
     private void initMemoryCache(final Context context) {
-    	Log.d(TAG, "Setting up mem cache...");
         mMemoryCache = new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
         		MEM_CACHE_DIVIDER)) {
             
@@ -299,7 +295,7 @@ public class ImageCache {
      */
     private void flush() {
         try {
-        	 synchronized (mDiskCache) {
+        	synchronized (mDiskCache) {
         		if (!mDiskCache.isClosed()) {
         			mDiskCache.flush();
         		}
@@ -323,6 +319,7 @@ public class ImageCache {
             cacheKey = bytesToHexString(digest.digest());
         } catch (final NoSuchAlgorithmException e) {
             cacheKey = String.valueOf(key.hashCode());
+            Log.w(TAG, "MD5 hashing algorithm not found. Falling back to Object.hashCode()");
         }
         return cacheKey;
     }
@@ -406,7 +403,7 @@ public class ImageCache {
                 try {
                     if (mDiskCache != null) {
                         mDiskCache.delete();
-                        mDiskCache = null;
+                        mDiskCache.close();
                     }
                 } catch (final IOException ioe) {
                     Log.e(TAG, "Error while clearing caches.", ioe);

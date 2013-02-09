@@ -166,7 +166,8 @@ public class ImageDownloadService extends IntentService {
             if (out != null) {
                 try {
                     out.close();
-                } catch (final IOException ignored) {
+                } catch (final IOException ioe) {
+                	Log.w(TAG, "Failed to close output stream.", ioe);
                 }
             }
         }

@@ -74,7 +74,7 @@ public abstract class ImageWorker {
         if (bitmap != null) {
             // Bitmap found in memory cache
             imageView.setImageBitmap(bitmap);
-            Log.d(TAG, "Memory cache hit for key: " + key);
+            Log.d(TAG, "Memory cache hit for key: " + key + "arist: " + data.getString(ImageFetcher.KEY_ARTIST));
         } else if (cancelPotentialWork(key, imageView)) {
             final BitmapWorkerTask task = new BitmapWorkerTask(imageView);
             final AsyncDrawable asyncDrawable =
@@ -217,10 +217,6 @@ public abstract class ImageWorker {
                     && !mExitTasksEarly) {
                 bitmap = mImageCache.getBitmapFromDiskCache(key);
             }
-            
-            if (bitmap != null) {
-            	Log.d(TAG, "Disk cache hit for key: " + key);
-            }
 
             // If the bitmap was not found in the cache and this task has not been cancelled by
             // another thread and the ImageView that was originally bound to this task is still
@@ -228,7 +224,6 @@ public abstract class ImageWorker {
             // process method (as implemented by a subclass)
             if (bitmap == null && !isCancelled() && getAttachedImageView() != null
                     && !mExitTasksEarly) {
-            	Log.d(TAG, "Process bitmap called for key: " + key);
                 bitmap = processBitmap(data);
             }
             
@@ -238,7 +233,6 @@ public abstract class ImageWorker {
             // bitmap to our cache as it might be used again in the future
             if (bitmap != null && mImageCache != null) {
                 mImageCache.addBitmapToCache(key, bitmap);
-                Log.d(TAG, "Processed bitmap added to cache for key: " + key);
             }
 
             return bitmap;
@@ -305,7 +299,7 @@ public abstract class ImageWorker {
      */
     private void setImageBitmap(ImageView imageView, Bitmap bitmap) {
         if (mFadeInBitmap) {
-            // Transition drawable with a transparent drwabale and the final bitmap
+            // Transition drawable with a transparent drawable and the final bitmap
             final TransitionDrawable td =
                     new TransitionDrawable(new Drawable[] {
                             new ColorDrawable(android.R.color.transparent),
