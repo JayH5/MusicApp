@@ -22,7 +22,7 @@ Requirements
 
 "Inspirations"
 --------------
-* A fair portion of the code for this app is based on Apollo Music player by Andrew Neil (https://github.com/adneal/Apollo-CM). A lot of Apollo, in turn is based on the original Android music player from Gingerbread, particularly the music service itself. But a very significant portion of this app is original work.
+* A fair portion of the code for this app is based on Apollo Music player by Andrew Neal (https://github.com/adneal/Apollo-CM). A lot of Apollo, in turn is based on the original Android music player from Gingerbread, particularly the music service itself. But a very significant portion of this app is original work.
 * The image caching/loading is based on the Android dev guide code called "Bitmapfun" (http://developer.android.com/training/displaying-bitmaps/load-bitmap.html)
 * The interface styling takes ques from Google Now for Jelly Bean
 
