@@ -549,16 +549,16 @@ public class MusicService extends Service {
      * 
      * @param remove_status_icon True to go to the idle state, false otherwise
      */
-    private void stop(final boolean remove_status_icon) {
+    private void stop(final boolean removeStatusIcon) {
         if (mPlayer.isInitialized()) {
             mPlayer.stop();
         }
-        if (remove_status_icon) {
+        if (removeStatusIcon) {
             gotoIdleState();
         } else {
             stopForeground(false);
         }
-        if (remove_status_icon) {
+        if (removeStatusIcon) {
             mIsSupposedToBePlaying = false;
         }
     }
