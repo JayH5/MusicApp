@@ -10,6 +10,7 @@ import android.content.Context;
 import android.os.Environment;
 
 public class AppUtils {
+	
 	public static final boolean isApplicationSentToBackground(final Context context) {
         final ActivityManager activityManager = (ActivityManager)context
                 .getSystemService(Context.ACTIVITY_SERVICE);
@@ -37,5 +38,11 @@ public class AppUtils {
                 ? context.getExternalCacheDir().getPath() : context.getCacheDir().getPath();
 
         return new File(cachePath + File.separator + uniqueName);
+	}
+	
+	public static final int calculateMemCacheSize(Context context, float memoryDivider) {
+		int memoryClass = ((ActivityManager) context.getSystemService(
+                Context.ACTIVITY_SERVICE)).getMemoryClass();
+    	return (int) (1024 * 1024 * memoryClass * memoryDivider);
 	}
 }

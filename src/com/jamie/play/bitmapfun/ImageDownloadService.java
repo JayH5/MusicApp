@@ -37,7 +37,6 @@ public class ImageDownloadService extends IntentService {
 	
 	private Set<String> mDownloadedSet = new HashSet<String>();
 	
-	private ImageResizer mResizer;
 	private ImageCache mImageCache;
 	
 	public ImageDownloadService() {
@@ -48,8 +47,7 @@ public class ImageDownloadService extends IntentService {
 	public void onCreate() {
 		super.onCreate();
 		
-		mResizer = new ImageResizer(this);
-		mImageCache = new ImageCache(this);
+		//mImageCache = new ImageCache(this);
 	}
 
 	@Override
@@ -76,16 +74,16 @@ public class ImageDownloadService extends IntentService {
 				
 				if (imageFile != null) {
 					// Resize the image
-					Bitmap bitmap = mResizer.getBitmapFromFile(imageFile);
+					//Bitmap bitmap = mResizer.getBitmapFromFile(imageFile);
 	    			// Delete the downloaded file
 					imageFile.delete();
 	    			
-	    			if (bitmap != null) {
+	    			/*if (bitmap != null) {
 	    				// Save the bitmap to the disk cache
-	    				mImageCache.addBitmapToDiskCache(key, bitmap);
+	    				mImageCache.addBitmapToCache(key, bitmap);
 	    				mDownloadedSet.add(key);
 	    				Log.d(TAG, "Image successfully downloaded for key: " + key);
-	    			}
+	    			}*/
 				}
 			}
 		}	

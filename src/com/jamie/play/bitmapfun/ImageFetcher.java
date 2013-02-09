@@ -62,9 +62,9 @@ public class ImageFetcher extends ImageWorker {
     	if (bitmap == null) {
     		Log.d(TAG, "Starting last fm fetch for image...");
     		
-    		final Intent intent = new Intent(mContext, ImageDownloadService.class);
-    		intent.putExtra(ImageDownloadService.KEY_BUNDLE, data);
-    		mContext.startService(intent);
+    		//final Intent intent = new Intent(mContext, ImageDownloadService.class);
+    		//intent.putExtra(ImageDownloadService.KEY_BUNDLE, data);
+    		//mContext.startService(intent);
     		
     		//bitmap = mDownloader.downloadBitmap(data);
     	}

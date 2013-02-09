@@ -67,8 +67,8 @@ public class ImageCache {
      * @param context The context to use
      * @param cacheParams The cache parameters to use to initialize the cache
      */
-    public ImageCache(Context context) {
-        init(context);
+    public ImageCache(Context context, String cacheDir) {
+        init(context, cacheDir);
     }
     
     /**
@@ -76,8 +76,8 @@ public class ImageCache {
      * For use by asynchronous services.
      * @param service
      */
-    public ImageCache(Service service) {
-    	initDiskCache(service);
+    public ImageCache(Service service, String cacheDir) {
+    	initDiskCache(service, cacheDir);
     }
 
     /**
@@ -85,11 +85,10 @@ public class ImageCache {
      * one is created using the supplied params and saved to a {@link RetainFragment}.
      *
      * @param activity The calling {@link FragmentActivity}
-     * @param cacheParams The cache parameters to use if creating the ImageCache
+     * @param cacheDir The directory for the disk cache
      * @return An existing retained ImageCache object or a new one if one did not exist
      */
-    public static ImageCache findOrCreateCache(
-            final Activity activity) {
+    public static ImageCache findOrCreateCache(Activity activity, String cacheDir) {
 
         // Search for, or create an instance of the non-UI RetainFragment
         final RetainFragment mRetainFragment = RetainFragment.findOrCreateRetainFragment(
@@ -101,7 +100,7 @@ public class ImageCache {
         // No existing ImageCache, create one and store it in RetainFragment
         if (imageCache == null) {
         	Log.d(TAG, "Failed to restore cache from retain frag");
-            imageCache = new ImageCache(activity);
+            imageCache = new ImageCache(activity, cacheDir);
             mRetainFragment.setObject(imageCache);
         } else {
         	Log.d(TAG, "Restored cache from retain frag");
@@ -118,13 +117,13 @@ public class ImageCache {
      * 
      * @param context The {@link Context} to use
      */
-    private void init(final Context context) {
+    private void init(final Context context, final String cacheDir) {
         new AsyncTask<Void, Void, Void>() {
 
             @Override
             protected Void doInBackground(final Void... unused) {
                 // Initialize the disk cache in a background thread
-                initDiskCache(context);
+                initDiskCache(context, cacheDir);
                 return null;
             }
         }.execute((Void[])null);
@@ -140,10 +139,10 @@ public class ImageCache {
      * 
      * @param context The {@link Context} to use
      */
-    public void initDiskCache(final Context context) {
+    public void initDiskCache(Context context, String cacheDir) {
         // Set up disk cache
         if (mDiskCache == null || mDiskCache.isClosed()) {
-            File diskCacheDir = AppUtils.getCacheDir(context, TAG);
+            File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
             if (diskCacheDir != null) {
                 if (!diskCacheDir.exists()) {
                     diskCacheDir.mkdirs();
@@ -166,7 +165,7 @@ public class ImageCache {
      */
     
     public void initMemoryCache(final Context context) {
-        mMemoryCache = new LruCache<String, Bitmap>(calculateMemCacheSize(context, 
+        mMemoryCache = new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
         		MEM_CACHE_DIVIDER)) {
             
         	// Measure item size in bytes rather than units
@@ -191,16 +190,10 @@ public class ImageCache {
             }
 
 			@Override
-			public void onConfigurationChanged(Configuration newConfig) {
-				// TODO Auto-generated method stub
-				
-			}
+			public void onConfigurationChanged(Configuration newConfig) {}
 
 			@Override
-			public void onLowMemory() {
-				// TODO Auto-generated method stub
-				
-			}
+			public void onLowMemory() {}
         });
     }
 
@@ -225,28 +218,19 @@ public class ImageCache {
      * @param data The key identifier
      * @param bitmap The {@link Bitmap} to cache
      */
-    public void addBitmapToMemCache(final String data, final Bitmap bitmap) {
+    private void addBitmapToMemCache(final String data, final Bitmap bitmap) {
         if (mMemoryCache == null) {
         	Log.e(TAG, "Memory cache is null!");
         	return;
         }
-    	
-    	if (data == null || bitmap == null) {
-    		Log.w(TAG, "Data or bitmap null when adding to mem cache");
-            return;
-        }
+        
         // Add to memory cache
-    	synchronized(mMemoryCache) {
-    		if (getBitmapFromMemCache(data) == null) {
-    			mMemoryCache.put(data, bitmap);
-    			Log.d(TAG, "Bitmap added to mem cache: " + data);
-    		} else {
-    			Log.d(TAG, "Bitmap found in mem cache, not adding");
-    		}
+    	if (getBitmapFromMemCache(data) == null) {
+    		mMemoryCache.put(data, bitmap);
     	}
     }
     
-    public void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
+    private void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
     	if (mDiskCache != null) {
     		 synchronized(mDiskCache) {
     			final String key = hashKeyForDisk(data);
@@ -265,19 +249,16 @@ public class ImageCache {
     				} else {
     					snapshot.getInputStream(DISK_CACHE_INDEX).close();
     				}
-    			} catch (final IOException e) {
-    				Log.e(TAG, "addBitmapToCache - " + e);
+    			} catch (final IOException ioe) {
+    				Log.e(TAG, "Error adding bitmap to disk cache.", ioe);
     			} finally {
-    				try {
-    					if (out != null) {
+    				if (out != null) {
+    					 try {
     						out.close();
-    						out = null;
-    					}
-    				} catch (final IOException e) {
-    					Log.e(TAG, "addBitmapToCache - " + e);
-    				} catch (final IllegalStateException e) {
-    					Log.e(TAG, "addBitmapToCache - " + e);
-    				}
+    					} catch (final IOException ioe) {
+        					Log.e(TAG, "Error closing output stream (addBitmapToDiskCache)", ioe);
+        				}
+    				} 
     			}
     		}
     	}
@@ -290,24 +271,25 @@ public class ImageCache {
         if (key == null) {
             return;
         }
-        // Remove the Lru entry
-        //synchronized (mMemoryCache) {
-        	if (mMemoryCache != null) {
-        		mMemoryCache.remove(key);
-        	}
-        //}
-
-        try {
-        	synchronized(mDiskCache) {
-        		// Remove the disk entry
-        		if (mDiskCache != null) {
-        			mDiskCache.remove(hashKeyForDisk(key));
-        		}
-        	}
-        } catch (final IOException e) {
-            Log.e(TAG, "remove - " + e);
+        removeFromMemCache(key);
+        removeFromDiskCache(key);
+    }
+    
+    public void removeFromMemCache(String key) {
+    	if (mMemoryCache != null) {
+    		mMemoryCache.remove(key);
+    	}
+    }
+    
+    public void removeFromDiskCache(String key) {
+    	if (mDiskCache != null) {
+        	try {
+        		mDiskCache.remove(hashKeyForDisk(key));
+        	} catch (final IOException ioe) {
+                Log.e(TAG, "Failed to remove file from disk cache.", ioe);
+            }
+        	flush();
         }
-        flush();
     }
     
     /**
@@ -315,17 +297,17 @@ public class ImageCache {
      * cache first
      */
     public void flush() {
-        try {
-        	synchronized(mDiskCache) {
-        		if (mDiskCache != null) {
+    	if (mDiskCache != null) {
+        	try {
+        		 synchronized (mDiskCache) {
         			if (!mDiskCache.isClosed()) {
         				mDiskCache.flush();
         			}
         		}
-        	}
-        } catch (final IOException e) {
-            Log.e(TAG, "flush - " + e);
-        }
+        	} catch (final IOException ioe) {
+                Log.e(TAG, "Error during disk cache flush.", ioe);
+            }
+        } 
     }
     
     /**
@@ -334,7 +316,7 @@ public class ImageCache {
      * 
      * @param key The key used to store the file
      */
-    public static synchronized final String hashKeyForDisk(final String key) {
+    public static final String hashKeyForDisk(final String key) {
         String cacheKey;
         try {
             final MessageDigest digest = MessageDigest.getInstance("MD5");
@@ -372,19 +354,9 @@ public class ImageCache {
      * @return The bitmap if found in cache, null otherwise
      */
     public Bitmap getBitmapFromMemCache(String data) {
-        //synchronized(mMemoryCache) {
-        	if (mMemoryCache != null) {
-        		final Bitmap memBitmap = mMemoryCache.get(data);
-        		if (memBitmap != null) {
-        			Log.d(TAG, "Memory cache hit: " + data);
-        			return memBitmap;
-        		} else {
-        			Log.w(TAG, "Memory cache miss: " + data);
-        		}
-        	} else {
-        		Log.w(TAG, "Memory cache is null!");
-        	}
-        //}
+        if (mMemoryCache != null) {
+        	return mMemoryCache.get(data);
+        }
         return null;
     }
 
@@ -399,31 +371,28 @@ public class ImageCache {
             return null;
         }
         
-        final String key = hashKeyForDisk(data);
         if (mDiskCache != null) {
         	synchronized (mDiskCache) {
+        		final String key = hashKeyForDisk(data);
         		InputStream inputStream = null;
         		try {
         			final DiskLruCache.Snapshot snapshot = mDiskCache.get(key);
         			if (snapshot != null) {
         				inputStream = snapshot.getInputStream(DISK_CACHE_INDEX);
         				if (inputStream != null) {
-        					final Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-        					if (bitmap != null) {
-        						return bitmap;
-        					}
+        					return BitmapFactory.decodeStream(inputStream);
         				}
         			}
         		} catch (final IOException e) {
         			Log.e(TAG, "getBitmapFromDiskCache - ", e);
         		} finally {
-        			try {
-        				if (inputStream != null) {
+        			if (inputStream != null) {
+        				try {
         					inputStream.close();
-        				}
-        			} catch (final IOException e) {
-        				Log.w(TAG, "Failed to close input stream:", e);
-        			}
+        				} catch (final IOException e) {
+            				Log.w(TAG, "Failed to close input stream:", e);
+            			}
+        			} 
         		}
         	}
         }
@@ -452,13 +421,5 @@ public class ImageCache {
                 return null;
             }
         }.execute((Void[])null);
-    }
-    
-    public int calculateMemCacheSize(Context context, float memoryDivider) {
-    	int memoryClass = ((ActivityManager) context.getSystemService(
-                Context.ACTIVITY_SERVICE)).getMemoryClass();
-    	int memSize = (int) (1024 * 1024 * memoryClass * memoryDivider);
-    	Log.d(TAG, "Calculated size for memory cache: " + memSize);
-    	return memSize;
     }
 }

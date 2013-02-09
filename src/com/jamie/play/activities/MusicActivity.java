@@ -22,7 +22,6 @@ import android.view.MenuItem;
 
 import com.jamie.play.IMusicService;
 import com.jamie.play.R;
-import com.jamie.play.bitmapfun.ImageCache;
 import com.jamie.play.bitmapfun.ImageFetcher;
 import com.jamie.play.fragments.musicplayer.MusicPlayerFragment;
 import com.jamie.play.service.MusicService;
@@ -30,6 +29,7 @@ import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.MusicServiceWrapper.ServiceToken;
 import com.jamie.play.service.MusicStateListener;
 import com.jamie.play.utils.AppUtils;
+import com.jamie.play.utils.ImageUtils;
 
 public class MusicActivity extends FragmentActivity implements ServiceConnection,
 		MusicStateListener, MenuDrawer.OnDrawerStateChangeListener {
@@ -57,8 +57,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		mServiceToken = MusicServiceWrapper.bindToService(this, this);
 		mPlaybackStatus = new PlaybackStatus(this);
 		
-		mImageWorker = new ImageFetcher(this);
-		mImageWorker.setImageCache(ImageCache.findOrCreateCache(this));
+		mImageWorker = ImageUtils.getImageFetcher(this);
 		
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
@@ -192,10 +191,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 			listener.onRefresh();
 			listener.onShuffleOrRepeatModeChanged();
 		}
-	}
-	
-	public ImageFetcher getImageFetcher() {
-		return mImageWorker;
 	}
 	
 	private final static class PlaybackStatus extends BroadcastReceiver {
