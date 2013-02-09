@@ -148,7 +148,7 @@ public class MusicService extends Service {
 
     // Audio playback objects
     private AudioManager mAudioManager;
-    private MultiPlayer mPlayer;
+    private GaplessPlayer mPlayer;
     private MusicPlayerHandler mPlayerHandler;
     private DelayedHandler mDelayedStopHandler;
     
@@ -265,7 +265,7 @@ public class MusicService extends Service {
         registerExternalStorageListener();
 
         // Initialze the media player
-        mPlayer = new MultiPlayer(this);
+        mPlayer = new GaplessPlayer(this);
         mPlayer.setHandler(mPlayerHandler);
 
         initBroadcastReceiver();
@@ -547,7 +547,7 @@ public class MusicService extends Service {
     /**
      * Stops playback
      * 
-     * @param remove_status_icon True to go to the idle state, false otherwise
+     * @param removeStatusIcon True to go to the idle state, false otherwise
      */
     private void stop(final boolean removeStatusIcon) {
         if (mPlayer.isInitialized()) {
@@ -2147,7 +2147,7 @@ public class MusicService extends Service {
          * Constructor of <code>Shuffler</code>
          */
         public Shuffler() {
-            super();
+        	
         }
 
         /**
@@ -2180,7 +2180,7 @@ public class MusicService extends Service {
         }
     };
 
-    private static final class MultiPlayer implements MediaPlayer.OnErrorListener,
+    private static final class GaplessPlayer implements MediaPlayer.OnErrorListener,
 			MediaPlayer.OnCompletionListener {
 
     	private final WeakReference<MusicService> mService;
@@ -2192,7 +2192,7 @@ public class MusicService extends Service {
 
     	private boolean mIsInitialized = false;
 
-    	public MultiPlayer(MusicService service) {
+    	public GaplessPlayer(MusicService service) {
     		mService = new WeakReference<MusicService>(service);
     		mCurrentMediaPlayer.setWakeMode(mService.get(), PowerManager.PARTIAL_WAKE_LOCK);
     	}
@@ -2213,10 +2213,13 @@ public class MusicService extends Service {
             }
             player.setOnCompletionListener(this);
             player.setOnErrorListener(this);
+            
+            // Notify any equalizers/audio effects that we're going to play music.
             final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
             intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
             intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, mService.get().getPackageName());
             mService.get().sendBroadcast(intent);
+            
             return true;
         }
     	
