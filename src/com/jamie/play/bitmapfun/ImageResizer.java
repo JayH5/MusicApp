@@ -16,7 +16,6 @@
 
 package com.jamie.play.bitmapfun;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,9 +30,8 @@ import android.net.Uri;
 import android.util.Log;
 
 /**
- * A simple subclass of {@link ImageWorker} that resizes images from resources given a target width
- * and height. Useful for when the input images might be too large to simply load directly into
- * memory.
+ * Resizes images from resources given a target width and height. Useful for when the input 
+ * images might be too large to simply load directly into memory.
  */
 public class ImageResizer {
     private static final String TAG = "ImageResizer";
@@ -46,7 +44,7 @@ public class ImageResizer {
     private static final int DEFAULT_IMAGE_WIDTH = 1024;
     private static final int DEFAULT_IMAGE_HEIGHT = 1024;
     
-    private static final int IO_BUFFER_SIZE_BYTES = 1024;
+    //private static final int IO_BUFFER_SIZE_BYTES = 1024;
 
     /**
      * Initialize providing a single target image size (used for both width and height);
@@ -115,10 +113,6 @@ public class ImageResizer {
     			contentUri, mImageWidth, mImageHeight);
     }
     
-    public Bitmap getBitmapFromInputStream(InputStream stream) {
-    	return decodeSampledBitmapFromInputStream(stream, mImageWidth, mImageHeight);
-    }
-    
     
     /**
      * Decode and sample down a bitmap from resources to the requested width and height.
@@ -171,28 +165,6 @@ public class ImageResizer {
         return BitmapFactory.decodeFile(filename, options);
     }
     
-    public static synchronized Bitmap decodeSampledBitmapFromContentUri(ContentResolver resolver,
-    		Uri uri, int reqWidth, int reqHeight) {
-    	
-    	InputStream input = null;
-    	try {
-    		input = resolver.openInputStream(uri);
-    		return decodeSampledBitmapFromInputStream(input, reqWidth, reqHeight);
-    	} catch (FileNotFoundException fnfe) {
-    		Log.e(TAG, "File not found for uri: " + uri, fnfe);
-    	} finally {
-    		if (input != null) {
-        		try {
-    				input.close();
-    			} catch (IOException e) {
-    				Log.e(TAG, "Failed to close input stream", e);
-    			}
-        		input = null;
-            }
-    	}
-    	return null;
-    }
-    
     /**
      * Loads an image from a content:// style Uri using the content resolver.
      * Due to an android bug in the file descriptor from the resolver, an input stream
@@ -203,39 +175,49 @@ public class ImageResizer {
      * @param reqHeight
      * @return
      */
-    public static synchronized Bitmap decodeSampledBitmapFromInputStream(InputStream input, 
-    		int reqWidth, int reqHeight) {
+    public static synchronized Bitmap decodeSampledBitmapFromContentUri(ContentResolver resolver,
+    		Uri uri, int reqWidth, int reqHeight) {
+    	
+    	// Get InputStream for the Uri
+    	InputStream inputStream = null;
+    	try {
+    		inputStream = resolver.openInputStream(uri);
+    		
+    		// First decode with inJustDecodeBounds=true to check dimensions
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeStream(inputStream, null, options);
+            
+            // The most reliable way to rest the stream is to close it and then open it again
+            inputStream.close();
+            
+            // Calculate the sample size
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
 
-    	Bitmap bitmap = null;
-    	
-    	// Make sure we can restart the input stream
-    	if (!input.markSupported()) {
-    		input = new BufferedInputStream(input, IO_BUFFER_SIZE_BYTES);
+            // Now decode bitmap with inSampleSize set
+           	inputStream = resolver.openInputStream(uri);            
+            options.inJustDecodeBounds = false;
+            return BitmapFactory.decodeStream(inputStream, null, options);
+    	}    	
+    	catch (FileNotFoundException fnfe) {
+    		Log.w(TAG, "File not found exception during image decode. Uri: " + uri);
+    		return null;
     	}
-		
-    	// Mark it so that it can be restarted
-		input.mark(0);
-		
-		// Perform just decode bounds
-		final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(input, null, options);
-    	
-    	try {            
-            // Reset the input stream to read properly this time
-            input.reset();
-    	} catch (IOException ioe) {
-    		Log.e(TAG, "IOException while resetting input stream.", ioe);
-    	}
-            
-        // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-            
-        // Actually decode the bitmap
-        options.inJustDecodeBounds = false;
-        bitmap = BitmapFactory.decodeStream(input, null, options);
-        
-        return bitmap;
+        catch (IOException ioe) {
+          	Log.e(TAG, "IO exception during image decode. Uri: " + uri, ioe);
+          	return null;
+        }
+        finally {
+        	if (inputStream != null) {
+        		try {
+        			inputStream.close();
+        		}
+        		catch (IOException ioe) {
+        			Log.e(TAG, "Failed to clean up input stream. Uri: " + uri, ioe);
+        			return null;
+        		}
+        	}
+        }
 	}
 
     /**
