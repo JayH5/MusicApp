@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Service;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
@@ -62,7 +61,8 @@ public class ImageCache {
     private LruCache<String, Bitmap> mMemoryCache;
 
     /**
-     * Creating a new ImageCache object using the specified parameters.
+     * Creating a new ImageCache object using the specified parameters. This constructor
+     * should not be called directly. Rather use findoOrCreateCache().
      *
      * @param context The context to use
      * @param cacheParams The cache parameters to use to initialize the cache
@@ -102,10 +102,8 @@ public class ImageCache {
         	Log.d(TAG, "Failed to restore cache from retain frag");
             imageCache = new ImageCache(activity, cacheDir);
             mRetainFragment.setObject(imageCache);
-        } else {
-        	Log.d(TAG, "Restored cache from retain frag");
         }
-
+        
         return imageCache;
     }
     
@@ -139,7 +137,7 @@ public class ImageCache {
      * 
      * @param context The {@link Context} to use
      */
-    public void initDiskCache(Context context, String cacheDir) {
+    private void initDiskCache(Context context, String cacheDir) {
         // Set up disk cache
         if (mDiskCache == null || mDiskCache.isClosed()) {
             File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
@@ -164,7 +162,7 @@ public class ImageCache {
      * @param context The {@link Context} to use
      */
     
-    public void initMemoryCache(final Context context) {
+    private void initMemoryCache(final Context context) {
         mMemoryCache = new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
         		MEM_CACHE_DIVIDER)) {
             
@@ -219,15 +217,12 @@ public class ImageCache {
      * @param bitmap The {@link Bitmap} to cache
      */
     private void addBitmapToMemCache(final String data, final Bitmap bitmap) {
-        if (mMemoryCache == null) {
-        	Log.e(TAG, "Memory cache is null!");
-        	return;
-        }
-        
-        // Add to memory cache
-    	if (getBitmapFromMemCache(data) == null) {
-    		mMemoryCache.put(data, bitmap);
-    	}
+        if (mMemoryCache != null) {
+        	// Add to memory cache
+        	if (getBitmapFromMemCache(data) == null) {
+        		mMemoryCache.put(data, bitmap);
+        	}
+        }       
     }
     
     private void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
@@ -275,13 +270,13 @@ public class ImageCache {
         removeFromDiskCache(key);
     }
     
-    public void removeFromMemCache(String key) {
+    private void removeFromMemCache(String key) {
     	if (mMemoryCache != null) {
     		mMemoryCache.remove(key);
     	}
     }
     
-    public void removeFromDiskCache(String key) {
+    private void removeFromDiskCache(String key) {
     	if (mDiskCache != null) {
         	try {
         		mDiskCache.remove(hashKeyForDisk(key));
@@ -294,20 +289,18 @@ public class ImageCache {
     
     /**
      * flush() is called to synchronize up other methods that are accessing the
-     * cache first
+     * cache first. The cache must not be null here.
      */
-    public void flush() {
-    	if (mDiskCache != null) {
-        	try {
-        		 synchronized (mDiskCache) {
-        			if (!mDiskCache.isClosed()) {
-        				mDiskCache.flush();
-        			}
+    private void flush() {
+        try {
+        	 synchronized (mDiskCache) {
+        		if (!mDiskCache.isClosed()) {
+        			mDiskCache.flush();
         		}
-        	} catch (final IOException ioe) {
-                Log.e(TAG, "Error during disk cache flush.", ioe);
-            }
-        } 
+        	}
+        } catch (final IOException ioe) {
+        	Log.e(TAG, "Error during disk cache flush.", ioe);
+        }
     }
     
     /**
@@ -354,7 +347,7 @@ public class ImageCache {
      * @return The bitmap if found in cache, null otherwise
      */
     public Bitmap getBitmapFromMemCache(String data) {
-        if (mMemoryCache != null) {
+    	if (data != null && mMemoryCache != null) {
         	return mMemoryCache.get(data);
         }
         return null;
@@ -367,11 +360,7 @@ public class ImageCache {
      * @return The {@link Bitmap} if found in cache, null otherwise
      */
     public final Bitmap getBitmapFromDiskCache(final String data) {
-        if (data == null) {
-            return null;
-        }
-        
-        if (mDiskCache != null) {
+        if (data != null && mDiskCache != null) {
         	synchronized (mDiskCache) {
         		final String key = hashKeyForDisk(data);
         		InputStream inputStream = null;
@@ -383,14 +372,14 @@ public class ImageCache {
         					return BitmapFactory.decodeStream(inputStream);
         				}
         			}
-        		} catch (final IOException e) {
-        			Log.e(TAG, "getBitmapFromDiskCache - ", e);
+        		} catch (final IOException ioe) {
+        			Log.e(TAG, "Error while fetching bitmap from disk cache.", ioe);
         		} finally {
         			if (inputStream != null) {
         				try {
         					inputStream.close();
-        				} catch (final IOException e) {
-            				Log.w(TAG, "Failed to close input stream:", e);
+        				} catch (final IOException ioe) {
+            				Log.w(TAG, "Failed to close input stream.", ioe);
             			}
         			} 
         		}
@@ -413,13 +402,14 @@ public class ImageCache {
                         mDiskCache.delete();
                         mDiskCache = null;
                     }
-                } catch (final IOException e) {
-                    Log.e(TAG, "clearCaches - " + e);
+                } catch (final IOException ioe) {
+                    Log.e(TAG, "Error while clearing caches.", ioe);
                 }
-                // Clear the memory cache
-                mMemoryCache.evictAll();
                 return null;
             }
         }.execute((Void[])null);
+        
+        // Clear the memory cache
+        mMemoryCache.evictAll();
     }
 }
