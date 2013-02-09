@@ -1,5 +1,7 @@
 package com.jamie.play.bitmapfun;
 
+import java.io.File;
+
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +10,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
+
+import com.jamie.play.utils.AppUtils;
 
 public class ImageFetcher extends ImageWorker {
 	
@@ -57,16 +61,26 @@ public class ImageFetcher extends ImageWorker {
     		}
         }
         
+    	if (bitmap == null) {
+    		String key = data.getString(ImageWorker.KEY);
+    		File downloadCacheFile = new File(AppUtils.getCacheDir(mContext, 
+    				ImageDownloadService.CACHE_DIR), key);
+    		
+    		if (downloadCacheFile.exists()) {
+    			bitmap = mResizer.getBitmapFromFile(downloadCacheFile);
+    			downloadCacheFile.delete();
+    		}
+    		
+    	}
+    	
     	// If album art still not found or we're getting an artist image
     	// send an intent to the download service to go load the image into cache.
     	if (bitmap == null) {
     		Log.d(TAG, "Starting last fm fetch for image...");
     		
-    		//final Intent intent = new Intent(mContext, ImageDownloadService.class);
-    		//intent.putExtra(ImageDownloadService.KEY_BUNDLE, data);
-    		//mContext.startService(intent);
-    		
-    		//bitmap = mDownloader.downloadBitmap(data);
+    		final Intent intent = new Intent(mContext, ImageDownloadService.class);
+    		intent.putExtra(ImageDownloadService.KEY_BUNDLE, data);
+    		mContext.startService(intent);
     	}
     	return bitmap;
     	

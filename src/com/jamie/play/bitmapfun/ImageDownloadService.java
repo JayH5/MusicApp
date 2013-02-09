@@ -14,7 +14,6 @@ import java.util.Set;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -29,15 +28,15 @@ import com.jamie.play.utils.AppUtils;
 public class ImageDownloadService extends IntentService {
 
 	private static final String TAG = "ImageDownloadService";
-	private static final String DEFAULT_CACHE_DIR = "DownloadCache";
+	public static final String CACHE_DIR = "DownloadCache";
 	private static final int IO_BUFFER_SIZE_BYTES = 1024;
+	
+	// TODO: Get own key.
 	private static final String LAST_FM_API_KEY = "0bec3f7ec1f914d7c960c12a916c8fb3";
 	
 	public static final String KEY_BUNDLE = "com.jamie.play.bitmapfun.ImageDownloadService";
 	
 	private Set<String> mDownloadedSet = new HashSet<String>();
-	
-	private ImageCache mImageCache;
 	
 	public ImageDownloadService() {
 		super(TAG);
@@ -46,8 +45,6 @@ public class ImageDownloadService extends IntentService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		
-		//mImageCache = new ImageCache(this);
 	}
 
 	@Override
@@ -69,21 +66,12 @@ public class ImageDownloadService extends IntentService {
 			
 			if (url != null) {
 				// Try download the image
-				File imageFile = downloadFile(this, url, 
-						AppUtils.getCacheDir(this, DEFAULT_CACHE_DIR));
+				File imageFile = downloadFile(this, url, key,
+						AppUtils.getCacheDir(this, CACHE_DIR));
 				
 				if (imageFile != null) {
-					// Resize the image
-					//Bitmap bitmap = mResizer.getBitmapFromFile(imageFile);
-	    			// Delete the downloaded file
-					imageFile.delete();
-	    			
-	    			/*if (bitmap != null) {
-	    				// Save the bitmap to the disk cache
-	    				mImageCache.addBitmapToCache(key, bitmap);
-	    				mDownloadedSet.add(key);
-	    				Log.d(TAG, "Image successfully downloaded for key: " + key);
-	    			}*/
+	    			mDownloadedSet.add(key);
+	    			Log.d(TAG, "Image successfully downloaded for key: " + key);
 				}
 			}
 		}	
@@ -134,38 +122,43 @@ public class ImageDownloadService extends IntentService {
      * @param urlString The URL to fetch
      * @return A File pointing to the fetched file
      */
-    public synchronized static File downloadFile(Context context, String urlString, File cacheDir) {
+    public static File downloadFile(Context context, String urlString, String filename, 
+    		File cacheDir) {
+    	
     	if (!cacheDir.exists()) {
             cacheDir.mkdir();
         }
 
         HttpURLConnection urlConnection = null;
         BufferedOutputStream out = null;
+        File file = null;
         
         Log.d(TAG, "Attempting to download from url: " + urlString);
 
         try {
         	//$NON-NLS-1$
-            final File tempFile = File.createTempFile("bitmap", null, cacheDir);
+        	file = new File(cacheDir, filename);
+        	if (file.createNewFile()) {
+        		final URL url = new URL(urlString);
+        		urlConnection = (HttpURLConnection)url.openConnection();
+        		if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+        			return null;
+        		}
+        		final InputStream in = new BufferedInputStream(urlConnection.getInputStream(), 
+        				IO_BUFFER_SIZE_BYTES);
+        		out = new BufferedOutputStream(new FileOutputStream(file), 
+        				IO_BUFFER_SIZE_BYTES);
 
-            final URL url = new URL(urlString);
-            urlConnection = (HttpURLConnection)url.openConnection();
-            if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                return null;
-            }
-            final InputStream in = new BufferedInputStream(urlConnection.getInputStream(), 
-            		IO_BUFFER_SIZE_BYTES);
-            out = new BufferedOutputStream(new FileOutputStream(tempFile), 
-            		IO_BUFFER_SIZE_BYTES);
-
-            int oneByte;
-            while ((oneByte = in.read()) != -1) {
-                out.write(oneByte);
-            }
-            Log.d(TAG, "Image successfully downloaded from url: " + urlString);
-            return tempFile;
+        		int oneByte;
+        		while ((oneByte = in.read()) != -1) {
+        			out.write(oneByte);
+        		}
+        		Log.d(TAG, "Image successfully downloaded from url: " + urlString);
+        		return file;
+        	}
         } catch (final IOException ioe) {
         	Log.w(TAG, "IOException during image download.", ioe);
+        	file.delete();
         } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();

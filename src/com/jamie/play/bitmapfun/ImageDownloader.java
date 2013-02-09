@@ -46,7 +46,7 @@ public class ImageDownloader {
 	        long httpCacheSize = 10 * 1024 * 1024; // 10 MiB
 	        HttpResponseCache.install(httpCacheDir, httpCacheSize);
 		} catch (IOException e) {
-	        Log.w(TAG, "HTTP response cache installation failed:" + e);
+	        Log.w(TAG, "HTTP response cache installation failed.",  e);
 	    }
 	}
 	
