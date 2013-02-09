@@ -116,17 +116,18 @@ public class ImageCache {
      * @param context The {@link Context} to use
      */
     private void init(final Context context, final String cacheDir) {
-        new AsyncTask<Void, Void, Void>() {
+    	// Set up the memory cache
+        initMemoryCache(context);
+        
+        // Initialize the disk cache in a background thread
+    	new AsyncTask<Void, Void, Void>() {
 
             @Override
             protected Void doInBackground(final Void... unused) {
-                // Initialize the disk cache in a background thread
                 initDiskCache(context, cacheDir);
                 return null;
             }
         }.execute((Void[])null);
-        // Set up the memory cache
-        initMemoryCache(context);
     }
     
     /**
@@ -140,6 +141,7 @@ public class ImageCache {
     private void initDiskCache(Context context, String cacheDir) {
         // Set up disk cache
         if (mDiskCache == null || mDiskCache.isClosed()) {
+        	Log.d(TAG, "Setting up disk cache...");
             File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
             if (diskCacheDir != null) {
                 if (!diskCacheDir.exists()) {
@@ -153,6 +155,8 @@ public class ImageCache {
                     }
                 }
             }
+        } else {
+        	Log.d(TAG, "Disk cache wasn't null or closed somehow...");
         }
     }
 
@@ -163,6 +167,7 @@ public class ImageCache {
      */
     
     private void initMemoryCache(final Context context) {
+    	Log.d(TAG, "Setting up mem cache...");
         mMemoryCache = new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
         		MEM_CACHE_DIVIDER)) {
             
@@ -218,9 +223,10 @@ public class ImageCache {
      */
     private void addBitmapToMemCache(final String data, final Bitmap bitmap) {
         if (mMemoryCache != null) {
-        	// Add to memory cache
-        	if (getBitmapFromMemCache(data) == null) {
-        		mMemoryCache.put(data, bitmap);
+        	synchronized (mMemoryCache) {
+        		if (getBitmapFromMemCache(data) == null) {
+        			mMemoryCache.put(data, bitmap);
+        		}
         	}
         }       
     }
