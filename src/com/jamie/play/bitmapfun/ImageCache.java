@@ -150,7 +150,8 @@ public class ImageCache {
                     try {
                         mDiskCache = DiskLruCache.open(diskCacheDir, 1, 1, DISK_CACHE_SIZE);
                     } catch (final IOException ioe) {
-                        diskCacheDir = null;
+                    	diskCacheDir = null; // TODO: Is there a reason for this line?
+                    	Log.w(TAG, "Error during opening of DiskLruCache.", ioe);
                     }
                 }
             }
