@@ -35,7 +35,9 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import com.jamie.play.IMusicService;
+import com.jamie.play.bitmapfun.ImageCache;
 import com.jamie.play.utils.AppUtils;
+import com.jamie.play.utils.ImageUtils;
 
 /**
  * A backbround {@link Service} used to keep music playing between activities
@@ -169,6 +171,7 @@ public class MusicService extends Service {
 	private WakeLock mWakeLock;
 	
 	//private ImageFetcher mImageWorker;
+	private ImageCache mImageCache;
     
     @Override
     public IBinder onBind(final Intent intent) {
@@ -232,6 +235,7 @@ public class MusicService extends Service {
         // without it having its own instance
         // Initialize the image worker
         //mImageWorker = ImageUtils.getImageFetcher(this);
+        mImageCache = ImageUtils.getImageCache(this);
         
         // Start up the thread running the service. Note that we create a
         // separate thread because the service normally runs in the process's
@@ -1401,7 +1405,10 @@ public class MusicService extends Service {
      */
     public Bitmap getAlbumArt(Track track) {
         // Return the cached artwork
-        //return mImageWorker.getCachedImage(String.valueOf(getAlbumId()));
+        if (mImageCache != null) {
+        	return mImageCache.getBitmapFromCache(
+        			String.valueOf(getCurrentTrack().getAlbumId()));
+        }
     	return null;
     }
 

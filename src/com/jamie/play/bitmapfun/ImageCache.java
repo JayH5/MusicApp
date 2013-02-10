@@ -40,7 +40,6 @@ import android.util.LruCache;
 
 import com.jakewharton.DiskLruCache;
 import com.jamie.play.utils.AppUtils;
-//import com.jamie.play.BuildConfig;
 
 /**
  * This class holds our bitmap caches (memory and disk).
@@ -59,6 +58,8 @@ public class ImageCache {
 
     private DiskLruCache mDiskCache;
     private LruCache<String, Bitmap> mMemoryCache;
+    
+    private static ImageCache sInstance;
 
     /**
      * Creating a new ImageCache object using the specified parameters. This constructor
@@ -105,6 +106,22 @@ public class ImageCache {
         }
         
         return imageCache;
+    }
+    
+    /**
+     * Used to create a singleton of {@link ImageCache}
+     * 
+     * @param context The {@link Context} to use
+     * @return A new instance of this class.
+     */
+    public final static ImageCache getInstance(Context context, String cacheDir) {
+        if (sInstance == null) {
+            sInstance = new ImageCache(context.getApplicationContext(), cacheDir);
+            Log.d(TAG, "ImageCache instance not found. Creating a new one...");
+        } else {
+        	Log.d(TAG, "Image cache instance found.");
+        }
+        return sInstance;
     }
     
     /**
@@ -344,6 +361,14 @@ public class ImageCache {
         return builder.toString();
     }
 
+    public Bitmap getBitmapFromCache(String data) {
+    	Bitmap bitmap = getBitmapFromMemCache(data);
+    	if (bitmap == null) {
+    		bitmap = getBitmapFromDiskCache(data);
+    	}
+    	return bitmap;
+    }
+    
     /**
      * Get from memory cache.
      *

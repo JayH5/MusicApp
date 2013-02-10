@@ -1,6 +1,5 @@
 package com.jamie.play.utils;
 
-import android.app.Activity;
 import android.content.Context;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
@@ -12,11 +11,22 @@ public class ImageUtils {
 	
 	public static final String DEFAULT_CACHE_DIR = "ImageCache";
 	
-	public static ImageFetcher getImageFetcher(Activity activity) {
+	/*public static ImageFetcher getImageFetcher(Activity activity) {
 		final ImageFetcher fetcher = new ImageFetcher(activity);
 		fetcher.setImageCache(ImageCache
 				.findOrCreateCache(activity, DEFAULT_CACHE_DIR));
 		return fetcher;
+	}*/
+	
+	public static ImageFetcher getImageFetcher(Context context) {
+		final ImageFetcher fetcher = new ImageFetcher(context);
+		fetcher.setImageCache(ImageCache
+				.getInstance(context, DEFAULT_CACHE_DIR));
+		return fetcher;
+	}
+	
+	public static ImageCache getImageCache(Context context) {
+		return ImageCache.getInstance(context, DEFAULT_CACHE_DIR);
 	}
 	
 	/*public static ImageFetcher getImageFetcher(Service service) { 
