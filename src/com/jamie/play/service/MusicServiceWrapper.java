@@ -280,7 +280,7 @@ public final class MusicServiceWrapper {
     }
     
     /**
-     * @return The current track
+     * @return The current track id.
      */
     public static final long getCurrentTrackId() {
     	if (mService != null) {
