@@ -14,13 +14,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.jamie.play.R;
-import com.jamie.play.R.dimen;
-import com.jamie.play.R.drawable;
-import com.jamie.play.R.id;
-import com.jamie.play.R.layout;
 import com.jamie.play.bitmapfun.ImageFetcher;
 import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.MusicStateListener;
+import com.jamie.play.service.Track;
 import com.jamie.play.utils.ImageUtils;
 
 public class MusicPlayerFragment extends Fragment implements MusicStateListener {
@@ -125,18 +122,14 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener 
 	
 	@Override
 	public void onMetaChanged() {
-		final String track = MusicServiceWrapper.getTrackName();
-		final String album = MusicServiceWrapper.getAlbumName();
-		final String artist = MusicServiceWrapper.getArtistName();
+		final Track track = MusicServiceWrapper.getCurrentTrack();
+		if (track != null) {
+			mTrackText.setText(track.getTitle());
+			mAlbumText.setText(track.getAlbum());
+			mArtistText.setText(track.getArtist());
 		
-		mTrackText.setText(track);
-		mAlbumText.setText(album);
-		mArtistText.setText(artist);
-		
-		final long albumId = MusicServiceWrapper.getCurrentAlbumId();
-		
-		mImageWorker.loadAlbumImage(albumId, artist, album, mAlbumArt);
-		
+			mImageWorker.loadAlbumImage(track, mAlbumArt);
+		}		
 	}
 
 	@Override

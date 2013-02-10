@@ -28,12 +28,14 @@ public class NotificationHelper {
 				.getSystemService(Context.NOTIFICATION_SERVICE);
 	}
 	
-	public void buildNotification(String track, String artist, String album, 
-			Bitmap albumArt) {
+	public void buildNotification(Track track, Bitmap albumArt) {
+		final String title = track.getTitle();
+		final String artist = track.getArtist();
+		final String album = track.getAlbum();
 		
 		mBaseView = new RemoteViews(mService.getPackageName(),
                 R.layout.notification_base);
-		initCollapsedLayout(track, album, albumArt);
+		initCollapsedLayout(title, album, albumArt);
 		initPlaybackActions();
 		
 		mNotification = new Notification.Builder(mService)
@@ -46,7 +48,7 @@ public class NotificationHelper {
 		mExpandedView = new RemoteViews(mService.getPackageName(),
         		R.layout.notification_expanded);
         mNotification.bigContentView = mExpandedView;
-        initExpandedLayout(track, artist, album, albumArt);
+        initExpandedLayout(title, artist, album, albumArt);
         initExpandedPlaybackActions();
         
         mService.startForeground(NOTIFICATION_ID, mNotification);

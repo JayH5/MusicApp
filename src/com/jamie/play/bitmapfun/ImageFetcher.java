@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.jamie.play.service.Track;
 import com.jamie.play.utils.AppUtils;
 
 public class ImageFetcher extends ImageWorker {
@@ -18,7 +19,8 @@ public class ImageFetcher extends ImageWorker {
 	private static final String TAG = "ImageFetcher";
 	
 	private static final String ARTIST_SUFFIX = "artist";
-	private static final Uri ALBUM_ART_BASE_URI = Uri.parse("content://media/external/audio/albumart");
+	private static final Uri ALBUM_ART_BASE_URI = 
+			Uri.parse("content://media/external/audio/albumart");
 	
 	// Bundle keys
 	public static final String KEY_ALBUM_ID = "album_id";
@@ -99,6 +101,14 @@ public class ImageFetcher extends ImageWorker {
     	data.putString(KEY_ALBUM, album);
     	
     	loadImage(String.valueOf(albumId), data, imageView);
+    }
+    
+    /**
+     * Used to fetch album images. Convenience method for MusicPlayerFragment.
+     */
+    public void loadAlbumImage(Track track, ImageView imageView) {
+    	loadAlbumImage(track.getAlbumId(), track.getArtist(), track.getAlbum(), 
+    			imageView);
     }
 
     /**

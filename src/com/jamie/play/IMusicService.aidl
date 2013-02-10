@@ -5,7 +5,6 @@ import android.net.Uri;
 import com.jamie.play.service.Track;
 
 interface IMusicService {
-    void openFile(String path);
     void open(in List<Track> tracks, int position);
     
     void play();
@@ -35,13 +34,8 @@ interface IMusicService {
     long position();
     long seek(long pos);
     
-    long getAudioId();
-    long getArtistId();
-    long getAlbumId();
-    String getTrackName();
-    String getArtistName();
-    String getAlbumName();
-    Uri getUri();
+    Track getCurrentTrack();
+    long getCurrentTrackId();
     
     int getMediaMountedCount();
     int getAudioSessionId();

@@ -153,7 +153,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		switch (item.getItemId()) {
 		case android.R.id.home:
 			// Set the "home-as-up" button to show the sliding menu
-			//getSlidingMenu().showMenu();
 			mDrawer.openMenu();
 			return true;
 		}
