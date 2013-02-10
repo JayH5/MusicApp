@@ -9,8 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.jamie.play.R;
-import com.jamie.play.R.id;
-import com.jamie.play.R.layout;
 import com.jamie.play.bitmapfun.ImageFetcher;
 
 public class ImageDialogFragment extends DialogFragment {
