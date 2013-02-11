@@ -19,19 +19,25 @@ import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.MusicStateListener;
 import com.jamie.play.service.Track;
 import com.jamie.play.utils.ImageUtils;
+import com.jamie.play.widgets.RepeatingImageButton;
 
 public class MusicPlayerFragment extends Fragment implements MusicStateListener {
+	
+	private static final int REPEAT_INTERVAL = 260;
 	
 	private ImageFetcher mImageWorker;
 	
 	private ImageButton mPlayPauseButton;
-	private ImageButton mPreviousButton;
-	private ImageButton mNextButton;
+	private RepeatingImageButton mPreviousButton;
+	private RepeatingImageButton mNextButton;
 	
 	private TextView mTrackText;
 	private TextView mAlbumText;
 	private TextView mArtistText;
 	private ImageView mAlbumArt;
+	
+	private long mStartSeekPos = 0;
+    private long mLastSeekEventTime;
 	
 	private ImageButton mPlayQueueButton;
 	
@@ -58,8 +64,8 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener 
         final View v = localInflater.inflate(R.layout.fragment_music_player, container, false);
         
         mPlayPauseButton = (ImageButton) v.findViewById(R.id.action_button_play);
-        mPreviousButton = (ImageButton) v.findViewById(R.id.action_button_previous);
-        mNextButton = (ImageButton) v.findViewById(R.id.action_button_next);
+        mPreviousButton = (RepeatingImageButton) v.findViewById(R.id.action_button_previous);
+        mNextButton = (RepeatingImageButton) v.findViewById(R.id.action_button_next);
         mPlayQueueButton = (ImageButton) v.findViewById(R.id.play_queue_button);
         initButtons();
         
@@ -90,6 +96,7 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener 
 				
 			}
 		});
+		mPreviousButton.setRepeatListener(mRewListener, REPEAT_INTERVAL);
 		
 		mNextButton.setOnClickListener(new View.OnClickListener() {
 			
@@ -99,6 +106,7 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener 
 				
 			}
 		});
+		mNextButton.setRepeatListener(mFfwdListener, REPEAT_INTERVAL);
 		
 		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {
 			
@@ -152,5 +160,101 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener 
 		// TODO Auto-generated method stub
 		
 	}
+	
+	private RepeatingImageButton.RepeatListener mRewListener =
+	        new RepeatingImageButton.RepeatListener() {
+		
+		@Override    
+		public void onRepeat(View v, long howlong, int repcnt) {
+	        scanBackward(repcnt, howlong);
+	    }
+	};
+	    
+	private RepeatingImageButton.RepeatListener mFfwdListener =
+	        new RepeatingImageButton.RepeatListener() {
+	    
+		@Override
+		public void onRepeat(View v, long howlong, int repcnt) {
+	        scanForward(repcnt, howlong);
+	    }
+	};
+	
+	/**
+     * Used to scan backwards in time through the current track
+     * 
+     * @param repcnt The repeat count
+     * @param delta The long press duration
+     */
+    private void scanBackward(final int repcnt, long delta) {
+        if (repcnt == 0) {
+            mStartSeekPos = MusicServiceWrapper.position();
+            mLastSeekEventTime = 0;
+        } else {
+            if (delta < 5000) {
+                // seek at 10x speed for the first 5 seconds
+                delta = delta * 10;
+            } else {
+                // seek at 40x after that
+                delta = 50000 + (delta - 5000) * 40;
+            }
+            long newpos = mStartSeekPos - delta;
+            if (newpos < 0) {
+                // move to previous track
+            	MusicServiceWrapper.previous(getActivity());
+                final long duration = MusicServiceWrapper.duration();
+                mStartSeekPos += duration;
+                newpos += duration;
+            }
+            if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
+            	MusicServiceWrapper.seek(newpos);
+                mLastSeekEventTime = delta;
+            }
+            /*if (repcnt >= 0) {
+                mPosOverride = newpos;
+            } else {
+                mPosOverride = -1;
+            }
+            refreshCurrentTime();*/
+        }
+    }
+
+    /**
+     * Used to scan forwards in time through the current track
+     * 
+     * @param repcnt The repeat count
+     * @param delta The long press duration
+     */
+    private void scanForward(final int repcnt, long delta) {
+        if (repcnt == 0) {
+            mStartSeekPos = MusicServiceWrapper.position();
+            mLastSeekEventTime = 0;
+        } else {
+            if (delta < 5000) {
+                // seek at 10x speed for the first 5 seconds
+                delta = delta * 10;
+            } else {
+                // seek at 40x after that
+                delta = 50000 + (delta - 5000) * 40;
+            }
+            long newpos = mStartSeekPos + delta;
+            final long duration = MusicServiceWrapper.duration();
+            if (newpos >= duration) {
+                // move to next track
+            	MusicServiceWrapper.next();
+                mStartSeekPos -= duration; // is OK to go negative
+                newpos -= duration;
+            }
+            if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
+                MusicServiceWrapper.seek(newpos);
+                mLastSeekEventTime = delta;
+            }
+            /*if (repcnt >= 0) {
+                mPosOverride = newpos;
+            } else {
+                mPosOverride = -1;
+            }
+            refreshCurrentTime();*/
+        }
+    }
 
 }
