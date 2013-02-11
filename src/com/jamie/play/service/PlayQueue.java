@@ -12,7 +12,6 @@ import android.provider.MediaStore;
 public class PlayQueue {
 
 	private List<Track> mPlayQueue;
-	private int mPlayQueueLen = -1;
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
@@ -32,7 +31,6 @@ public class PlayQueue {
 	
 	private PlayQueue(List<Track> list) {
 		mPlayQueue = list;
-		mPlayQueueLen = mPlayQueue.size();
 	}
 	
 	public static PlayQueue createFromHexString(Context context, String hexString) {
@@ -109,12 +107,14 @@ public class PlayQueue {
         if (position < 0) {
             position = 0;
             mPlayQueue.clear();
-        } else if (position > mPlayQueueLen) {
-            position = mPlayQueueLen;
+        } else {
+        	final int len = mPlayQueue.size();
+        	if (position > len) {
+        		position = len;
+        	}
         }
         
         mPlayQueue.addAll(position, list);
-        mPlayQueueLen = mPlayQueue.size();
 	}
 	
 	public void moveQueueItem(int from, int to) {
@@ -149,8 +149,6 @@ public class PlayQueue {
         	}
         }
         	
-        mPlayQueueLen -= numRemoved;
-        	
         return numRemoved;
     }
 	
@@ -167,8 +165,7 @@ public class PlayQueue {
         	mPlayPosition -= numRemoved;
         }
         
-        mPlayQueue.subList(first, last).clear();        
-        mPlayQueueLen -= numRemoved;
+        mPlayQueue.subList(first, last).clear();
         
         return numRemoved;
 	}
@@ -187,7 +184,6 @@ public class PlayQueue {
 	
 	public void add(Track track) {
 		mPlayQueue.add(track);
-		mPlayQueueLen++;
 	}
 	
 	public int getPlayPosition() {
@@ -207,7 +203,7 @@ public class PlayQueue {
 	}
 	
 	public int size() {
-		return mPlayQueueLen;
+		return mPlayQueue.size();
 	}
 	
 	public boolean isEmpty() {
@@ -215,28 +211,28 @@ public class PlayQueue {
 	}
 	
 	public Track getCurrentTrack() {
-		if (mPlayPosition > 0 && mPlayPosition < mPlayQueue.size()) {
+		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
 			return mPlayQueue.get(mPlayPosition);
 		}
 		return null;
 	}
 	
 	public long getCurrentId() {
-		if (mPlayPosition > 0 && mPlayPosition < mPlayQueue.size()) {
+		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
 			return mPlayQueue.get(mPlayPosition).getId();
 		}
 		return -1;
 	}
 	
 	public Uri getCurrentUri() {
-		if (mPlayPosition > 0 && mPlayPosition < mPlayQueue.size()) {
+		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
 			return mPlayQueue.get(mPlayPosition).getUri();
 		}
 		return null;
 	}
 	
 	public Uri getNextUri() {
-		if (mNextPlayPosition > 0 && mNextPlayPosition < mPlayQueue.size()) {
+		if (mNextPlayPosition >= 0 && mNextPlayPosition < mPlayQueue.size()) {
 			return mPlayQueue.get(mNextPlayPosition).getUri();
 		}
 		return null;
