@@ -23,7 +23,8 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.jamie.play.activities.LibraryActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -60,11 +61,13 @@
 
         <activity
             android:name="com.jamie.play.activities.AlbumBrowserActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name="com.jamie.play.activities.ArtistBrowserActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
         </activity>
     </application>
 
