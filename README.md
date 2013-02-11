@@ -1,7 +1,7 @@
 MusicApp
 ========
 
-A music player that brings your music to centre stage.
+A music player that brings your music to centre stage.  
 ![Play screen](/screenshots/2013-02-10 16.23.18.png)
 
 Name
