@@ -1,19 +1,16 @@
 package com.jamie.play.adapters;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.widget.ResourceCursorAdapter;
 
 import com.jamie.play.service.Track;
 
 public abstract class TrackAdapter extends ResourceCursorAdapter {
-
-	private static final String TAG = "TrackAdapter";
 	
 	private int mIdColIdx;
 	private int mTitleColIdx;
@@ -71,9 +68,8 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 		Cursor cursor = getCursor();
 		List<Track> trackList = null;
 		if (cursor != null & cursor.moveToFirst()) {
-			trackList = new ArrayList<Track>(cursor.getCount());
+			trackList = new LinkedList<Track>();
 			do {
-				Log.d(TAG, "Adding track: " + cursor.getString(mTitleColIdx));
 				trackList.add(new Track(
 						cursor.getLong(mIdColIdx),
 						cursor.getString(mTitleColIdx),
