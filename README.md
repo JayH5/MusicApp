@@ -50,7 +50,7 @@ Current issues
 * Shuffle/repeat modes are UNIMPLEMENTED, although some of the code is in the MusicService. Repeat mode really a matter of adding a button
 * Notification and lockscreen controls show themselves inconsistently.
 * When the play queue is brought up it is not set to the current position.
-* The player drawer should show itself when the user selects a song to play.
+* ~~The player drawer should show itself when the user selects a song to play.~~
 
 Minor issues
 ------------
