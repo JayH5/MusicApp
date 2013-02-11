@@ -17,11 +17,27 @@
         android:scaleType="fitXY" />
     
     <SeekBar
-        android:id="@+id/seekBar1"
+        android:id="@+id/seek_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/music_player_album_art"
+        android:layout_alignParentLeft="true"
+        android:max="1000"
+        android:thumb="@null"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp" />
+    
+    <TextView
+        android:id="@+id/elapsedTime"
+        style="@style/MusicPlayerDurationText"
+        android:layout_below="@id/seek_bar"
         android:layout_alignParentLeft="true" />
+    
+    <TextView
+        android:id="@+id/totalTime"
+        style="@style/MusicPlayerDurationText"
+        android:layout_below="@id/seek_bar"
+        android:layout_alignParentRight="true" />
     
     <LinearLayout
         android:id="@+id/music_player_info_holder"

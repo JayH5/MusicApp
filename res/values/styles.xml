@@ -78,6 +78,12 @@
         <item name="android:singleLine">true</item>
     </style>
     
+    <style name="MusicPlayerDurationText" parent="ListItemText">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textColor">?android:textColorSecondary</item>
+        <item name="android:textSize">@dimen/music_player_duration_text_size</item>
+    </style>
+    
     
     <!-- Gridview text styles -->
     <style name="GridViewText.Title" parent="ListItemText.Title">

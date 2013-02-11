@@ -20,6 +20,7 @@
     <dimen name="subtitle_text_size">14dp</dimen>
     <dimen name="music_player_title_text_size">24sp</dimen>
     <dimen name="view_pager_indicator_text_size">13sp</dimen>
+    <dimen name="music_player_duration_text_size">12sp</dimen>
     
     <!-- Notifications -->
     <dimen name="notification_big_icon_width">64dp</dimen>

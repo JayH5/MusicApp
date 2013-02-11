@@ -49,6 +49,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	private Vibrator mVibrator;
 	
 	private MenuDrawer mDrawer;
+	private MusicPlayerFragment mPlayer;
 	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
@@ -69,12 +70,12 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getSupportFragmentManager();
-		MusicPlayerFragment frag = (MusicPlayerFragment) fm.findFragmentByTag(PLAYER_TAG);
-		if (frag == null) {
-			frag = new MusicPlayerFragment();
+		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(PLAYER_TAG);
+		if (mPlayer == null) {
+			mPlayer = new MusicPlayerFragment();
 		}
-		addMusicStateListener(frag);
-		fm.beginTransaction().replace(R.id.menu_frame, frag)
+		addMusicStateListener(mPlayer);
+		fm.beginTransaction().replace(R.id.menu_frame, mPlayer)
 			.commit();	
 		
 		
@@ -271,6 +272,12 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 				|| oldState == MenuDrawer.STATE_DRAGGING)
 				&& newState == MenuDrawer.STATE_CLOSED) {
 			mVibrator.vibrate(15);
+		}
+		
+		if (newState == MenuDrawer.STATE_CLOSED) {
+			mPlayer.onHide();
+		} else if (newState == MenuDrawer.STATE_OPEN) {
+			mPlayer.onShow();
 		}
 		
 	}
