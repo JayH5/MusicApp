@@ -56,7 +56,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
 	public boolean setDataSource(final Uri uri) {
         mIsInitialized = setDataSourceImpl(mCurrentMediaPlayer, uri);
         if (mIsInitialized) {
-            setNextDataSource(null);
+        	setNextDataSource(null);
         }
         return mIsInitialized;
     }

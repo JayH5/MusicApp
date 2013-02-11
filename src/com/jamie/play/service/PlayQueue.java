@@ -9,6 +9,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 
+import com.jamie.play.utils.HexUtils;
+
 public class PlayQueue {
 
 	private List<Track> mPlayQueue;
@@ -25,17 +27,22 @@ public class PlayQueue {
         MediaStore.Audio.Media.ALBUM
     };
 	
+    public PlayQueue() {
+    	mPlayQueue = new ArrayList<Track>();
+    }
+    
 	public PlayQueue(int capacity) {
 		mPlayQueue = new ArrayList<Track>(capacity);
 	}
 	
-	private PlayQueue(List<Track> list) {
-		mPlayQueue = list;
-	}
-	
-	public static PlayQueue createFromHexString(Context context, String hexString) {
+	/**
+	 * Uses the contents of a hex string to recreate a queue.
+	 * @param context
+	 * @param hexString
+	 */
+	public void open(Context context, String hexString) {
 		long[] trackIds = hexStringToTrackIds(hexString);
-		List<Track> tracks = trackIdsToTracks(context, trackIds);
+		mPlayQueue.addAll(trackIdsToTracks(context, trackIds));
 		
 		// TODO: Test if this is necessary
 		//if (tracks == null || tracks.isEmpty()) {
@@ -43,7 +50,6 @@ public class PlayQueue {
             //tracks = trackIdsToTracks(context, trackIds);
 		//}
 
-        return new PlayQueue(tracks);
 	}
 	
 	private static long[] hexStringToTrackIds(String hexString) {
@@ -103,18 +109,35 @@ public class PlayQueue {
 	}
 	
 	public void addToQueue(final List<Track> list, int position) {
-		// If position < 0 it signals that a new queue should be created
-        if (position < 0) {
-            position = 0;
-            mPlayQueue.clear();
-        } else {
-        	final int len = mPlayQueue.size();
-        	if (position > len) {
-        		position = len;
-        	}
+        final int len = mPlayQueue.size();
+        // Be lenient on getting the position too high
+        if (position > len) {
+        	position = len;
         }
         
         mPlayQueue.addAll(position, list);
+        
+        // Update the play position
+        if (position < mPlayPosition) {
+        	mPlayPosition += list.size();
+        }
+	}
+	
+	
+	/**
+	 * Swaps in a new list in place of the current queue
+	 * @param list
+	 * @return true if queue changed
+	 */
+	public boolean openList(List<Track> list) {
+		if (listEquals(list)) {
+			return false;
+		}
+		
+		mPlayQueue.clear();
+		mPlayQueue.addAll(list);
+		
+		return true;
 	}
 	
 	public void moveQueueItem(int from, int to) {
@@ -242,9 +265,13 @@ public class PlayQueue {
 		final StringBuilder builder = new StringBuilder();
     	for (Track track : mPlayQueue) {
     		builder.append(Long.toHexString(track.getId()));
-    		builder.append(';');
+    		builder.append(HexUtils.DELIMITER);
     	}
     	return builder.toString();
+	}
+	
+	public boolean listEquals(List<Track> list) {
+		return mPlayQueue.equals(list);
 	}
 	
 }

@@ -38,6 +38,7 @@ import com.jamie.play.IMusicService;
 import com.jamie.play.bitmapfun.ImageCache;
 import com.jamie.play.utils.AppUtils;
 import com.jamie.play.utils.ImageUtils;
+import com.jamie.play.utils.HexUtils;
 
 /**
  * A backbround {@link Service} used to keep music playing between activities
@@ -88,13 +89,22 @@ public class MusicService extends Service {
     public static final String REPEATMODE_CHANGED = "com.jamie.play.repeatmodechanged";
     public static final String SHUFFLEMODE_CHANGED = "com.jamie.play.shufflemodechanged";
     
+    // Shared preference keys
+    private static final String PREF_CARD_ID = "cardid";
+    private static final String PREF_QUEUE = "queue";
+    private static final String PREF_CURRENT_POSITION = "curpos";
+    private static final String PREF_SEEK_POSITION = "seekpos";
+    private static final String PREF_REPEAT_MODE = "repeatmode";
+    private static final String PREF_SHUFFLE_MODE = "shufflemode";
+    private static final String PREF_HISTORY = "history";
+    
     // Shuffle modes
     public static final int SHUFFLE_NONE = 0;
     public static final int SHUFFLE_NORMAL = 1;
     public static final int SHUFFLE_AUTO = 2;
     private int mShuffleMode = SHUFFLE_NONE;
     
-    private static final Shuffler mShuffler = new Shuffler();
+    private final Shuffler mShuffler = new Shuffler();
     private List<Track> mAutoShuffleList;
 
     // Repeat modes
@@ -115,7 +125,7 @@ public class MusicService extends Service {
     private boolean mPausedByTransientLossOfFocus = false;
     
     // Queue of tracks to be played
-    private PlayQueue mPlayQueue;
+    private final PlayQueue mPlayQueue = new PlayQueue();
     
     private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     private static final String[] PROJECTION = new String[] {
@@ -137,7 +147,7 @@ public class MusicService extends Service {
     private int mCardId;
     
     // Keep track of previously played tracks
-    private static final LinkedList<Integer> mHistory = new LinkedList<Integer>();
+    private final List<Integer> mHistory = new LinkedList<Integer>();
     private static final int MAX_HISTORY_SIZE = 100;
 
     // Audio playback objects
@@ -169,8 +179,7 @@ public class MusicService extends Service {
 	private final IBinder mBinder = new ServiceStub(this);
 	private int mServiceStartId = -1;
 	private WakeLock mWakeLock;
-	
-	//private ImageFetcher mImageWorker;
+
 	private ImageCache mImageCache;
     
     @Override
@@ -198,7 +207,10 @@ public class MusicService extends Service {
             // before stopping the service, so that pause/resume isn't slow.
             // Also delay stopping the service if we're transitioning between
             // tracks.
-        } else if (!mPlayQueue.isEmpty() || mPlayerHandler.hasMessages(TRACK_ENDED)) {
+        //} else if (!mPlayQueue.isEmpty() || mPlayerHandler.hasMessages(TRACK_ENDED)) {
+        // TODO: Check is mPlayerHandler.hasMessages(TRACK_ENDED) is necessary for
+        // gapless player.
+        } else if (!mPlayQueue.isEmpty()) {
             final Message msg = mDelayedStopHandler.obtainMessage();
             mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
             return true;
@@ -231,10 +243,6 @@ public class MusicService extends Service {
         // Initialze the notification helper
         mNotificationHelper = new NotificationHelper(this);
 
-        // TODO: Create way to give Music Service access to imagecache
-        // without it having its own instance
-        // Initialize the image worker
-        //mImageWorker = ImageUtils.getImageFetcher(this);
         mImageCache = ImageUtils.getImageCache(this);
         
         // Start up the thread running the service. Note that we create a
@@ -319,7 +327,7 @@ public class MusicService extends Service {
         filter.addAction(ACTION_SHUFFLE);
         filter.addAction(KILL_FOREGROUND);
         filter.addAction(START_BACKGROUND);
-        //filter.addAction(UPDATE_LOCKSCREEN);
+        
         // Attach the broadcast listener
         registerReceiver(mIntentReceiver, filter);
     }
@@ -506,9 +514,12 @@ public class MusicService extends Service {
      * countdown to calling {@code #stopForeground(true)}
      */
     private void gotoIdleState() {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
+        // Post a delayed message to stop service
+    	mDelayedStopHandler.removeCallbacksAndMessages(null);
         final Message msg = mDelayedStopHandler.obtainMessage();
         mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
+        
+        // Put the notification in idle state and remove it after a bit
         if (mBuildNotification) {
             mNotificationHelper.goToIdleState(mIsSupposedToBePlaying);
         }
@@ -519,6 +530,12 @@ public class MusicService extends Service {
                 killNotification();
             }
         }, IDLE_DELAY);
+        
+        // Update play state
+        if (mIsSupposedToBePlaying) {
+            mIsSupposedToBePlaying = false;
+            notifyChange(PLAYSTATE_CHANGED);
+        }
     }
 
     /**
@@ -535,9 +552,6 @@ public class MusicService extends Service {
         } else {
             stopForeground(false);
         }
-        if (removeStatusIcon) {
-            mIsSupposedToBePlaying = false;
-        }
     }
 
     /**
@@ -547,7 +561,7 @@ public class MusicService extends Service {
      * @param position The position to place the tracks
      */
     private void addToPlayList(final List<Track> list, int position) {
-        mPlayQueue.addToQueue(list, position);
+    	mPlayQueue.addToQueue(list, position);
         
         if (mPlayQueue.isEmpty()) {
             notifyChange(META_CHANGED);
@@ -558,8 +572,8 @@ public class MusicService extends Service {
      * Called to open a new file as the current track and prepare the next for
      * playback
      */
-    private void openCurrentAndNext() {
-        openCurrent();
+    private void openCurrentAndNext() {    	
+    	openCurrent();
         setNextTrack();
     }
 
@@ -582,10 +596,6 @@ public class MusicService extends Service {
                 // If that position is invalid, stop trying
                 if (pos < 0) {
                 	gotoIdleState();
-                    if (mIsSupposedToBePlaying) {
-                    	mIsSupposedToBePlaying = false;
-                        notifyChange(PLAYSTATE_CHANGED);
-                    }
                     return;
                 }
                 mPlayQueue.setPlayPosition(pos);
@@ -594,10 +604,6 @@ public class MusicService extends Service {
             } else {
                 mOpenFailedCounter = 0;
                 gotoIdleState();
-                if (mIsSupposedToBePlaying) {
-                    mIsSupposedToBePlaying = false;
-                    notifyChange(PLAYSTATE_CHANGED);
-                }
                 return;
             }
         }
@@ -841,66 +847,57 @@ public class MusicService extends Service {
      * @param saveQueue True if the queue should be saved
      */
     private void saveState(boolean saveQueue) {
-        if (!mQueueIsSaveable) {
+    	if (!mQueueIsSaveable) {
             return;
         }
 
         final SharedPreferences.Editor editor = mPreferences.edit();
         if (saveQueue) {
         	if (mPlayQueue != null) {
-        		editor.putString("queue", mPlayQueue.toHexString());
+        		editor.putString(PREF_QUEUE, mPlayQueue.toHexString());
         	}
             
-            editor.putInt("cardid", mCardId);
+            editor.putInt(PREF_CARD_ID, mCardId);
             
             if (mShuffleMode != SHUFFLE_NONE) {
-                editor.putString("history", historyToHexString());
+                editor.putString(PREF_HISTORY, HexUtils.intListToHexString(mHistory));
             }
         }
-        editor.putInt("curpos", mPlayQueue.getPlayPosition());
+        editor.putInt(PREF_CURRENT_POSITION, mPlayQueue.getPlayPosition());
         if (mPlayer.isInitialized()) {
-            editor.putLong("seekpos", mPlayer.position());
+            editor.putLong(PREF_SEEK_POSITION, mPlayer.position());
         }
-        editor.putInt("repeatmode", mRepeatMode);
-        editor.putInt("shufflemode", mShuffleMode);
+        editor.putInt(PREF_REPEAT_MODE, mRepeatMode);
+        editor.putInt(PREF_SHUFFLE_MODE, mShuffleMode);
         editor.apply();
-    }
-    
-    
-    private String historyToHexString() {
-    	final StringBuilder builder = new StringBuilder();
-    	for (int id : mHistory) {
-    		builder.append(Integer.toHexString(id));
-    		builder.append(';');
-    	}
-    	return builder.toString();
-    }
+    }    
 
     /**
      * Reloads the queue as the user left it
      */
     private void restoreState() {
         String q = null;
+        // Restore the card id
         int id = mCardId;
-        if (mPreferences.contains("cardid")) {
-            id = mPreferences.getInt("cardid", ~mCardId);
+        if (mPreferences.contains(PREF_CARD_ID)) {
+            id = mPreferences.getInt(PREF_CARD_ID, ~mCardId);
         }
+        // If it matches our current card id then get the saved queue
         if (id == mCardId) {
-            q = mPreferences.getString("queue", "");
+            q = mPreferences.getString(PREF_QUEUE, "");
         }
         if (q != null && !q.isEmpty()) {
-        	mPlayQueue = PlayQueue.createFromHexString(this, q);
-        	Log.d(TAG, "Play queue restored with length: " + mPlayQueue.size());
+        	// Restore the queue
+        	mPlayQueue.open(this, q);
         	
-            final int pos = mPreferences.getInt("curpos", 0);
-            Log.d(TAG, "Play position found in SharedPreferences: " + pos);
+            // Restore the queue position
+        	final int pos = mPreferences.getInt(PREF_CURRENT_POSITION, 0);
             if (pos < 0 || pos >= mPlayQueue.size()) {
                 return;
             }
-            
             mPlayQueue.setPlayPosition(pos);
-            Log.d(TAG, "Play queue position set to: " + pos);
             
+            // Try to open the current queue position
             mOpenFailedCounter = 20;
             openCurrentAndNext();
             if (!mPlayer.isInitialized()) {
@@ -908,38 +905,33 @@ public class MusicService extends Service {
             }
 
             // Get the saved seek position
-            long seekPosition = mPreferences.getLong("seekpos", 0);
-            Log.d(TAG, "Seek position found in SharedPreferences: " + seekPosition);
+            long seekPosition = mPreferences.getLong(PREF_SEEK_POSITION, 0);
             // If it is invalid, just start from the beginning
             if (seekPosition < 0 || seekPosition > duration()) {
             	seekPosition = 0;
             }
             seek(seekPosition);
-            Log.d(TAG, "Seek position set to: " + seekPosition);
 
             // Get the saved repeat mode
-            int repeatMode = mPreferences.getInt("repeatmode", REPEAT_NONE);
-            Log.d(TAG, "Repeat mode found in SharedPreferences: " + repeatMode);
+            int repeatMode = mPreferences.getInt(PREF_REPEAT_MODE, REPEAT_NONE);
             // If it is invalid, switch repeat off
             if (repeatMode != REPEAT_ALL && repeatMode != REPEAT_CURRENT) {
             	repeatMode = REPEAT_NONE;
             }
             mRepeatMode = repeatMode;
-            Log.d(TAG, "Repeat mode set to: " + repeatMode);
 
             // Get the saved shuffle mode
-            int shuffleMode = mPreferences.getInt("shufflemode", SHUFFLE_NONE);
-            Log.d(TAG, "Shuffle mode found in SharedPreferences: " + shuffleMode);
+            int shuffleMode = mPreferences.getInt(PREF_SHUFFLE_MODE, SHUFFLE_NONE);
             // If it is invalid, switch shuffle off
             if (shuffleMode != SHUFFLE_AUTO && shuffleMode != SHUFFLE_NORMAL) {
             	shuffleMode = SHUFFLE_NONE;
             }
             
+            // Restore the history if shuffle is on
             if (shuffleMode != SHUFFLE_NONE) {
-                q = mPreferences.getString("history", "");
+                q = mPreferences.getString(PREF_HISTORY, "");
                 if (q != null && !q.isEmpty()) {
-                    hexStringToHistory(q);
-                    Log.d(TAG, "History restored with length: " + mHistory.size());
+                    mHistory.addAll(HexUtils.hexStringToIntList(q));
                 }
             }
             if (shuffleMode == SHUFFLE_AUTO) {
@@ -948,17 +940,10 @@ public class MusicService extends Service {
                 }
             }
             mShuffleMode = shuffleMode;
-            Log.d(TAG, "Shuffle mode set to: " + shuffleMode);
+        } else {
+        	Log.w(TAG, "Couldn't restore queue from shared preferences");
         }
-    }
-    
-    private void hexStringToHistory(String hexString) {
-    	final String[] hexes = hexString.split(";");
-    	mHistory.clear();
-    	for (String hex : hexes) {
-    		mHistory.add(Integer.parseInt(hex, 16));
-    	}
-    }
+    }    
 
     /**
      * Returns the audio session ID
@@ -1122,7 +1107,7 @@ public class MusicService extends Service {
     }
 
     /**
-     * Returns the queue as a shallow copy of the playqueue.
+     * Returns a shallow copy of the List backing the play queue
      * 
      * @return The queue as a List<Track>
      */
@@ -1144,23 +1129,19 @@ public class MusicService extends Service {
      * @param position The position to start playback at
      */
     public synchronized void open(final List<Track> list, final int position) {
-        Log.d(TAG, "Opening track list of length: " + list.size() + ", at position: " + position);
     	if (mShuffleMode == SHUFFLE_AUTO) {
             mShuffleMode = SHUFFLE_NORMAL;
         }
         final long oldId = getCurrentTrackId();
-        if (mPlayQueue == null) {
-        	mPlayQueue = new PlayQueue(list.size());
-        }
-        if (!mPlayQueue.equals(list)) {
-            addToPlayList(list, -1);
+        if (mPlayQueue.openList(list)) {
             notifyChange(QUEUE_CHANGED);
-        }
-        if (position >= 0) {
+        } 
+        if (position >= 0 || position > list.size()) {
         	mPlayQueue.setPlayPosition(position);
         } else {
         	mPlayQueue.setPlayPosition(mShuffler.nextInt(mPlayQueue.size()));
         }
+        
         mHistory.clear();
         openCurrentAndNext();
         if (oldId != getCurrentTrackId()) {
@@ -1195,6 +1176,8 @@ public class MusicService extends Service {
 
             // Update the notification
             buildNotification();
+            
+            // Update the play state
             if (!mIsSupposedToBePlaying) {
                 mIsSupposedToBePlaying = true;
                 notifyChange(PLAYSTATE_CHANGED);
@@ -1213,8 +1196,6 @@ public class MusicService extends Service {
         if (mIsSupposedToBePlaying) {
             mPlayer.pause();
             gotoIdleState();
-            mIsSupposedToBePlaying = false;
-            notifyChange(PLAYSTATE_CHANGED);
         }
     }
 
@@ -1228,10 +1209,6 @@ public class MusicService extends Service {
         final int pos = getNextPosition(force);
         if (pos < 0) {
             gotoIdleState();
-            if (mIsSupposedToBePlaying) {
-                mIsSupposedToBePlaying = false;
-                notifyChange(PLAYSTATE_CHANGED);
-            }
             return;
         }
         mPlayQueue.setPlayPosition(pos);
@@ -1300,7 +1277,6 @@ public class MusicService extends Service {
         mShuffleMode = shufflemode;
         if (mShuffleMode == SHUFFLE_AUTO) {
             if (makeAutoShuffleList()) {
-                //mPlayListLen = 0;
                 doAutoShuffleUpdate();
                 openAndPlay(0);
                 return;
@@ -1405,11 +1381,7 @@ public class MusicService extends Service {
      */
     public Bitmap getAlbumArt(Track track) {
         // Return the cached artwork
-        if (mImageCache != null) {
-        	return mImageCache.getBitmapFromCache(
-        			String.valueOf(getCurrentTrack().getAlbumId()));
-        }
-    	return null;
+        return mImageCache.getBitmapFromCache(String.valueOf(track.getAlbumId()));
     }
 
     /**
