@@ -2,6 +2,7 @@ MusicApp
 ========
 
 A music player that brings your music to centre stage.
+![Play screen](/screenshots/2013-02-10 16.23.18.png)
 
 Name
 ----
@@ -42,7 +43,7 @@ Current issues
 --------------
 * App fails to restore state in all activities other than the Library activity. This causes a fc when resuming the app from the album or artist browser. FIXME: Need to ensure these activities can recover themselves.
 * Rotation crashes the app. FIXME: Need to lock app to portrait only for now. Must design new layouts for horizontal views.
-* Image fetching mechanism not robust enough. Needs optimizing. Doesn't crash but there are a number of issues that will be pointed out in the code. FIXME: Work on making fetches from Content Uris really robust but hopefully without reopening an InputStream from the Content Resolver. Find a way to make the ImageDownloadService let image views know when it's fetched their images. Also improve the efficiency of the service by preventing large queues of incoming intents. ImageFetcher needs to be aware of what the service has already received requests for.
+* ~~Image fetching mechanism not robust enough. Needs optimizing. Doesn't crash but there are a number of issues that will be pointed out in the code. FIXME: Work on making fetches from Content Uris really robust but hopefully without reopening an InputStream from the Content Resolver. Find a way to make the ImageDownloadService let image views know when it's fetched their images. Also improve the efficiency of the service by preventing large queues of incoming intents. ImageFetcher needs to be aware of what the service has already received requests for.~~
 * For artists who are only featured on an album by another artist (happens a lot with compilations), browsing the artist will bring up an empty list of albums but say that the artist has some albums.
 * ANDROID ISSUE: The MediaStore doesn't attribute albums to the correct artists in the case of compilations. Doesn't read the Album Artist metadata tag from the media file, instead adds the first artist of the album. FIXME: ??? Don't know how.
 * Track seekbar, time indicators are UNIMPLEMENTED
@@ -50,7 +51,11 @@ Current issues
 * Notification and lockscreen controls show themselves inconsistently.
 * When the play queue is brought up it is not set to the current position.
 * The player drawer should show itself when the user selects a song to play.
+
+Minor issues
+------------
 * Album artwork and artist images are really low res... not sure why. But this is a pretty minor issue.
+* Image fetching mechanism may leave a few stray files in the DownloadCache directory.
 
 Next features
 -------------
@@ -58,6 +63,7 @@ Next features
 * Long press song/album/artist/etc for contextual options
 * Play queue interface upgrade: Drag tracks to reorder. Press button to remove track from queue
 * Settings of some kind
+* Play files from file explorer
 
 Would-be-nice-to-have-one-day features
 --------------------------------------
