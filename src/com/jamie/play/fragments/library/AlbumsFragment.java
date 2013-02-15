@@ -57,6 +57,18 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     }
     
     @Override
+	public void onResume() {
+		super.onResume();
+		mImageWorker.setExitTasksEarly(false);
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		mImageWorker.setExitTasksEarly(true);
+	}
+    
+    @Override
     public View onCreateView(
             LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 

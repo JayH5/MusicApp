@@ -9,6 +9,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.jamie.play.R;
+import com.jamie.play.adapters.abs.AlbumAdapter;
 import com.jamie.play.bitmapfun.ImageFetcher;
 
 public class AlbumsAdapter extends AlbumAdapter {

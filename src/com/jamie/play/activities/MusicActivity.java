@@ -22,14 +22,12 @@ import android.view.MenuItem;
 
 import com.jamie.play.IMusicService;
 import com.jamie.play.R;
-import com.jamie.play.bitmapfun.ImageFetcher;
 import com.jamie.play.fragments.musicplayer.MusicPlayerFragment;
 import com.jamie.play.service.MusicService;
 import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.MusicServiceWrapper.ServiceToken;
 import com.jamie.play.service.MusicStateListener;
 import com.jamie.play.utils.AppUtils;
-import com.jamie.play.utils.ImageUtils;
 
 public class MusicActivity extends FragmentActivity implements ServiceConnection,
 		MusicStateListener, MenuDrawer.OnDrawerStateChangeListener {
@@ -44,8 +42,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	
 	private boolean mIsBackPressed;
 	
-	private ImageFetcher mImageWorker;
-	
 	private Vibrator mVibrator;
 	
 	private MenuDrawer mDrawer;
@@ -57,8 +53,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		
 		mServiceToken = MusicServiceWrapper.bindToService(this, this);
 		mPlaybackStatus = new PlaybackStatus(this);
-		
-		mImageWorker = ImageUtils.getImageFetcher(this);
 		
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
@@ -73,11 +67,11 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(PLAYER_TAG);
 		if (mPlayer == null) {
 			mPlayer = new MusicPlayerFragment();
+			fm.beginTransaction()
+				.add(R.id.menu_frame, mPlayer, PLAYER_TAG)
+				.commit();	
 		}
 		addMusicStateListener(mPlayer);
-		fm.beginTransaction().replace(R.id.menu_frame, mPlayer)
-			.commit();	
-		
 		
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
@@ -89,7 +83,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	@Override
     protected void onResume() {
         super.onResume();
-        mImageWorker.setExitTasksEarly(false);
         MusicServiceWrapper.killForegroundService(this);
         refreshListeners();
 	}
@@ -110,7 +103,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	@Override
     protected void onPause() {
         super.onPause();
-        mImageWorker.setExitTasksEarly(true);
         if (MusicServiceWrapper.isPlaying() || mIsBackPressed) {
             if (AppUtils.isApplicationSentToBackground(this)) {
             	MusicServiceWrapper.startBackgroundService(this);

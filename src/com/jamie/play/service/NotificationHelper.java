@@ -63,8 +63,9 @@ public class NotificationHelper {
 	}
 	
 	private PendingIntent getPendingIntent() {
-        return PendingIntent.getActivity(mService, 0, new Intent("com.example.musicexperiments2.MUSIC_PLAYER")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+        return PendingIntent.getActivity(mService, 0, 
+        		new Intent("com.jamie.MUSIC_PLAYER")
+        				.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
     }
 	
 	private void initCollapsedLayout(String track, String artist, Bitmap albumArt) {

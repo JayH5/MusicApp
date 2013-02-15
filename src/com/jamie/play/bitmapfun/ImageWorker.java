@@ -84,6 +84,10 @@ public abstract class ImageWorker {
             task.execute(data);
         }
     }
+    
+    public void loadImage(String key, ImageView imageView) {
+    	loadImage(key, new Bundle(), imageView);
+    }
 
     /**
      * Set placeholder bitmap that shows when the the background thread is running.

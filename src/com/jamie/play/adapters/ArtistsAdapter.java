@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.jamie.play.R;
+import com.jamie.play.adapters.abs.ArtistAdapter;
 import com.jamie.play.bitmapfun.ImageFetcher;
 import com.jamie.play.utils.TextUtils;
 

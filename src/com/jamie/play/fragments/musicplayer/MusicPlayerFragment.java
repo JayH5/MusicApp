@@ -32,6 +32,8 @@ import com.jamie.play.widgets.RepeatingImageButton;
 public class MusicPlayerFragment extends Fragment implements MusicStateListener, 
 		SeekBar.OnSeekBarChangeListener {
 	
+	private static final String TRACK_TAG = "track";
+	
 	private static final int REPEAT_INTERVAL = 260;
 	
 	// Time handler message
@@ -42,6 +44,8 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 	private ImageButton mPlayPauseButton;
 	private RepeatingImageButton mPreviousButton;
 	private RepeatingImageButton mNextButton;
+	
+	private Track mTrack;
 	
 	private TextView mTrackText;
 	private TextView mAlbumText;
@@ -77,6 +81,16 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 	}
 	
 	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		
+		if (savedInstanceState != null) {
+			mTrack = savedInstanceState.getParcelable(TRACK_TAG);
+			loadTrack(mTrack);
+		}
+	}
+	
+	@Override
 	public void onDestroy() {
         super.onDestroy();
         mIsPaused = false;
@@ -90,6 +104,25 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
         queueNextRefresh(next);
     }
 	
+	@Override
+	public void onResume() {
+		super.onResume();
+		mImageWorker.setExitTasksEarly(false);
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		mImageWorker.setExitTasksEarly(true);
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+		outState.putParcelable(TRACK_TAG, mTrack);
+	}
+	
 	public void onHide() {
 		mShown = false;
 		mTimeHandler.removeCallbacks(null);
@@ -100,6 +133,9 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 		// Refresh the current time
         final long next = refreshCurrentTime();
         queueNextRefresh(next);
+        
+        // TODO: remove the necessity for this call:
+        onMetaChanged();
 	}
 	
 	@Override
@@ -185,7 +221,11 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 	
 	@Override
 	public void onMetaChanged() {
-		final Track track = MusicServiceWrapper.getCurrentTrack();
+		loadTrack(MusicServiceWrapper.getCurrentTrack());
+		queueNextRefresh(1);
+	}
+	
+	private void loadTrack(Track track) {
 		if (track != null) {
 			mTrackText.setText(track.getTitle());
 			mAlbumText.setText(track.getAlbum());
@@ -194,7 +234,6 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 					MusicServiceWrapper.duration()));
 			mImageWorker.loadAlbumImage(track, mAlbumArt);
 		}
-		queueNextRefresh(1);
 	}
 
 	@Override
@@ -205,6 +244,7 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 			queueNextRefresh(1);
 		} else {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_play);
+			refreshCurrentTime();
 			mElapsedTime.startAnimation(AnimationUtils.loadAnimation(getActivity(), 
 					R.anim.fade_in_out));
 			mTimeHandler.removeCallbacks(null);
@@ -219,8 +259,8 @@ public class MusicPlayerFragment extends Fragment implements MusicStateListener,
 
 	@Override
 	public void onRefresh() {
-		// TODO Auto-generated method stub
-		
+		loadTrack(MusicServiceWrapper.getCurrentTrack());
+		refreshCurrentTime();		
 	}
 	
 	private RepeatingImageButton.RepeatListener mRewListener =

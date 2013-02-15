@@ -18,7 +18,7 @@ public class ImageFetcher extends ImageWorker {
 	
 	private static final String TAG = "ImageFetcher";
 	
-	private static final String ARTIST_SUFFIX = "artist";
+	public static final String ARTIST_SUFFIX = "artist";
 	private static final Uri ALBUM_ART_BASE_URI = 
 			Uri.parse("content://media/external/audio/albumart");
 	
@@ -101,6 +101,17 @@ public class ImageFetcher extends ImageWorker {
     	data.putString(KEY_ALBUM, album);
     	
     	loadImage(String.valueOf(albumId), data, imageView);
+    }
+    
+    public void loadAlbumImage(long albumId, ImageView imageView) {
+    	final Bundle data = new Bundle();
+    	data.putLong(KEY_ALBUM_ID, albumId);
+    	
+    	loadImage(String.valueOf(albumId), data, imageView);
+    }
+    
+    public void loadArtistImage(long artistId, ImageView imageView) {
+    	loadImage(artistId + ARTIST_SUFFIX, imageView);
     }
     
     /**

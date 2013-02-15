@@ -8,7 +8,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.jamie.play.activities.MusicActivity;
-import com.jamie.play.adapters.TrackAdapter;
+import com.jamie.play.adapters.abs.TrackAdapter;
 import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.Track;
 

@@ -7,7 +7,7 @@ import android.widget.ListView;
 
 import com.jamie.play.R;
 import com.jamie.play.adapters.SongsAdapter;
-import com.jamie.play.adapters.TrackAdapter;
+import com.jamie.play.adapters.abs.TrackAdapter;
 import com.jamie.play.cursormanager.CursorDefinitions;
 import com.jamie.play.cursormanager.CursorManager;
 import com.jamie.play.fragments.TrackListFragment;

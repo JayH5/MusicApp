@@ -15,16 +15,17 @@ import com.jamie.play.service.MusicServiceWrapper;
 public class PlayQueueFragment extends DialogFragment implements OnClickListener {
 	
 	private AlertDialog mAlertDialog;
+	private PlayQueueAdapter mAdapter;
 	
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {        
-        PlayQueueAdapter adapter = new PlayQueueAdapter(getActivity(), 
+        mAdapter = new PlayQueueAdapter(getActivity(), 
         		R.layout.list_item_two_line, MusicServiceWrapper.getQueue());
 	   
         mAlertDialog = new AlertDialog.Builder(getActivity())
         		.setCancelable(true)
         		.setTitle("Play Queue")
-        		.setAdapter(adapter, this)
+        		.setAdapter(mAdapter, this)
         		.create();
         
 	    return mAlertDialog;
@@ -34,8 +35,19 @@ public class PlayQueueFragment extends DialogFragment implements OnClickListener
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 		
+		if (mAdapter.getCount() == 0) {
+			mAdapter.setList(MusicServiceWrapper.getQueue());
+		}
+	}
+	
+	@Override
+	public void onStart() {
+		super.onStart();
+		
 		int position = MusicServiceWrapper.getQueuePosition();
-		mAlertDialog.getListView().setSelection(position);
+		if (position > 0 && position < mAdapter.getCount()) {
+			mAlertDialog.getListView().setSelection(position);
+		}
 	}
 
 	@Override

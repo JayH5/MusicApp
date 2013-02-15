@@ -9,13 +9,9 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 
 import com.jamie.play.R;
-import com.jamie.play.adapters.ArtistTracksAdapter;
-import com.jamie.play.adapters.TrackAdapter;
-import com.jamie.play.cursormanager.CursorDefinitions;
-import com.jamie.play.cursormanager.CursorManager;
-import com.jamie.play.fragments.TrackListFragment;
-import com.jamie.play.fragments.artistbrowser.ArtistAlbumsFragment;
+import com.jamie.play.fragments.artistbrowser.ArtistAlbumListFragment;
 import com.jamie.play.fragments.artistbrowser.ArtistSummaryFragment;
+import com.jamie.play.fragments.artistbrowser.ArtistTrackListFragment;
 import com.viewpagerindicator.TitlePageIndicator;
 
 public class ArtistBrowserActivity extends MusicActivity {
@@ -23,16 +19,14 @@ public class ArtistBrowserActivity extends MusicActivity {
 	public static final String EXTRA_ARTIST = "extra_artist";
 	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
+	private static final String TAG_SUMMARY_FRAG = "artist_summary";
+	
+	private long mArtistId;
 	private String mArtist;
-	
-	private Bundle mArtistBundle = new Bundle();
-	
-	private TrackListFragment mArtistTracksFragment;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//setContentView(R.layout.activity_artist_browser);
 		getMenuDrawer().setContentView(R.layout.activity_artist_browser);
 		
 		// Set up the view pager and its indicator
@@ -46,63 +40,48 @@ public class ArtistBrowserActivity extends MusicActivity {
 		// Get the album and artist names from the intent
 		final Intent launchIntent = getIntent();
 		if (launchIntent != null) {
-			mArtistBundle.putAll(launchIntent.getExtras());
+			mArtist = launchIntent.getStringExtra(EXTRA_ARTIST);
+			mArtistId = launchIntent.getLongExtra(EXTRA_ARTIST_ID, -1);
 		} else {
-			mArtistBundle.putAll(savedInstanceState);
+			mArtist = savedInstanceState.getString(EXTRA_ARTIST);
+			mArtistId = savedInstanceState.getLong(EXTRA_ARTIST_ID, -1);
 		}
-		
-		mArtist = mArtistBundle.getString(EXTRA_ARTIST);
-		long artistId = mArtistBundle.getLong(EXTRA_ARTIST_ID);
 		
 		// Set the title in the action bar
 		final ActionBar actionBar = getActionBar();
 		actionBar.setTitle(mArtist);
 				
-		// Set up the summary of the album
-		ArtistSummaryFragment summaryFragment = new ArtistSummaryFragment();
-		summaryFragment.setArguments(mArtistBundle);
-		
-		// Set up the tracks list fragment and its adapter
-		TrackAdapter adapter = new ArtistTracksAdapter(this, 
-				R.layout.list_item_two_line, null, 0);
-		
-		mArtistTracksFragment = new TrackListFragment();
-		mArtistTracksFragment.setListAdapter(adapter);
-		
-		// Set up the cursor manager to load cursor for summary and track list
-		final CursorManager cm = new CursorManager(this, 
-				adapter, CursorDefinitions.getArtistBrowserCursorParams(artistId), summaryFragment);
-		
-		// Display the summary fragment
+		// Set up the summary fragment
 		final FragmentManager fm = getSupportFragmentManager();
-		fm.beginTransaction()
-				.add(R.id.summaryFrame, summaryFragment)
+		if (fm.findFragmentByTag(TAG_SUMMARY_FRAG) == null) {
+			fm.beginTransaction()
+				.add(R.id.summaryFrame, ArtistSummaryFragment.newInstance(mArtistId),
+						TAG_SUMMARY_FRAG)
 				.commit();
-		
-		getSupportLoaderManager().initLoader(0, null, cm);
-		
+		}
 	}
 	
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		outState.putAll(mArtistBundle);
+		
+		outState.putString(EXTRA_ARTIST, mArtist);
+		outState.putLong(EXTRA_ARTIST_ID, mArtistId);
 	}
 	
 	public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
 		public SectionsPagerAdapter(FragmentManager fm) {
 			super(fm);
-			// TODO Auto-generated constructor stub
 		}
 
 		@Override
 		public Fragment getItem(int position) {
 			switch (position) {
 			case 0:
-				return ArtistAlbumsFragment.newInstance(mArtist);
+				return ArtistAlbumListFragment.newInstance(mArtistId);
 			case 1:
-				return mArtistTracksFragment;
+				return ArtistTrackListFragment.newInstance(mArtistId);
 			}
 			return null;
 		}

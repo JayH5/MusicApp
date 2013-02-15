@@ -26,22 +26,44 @@ public class PlayQueueAdapter extends BaseAdapter {
 	
 	@Override
 	public int getCount() {
-		return mList.size();
+		if (mList != null) {
+			return mList.size();
+		}
+		return 0;
 	}
 
 	@Override
 	public Object getItem(int position) {
-		return mList.get(position);
+		if (mList != null) {
+			return mList.get(position);
+		}
+		return null;
 	}
 
 	@Override
 	public long getItemId(int position) {
-		return mList.get(position).getId();
+		if (mList != null) {
+			return mList.get(position).getId();
+		}
+		return 0;
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		return createViewFromResource(position, convertView, parent, mResource);
+	}
+	
+	public void setList(List<Track> list) {
+		mList = list;
+		if (list != null) {
+			notifyDataSetChanged();
+		} else {
+			notifyDataSetInvalidated();
+		}
+	}
+	
+	public List<Track> getList() {
+		return mList;
 	}
 	
 	 private View createViewFromResource(int position, View convertView,
@@ -62,11 +84,11 @@ public class PlayQueueAdapter extends BaseAdapter {
 		 final TextView titleText = (TextView) view.findViewById(R.id.title);
 		 final TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
 		 
-		 final Track track = mList.get(position);
-		 
-		 titleText.setText(track.getTitle());
-		 subtitleText.setText(track.getArtist());
-		 
+		 final Track track = (Track) getItem(position);
+		 if (track != null) {
+			 titleText.setText(track.getTitle());
+			 subtitleText.setText(track.getArtist());
+		 }		 
 	 }
 
 }
