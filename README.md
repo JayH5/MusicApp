@@ -11,7 +11,7 @@ Previous working name: "Play". Current working name: "Soundstage".
 Dependencies
 ------------
 * DiskLruCache 1.3.1 (https://github.com/JakeWharton/DiskLruCache)
-* MenuDrawer 2.0.0 (https://github.com/SimonVT/android-menudrawer)
+* MenuDrawer 2.0.1 (https://github.com/SimonVT/android-menudrawer)
 * ViewPagerIndicator 2.4.1 (https://github.com/JakeWharton/Android-ViewPagerIndicator)
 * Android Support Library v4 R11
 
@@ -43,13 +43,15 @@ Lastfm
 Current issues
 --------------
 * Seek bar doesn't seek when dragged.
-* Now playing drawer restores itself inconsistently. Sometimes it works, sometimes it doesn't.
-* App fails to restore state in all activities other than the Library activity. This causes a fc when resuming the app from the album or artist browser. FIXME: Need to ensure these activities can recover themselves.
-* For artists who are only featured on an album by another artist (happens a lot with compilations), browsing the artist will bring up an empty list of albums but say that the artist has some albums.
+* In the album grid view, the adapter constantly reloads the image for the first album.. not sure why.. is limiting performance.
 * ANDROID ISSUE: The MediaStore doesn't attribute albums to the correct artists in the case of compilations. Doesn't read the Album Artist metadata tag from the media file, instead adds the first artist of the album. FIXME: ??? Don't know how.
 * Shuffle/repeat modes are UNIMPLEMENTED, although some of the code is in the MusicService. Repeat mode really a matter of adding a button
+* Now playing drawer doesn't restore the current track on app launch.
 * Notification and lockscreen controls show themselves inconsistently.
-* When the play queue is brought up it is not set to the current position.
+* ~~Now playing drawer restores itself inconsistently. Sometimes it works, sometimes it doesn't.~~
+* ~~App fails to restore state in all activities other than the Library activity. This causes a fc when resuming the app from the album or artist browser. FIXME: Need to ensure these activities can recover themselves.~~
+* ~~For artists who are only featured on an album by another artist (happens a lot with compilations), browsing the artist will bring up an empty list of albums but say that the artist has some albums.~~
+* ~~When the play queue is brought up it is not set to the current position.~~
 * ~~Rotation crashes the app. FIXME: Need to lock app to portrait only for now. Must design new layouts for horizontal views.~~
 * ~~Track seekbar, time indicators are UNIMPLEMENTED~~
 * ~~The player drawer should show itself when the user selects a song to play.~~
