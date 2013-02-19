@@ -1,19 +1,13 @@
 package com.jamie.play.fragments.artistbrowser;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.List;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.database.Cursor;
-import android.database.MatrixCursor;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.view.View;
 import android.widget.ImageView;
@@ -22,26 +16,31 @@ import android.widget.TextView;
 
 import com.jamie.play.R;
 import com.jamie.play.activities.AlbumBrowserActivity;
-import com.jamie.play.adapters.abs.AlbumAdapter;
+import com.jamie.play.adapters.abs.ResourceArrayAdapter;
 import com.jamie.play.bitmapfun.ImageFetcher;
+import com.jamie.play.loaders.ArtistAlbumListLoader;
+import com.jamie.play.models.ArtistAlbum;
 import com.jamie.play.utils.ImageUtils;
 import com.jamie.play.utils.TextUtils;
 
 public class ArtistAlbumListFragment extends ListFragment implements 
-		LoaderManager.LoaderCallbacks<Cursor> {
+		LoaderManager.LoaderCallbacks<List<ArtistAlbum>> {
 	
 	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
+	public static final String EXTRA_ARTIST = "extra_artist";
 	
 	private long mArtistId;
+	private String mArtist;
 	
 	private ImageFetcher mImageWorker;
-	private AlbumAdapter mAdapter;
+	private ArtistAlbumAdapter mAdapter;
 	
 	public ArtistAlbumListFragment() {}
 	
-	public static ArtistAlbumListFragment newInstance(long artistId) {
+	public static ArtistAlbumListFragment newInstance(long artistId, String artist) {
 		Bundle args = new Bundle();
 		args.putLong(EXTRA_ARTIST_ID, artistId);
+		args.putString(EXTRA_ARTIST, artist);
 		
 		ArtistAlbumListFragment frag = new ArtistAlbumListFragment();
 		frag.setArguments(args);
@@ -53,11 +52,15 @@ public class ArtistAlbumListFragment extends ListFragment implements
 		super.onCreate(savedInstanceState);
         
         mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);
+        mArtist = getArguments().getString(EXTRA_ARTIST);
         
         mImageWorker = ImageUtils.getImageFetcher(getActivity());
         
-        mAdapter = new ArtistAlbumsAdapter(getActivity(), 
-        		R.layout.list_item_artist_album, null, 0);
+        /*mAdapter = new ArtistAlbumsAdapter(getActivity(), 
+        		R.layout.list_item_artist_album, null, 0);*/
+        
+        mAdapter = new ArtistAlbumAdapter(getActivity(), 
+        		R.layout.list_item_artist_album, null);
         
         setListAdapter(mAdapter);
         
@@ -82,20 +85,17 @@ public class ArtistAlbumListFragment extends ListFragment implements
 	
 	@Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-		Cursor cursor = (Cursor) mAdapter.getItem(position);
-
-		final String album = cursor.getString(mAdapter.getAlbumColIdx());
-		final String artist = cursor.getString(mAdapter.getArtistColIdx());
+		ArtistAlbum artistAlbum = (ArtistAlbum) mAdapter.getItem(position);
 		
 		final Intent i = new Intent(getActivity(), AlbumBrowserActivity.class);		
 		i.putExtra(AlbumBrowserActivity.EXTRA_ALBUM_ID, id);
-		i.putExtra(AlbumBrowserActivity.EXTRA_ALBUM, album);
-		i.putExtra(AlbumBrowserActivity.EXTRA_ARTIST, artist);
+		i.putExtra(AlbumBrowserActivity.EXTRA_ALBUM, artistAlbum.album);
+		i.putExtra(AlbumBrowserActivity.EXTRA_ARTIST, mArtist);
 		
 		startActivity(i);
 	}
 	
-	private class ArtistAlbumsAdapter extends AlbumAdapter {
+	/*private class ArtistAlbumsAdapter extends AlbumAdapter {
 
 		private int mNumTracksColIdx;
 		private int mFirstYearColIdx;
@@ -143,9 +143,35 @@ public class ArtistAlbumListFragment extends ListFragment implements
 			}
 		}
 		
+	}*/
+	
+	private class ArtistAlbumAdapter extends ResourceArrayAdapter<ArtistAlbum> {
+
+		public ArtistAlbumAdapter(Context context, int resource,
+				List<ArtistAlbum> objects) {
+			super(context, resource, objects);
+		}
+
+		@Override
+		public void bindView(View view, Context context, ArtistAlbum artistAlbum) {
+			final ImageView albumArt = (ImageView) view.findViewById(R.id.albumThumb);
+			final TextView titleText = (TextView) view.findViewById(R.id.albumName);
+			final TextView yearText = (TextView) view.findViewById(R.id.albumYear);
+			final TextView numTracksText = (TextView) view.findViewById(R.id.albumTracks);
+			
+			titleText.setText(artistAlbum.album);
+			mImageWorker.loadAlbumImage(artistAlbum.albumId, albumArt);
+			
+			final Resources res = getResources();
+			numTracksText.setText(TextUtils.getNumTracksText(res, artistAlbum.numTracks));
+			yearText.setText(TextUtils.getYearText(res, artistAlbum.firstYear, 
+					artistAlbum.lastYear));
+		}
+
+		
 	}
 	
-	private static class ArtistAlbumCursorLoader extends CursorLoader {
+	/*private static class ArtistAlbumCursorLoader extends CursorLoader {
 
 		public ArtistAlbumCursorLoader(Context context, Uri uri,
 				String[] projection, String selection, String[] selectionArgs,
@@ -242,30 +268,21 @@ public class ArtistAlbumListFragment extends ListFragment implements
 			}
 		}
 		
+	}*/
+
+	@Override
+	public Loader<List<ArtistAlbum>> onCreateLoader(int id, Bundle args) {
+		return new ArtistAlbumListLoader(getActivity(), mArtistId);
 	}
 
 	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return new ArtistAlbumCursorLoader(getActivity(), 
-				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, 
-				new String[] {
-					MediaStore.Audio.Media.ARTIST_ID,
-					MediaStore.Audio.Media.ALBUM_ID,
-					MediaStore.Audio.Media.ALBUM,
-					MediaStore.Audio.Media.ARTIST,
-					MediaStore.Audio.Media.YEAR,
-				}, MediaStore.Audio.Media.ARTIST_ID + "=" + mArtistId, 
-				null, null);
+	public void onLoadFinished(Loader<List<ArtistAlbum>> loader, List<ArtistAlbum> data) {
+		mAdapter.setList(data);	
 	}
 
 	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-		mAdapter.swapCursor(data);		
-	}
-
-	@Override
-	public void onLoaderReset(Loader<Cursor> arg0) {
-		mAdapter.swapCursor(null);		
+	public void onLoaderReset(Loader<List<ArtistAlbum>> arg0) {
+		mAdapter.setList(null);	
 	}
 
 }

@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.jamie.play.service.Track;
+import com.jamie.play.models.Track;
 import com.jamie.play.utils.AppUtils;
 
 public class ImageFetcher extends ImageWorker {

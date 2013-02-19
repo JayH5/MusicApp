@@ -2,7 +2,7 @@ package com.jamie.play;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
-import com.jamie.play.service.Track;
+import com.jamie.play.models.Track;
 
 interface IMusicService {
     void open(in List<Track> tracks, int position);
@@ -30,7 +30,6 @@ interface IMusicService {
     void refresh();
     boolean isPlaying();
     
-    long duration();
     long position();
     long seek(long pos);
     

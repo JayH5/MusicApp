@@ -10,18 +10,37 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.jamie.play.R;
-import com.jamie.play.service.Track;
+import com.jamie.play.models.Track;
 
 public class PlayQueueAdapter extends BaseAdapter {
 
+	private static final int TYPE_PAST = 0;
+	private static final int TYPE_PRESENT = 1;
+	private static final int TYPE_FUTURE = 2;
+	private static final int NUM_TYPES = 3;
+	
 	private List<Track> mList;
-	private int mResource;
 	private LayoutInflater mInflater;
 	
-	public PlayQueueAdapter(Context context, int resource, List<Track> list) {
-		mResource = resource;
+	private int mQueuePosition;
+	private int mResourcePast;
+	private int mResourcePresent;
+	private int mResourceFuture;
+	
+	public PlayQueueAdapter(Context context, int resourcePast, int resourcePresent, 
+			int resourceFuture, List<Track> list, int position) {
+	
 		mList = list;
 		mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		mResourcePast = resourcePast;
+		mResourcePresent = resourcePresent;
+		mResourceFuture = resourceFuture;
+		mQueuePosition = position;
+	}
+	
+	public void setQueuePosition(int position) {
+		mQueuePosition = position;
+		notifyDataSetChanged();
 	}
 	
 	@Override
@@ -47,10 +66,56 @@ public class PlayQueueAdapter extends BaseAdapter {
 		}
 		return 0;
 	}
+	
+	@Override
+	public int getItemViewType(int position) {
+		int type;
+		if (mQueuePosition >= 0) {
+			if (position < mQueuePosition) {
+				type = TYPE_PAST;
+			} else if (position == mQueuePosition) {
+				type = TYPE_PRESENT;
+			} else {
+				type = TYPE_FUTURE;
+			}
+		} else {
+			type = TYPE_FUTURE;
+		}
+		return type;
+	}
+	
+	@Override
+	public int getViewTypeCount() {
+		return NUM_TYPES;
+	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		return createViewFromResource(position, convertView, parent, mResource);
+	    View view;
+		if (convertView == null) {
+	    	final int type = getItemViewType(position);
+	    	int resource;
+	    	switch (type) {
+	    	case TYPE_PAST:
+	    		resource = mResourcePast;
+	    		break;
+	    	case TYPE_PRESENT:
+	    		resource = mResourcePresent;
+	    		break;
+	    	case TYPE_FUTURE:
+	    		resource = mResourceFuture;
+	    		break;
+	    	default:
+	    		resource = mResourceFuture;
+	    		break;
+	    	}
+	        view = mInflater.inflate(resource, parent, false);
+	    } else {
+	    	view = convertView;
+	    }
+	    
+	    bindView(position, view);
+	    return view;
 	}
 	
 	public void setList(List<Track> list) {
@@ -65,20 +130,6 @@ public class PlayQueueAdapter extends BaseAdapter {
 	public List<Track> getList() {
 		return mList;
 	}
-	
-	 private View createViewFromResource(int position, View convertView,
-	            ViewGroup parent, int resource) {
-		 View v;
-	     if (convertView == null) {
-	         v = mInflater.inflate(resource, parent, false);
-	     } else {
-	    	 v = convertView;
-	     }
-
-	     bindView(position, v);
-
-	     return v;
-	 }
 	 
 	 private void bindView(int position, View view) {
 		 final TextView titleText = (TextView) view.findViewById(R.id.title);

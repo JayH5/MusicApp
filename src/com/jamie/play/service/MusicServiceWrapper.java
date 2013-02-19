@@ -25,6 +25,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.jamie.play.IMusicService;
+import com.jamie.play.models.Track;
 
 public final class MusicServiceWrapper {
 
@@ -475,19 +476,6 @@ public final class MusicServiceWrapper {
         if (mService != null) {
             try {
                 return mService.position();
-            } catch (final RemoteException ignored) {
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * @return The total length of the current track
-     */
-    public static final long duration() {
-        if (mService != null) {
-            try {
-                return mService.duration();
             } catch (final RemoteException ignored) {
             }
         }

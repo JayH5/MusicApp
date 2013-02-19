@@ -79,7 +79,7 @@ public class ArtistBrowserActivity extends MusicActivity {
 		public Fragment getItem(int position) {
 			switch (position) {
 			case 0:
-				return ArtistAlbumListFragment.newInstance(mArtistId);
+				return ArtistAlbumListFragment.newInstance(mArtistId, mArtist);
 			case 1:
 				return ArtistTrackListFragment.newInstance(mArtistId);
 			}

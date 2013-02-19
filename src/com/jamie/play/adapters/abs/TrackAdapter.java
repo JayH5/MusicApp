@@ -8,7 +8,7 @@ import android.database.Cursor;
 import android.provider.MediaStore;
 import android.widget.ResourceCursorAdapter;
 
-import com.jamie.play.service.Track;
+import com.jamie.play.models.Track;
 
 public abstract class TrackAdapter extends ResourceCursorAdapter {
 	
@@ -18,6 +18,7 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 	private int mArtistColIdx;
 	private int mAlbumIdColIdx;
 	private int mAlbumColIdx;
+	private int mDurationColIdx;
 	
 	public TrackAdapter(Context context, int layout, Cursor c, int flags) {
 		super(context, layout, c, flags);
@@ -47,6 +48,10 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 		return mAlbumColIdx;
 	}
 	
+	public int getDurationColIdx() {
+		return mDurationColIdx;
+	}
+	
 	protected void getColumnIndices(Cursor cursor) {
 		if (cursor != null) {
 			mIdColIdx = cursor
@@ -61,6 +66,8 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
 			mAlbumColIdx = cursor
 					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
+			mDurationColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
 		}
 	}
 	
@@ -76,7 +83,8 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 						cursor.getLong(mArtistIdColIdx),
 						cursor.getString(mArtistColIdx),
 						cursor.getLong(mAlbumIdColIdx),
-						cursor.getString(mAlbumColIdx)));
+						cursor.getString(mAlbumColIdx),
+						cursor.getLong(mDurationColIdx)));
 			} while (cursor.moveToNext());
 		}
 		return trackList;

@@ -1,10 +1,12 @@
 package com.jamie.play.fragments.albumbrowser;
 
-import android.content.Context;
+import java.util.List;
+
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
-import android.database.Cursor;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -17,15 +19,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.jamie.play.R;
-import com.jamie.play.adapters.abs.SummaryAdapter;
+import com.jamie.play.activities.ArtistBrowserActivity;
 import com.jamie.play.bitmapfun.ImageFetcher;
-import com.jamie.play.cursormanager.CursorDefinitions;
 import com.jamie.play.fragments.ImageDialogFragment;
+import com.jamie.play.loaders.AlbumSummaryLoader;
+import com.jamie.play.models.AlbumSummary;
 import com.jamie.play.utils.ImageUtils;
 import com.jamie.play.utils.TextUtils;
 
 public class AlbumSummaryFragment extends Fragment implements 
-		LoaderManager.LoaderCallbacks<Cursor> {
+		LoaderManager.LoaderCallbacks<AlbumSummary> {
 	
 	private static final String EXTRA_ALBUM_ID = "extra_album_id";
 	private static final String TAG_IMAGE_DIALOG = "tag_image_dialog";
@@ -40,11 +43,12 @@ public class AlbumSummaryFragment extends Fragment implements
 	
 	private ImageView mAlbumArt;
 	
-	private SummaryAdapter mAdapter;
+	//private SummaryAdapter mAdapter;
 	
 	private long mAlbumId;
 	
-	//private long mArtistId = -1;
+	private List<String> mArtists;
+	private List<Long> mArtistIds;
 
 	public static AlbumSummaryFragment newInstance(long albumId) {
 		final Bundle args = new Bundle();
@@ -64,7 +68,7 @@ public class AlbumSummaryFragment extends Fragment implements
 		// Get the image worker... can't load artwork until view inflated
 		mImageWorker = ImageUtils.getImageFetcher(getActivity());
 		
-		mAdapter = new AlbumSummaryAdapter(getActivity(), null);
+		//mAdapter = new AlbumSummaryAdapter(getActivity(), null);
 		
 		getLoaderManager().initLoader(LOADER_ID, null, this);
 	}
@@ -109,7 +113,7 @@ public class AlbumSummaryFragment extends Fragment implements
 		final ImageButton addToQueueButton = (ImageButton) view
 				.findViewById(R.id.add_to_queue_button);
 		
-		browseArtistButton.setOnClickListener(mBrowseArtistListener);		
+		browseArtistButton.setOnClickListener(mArtistButtonListener);		
 		addToQueueButton.setOnClickListener(mAddToQueueListener);
 		
 		return view;
@@ -123,98 +127,73 @@ public class AlbumSummaryFragment extends Fragment implements
 			
 		}
 	};
+
+	@Override
+	public Loader<AlbumSummary> onCreateLoader(int id, Bundle args) {
+		/*return CursorDefinitions.getAlbumBrowserCursorParams(mAlbumId)
+				.getCursorLoader(getActivity());*/
+		return new AlbumSummaryLoader(getActivity(), mAlbumId);
+	}
+
+	@Override
+	public void onLoadFinished(Loader<AlbumSummary> loader, AlbumSummary data) {
+		switch (loader.getId()) {
+		case LOADER_ID:
+			//mAdapter.swapCursor(data);
+			loadSummary(data);
+			break;
+		default:
+			break;
+		}		
+	}
+
+	@Override
+	public void onLoaderReset(Loader<AlbumSummary> loader) {
+		return;
+	}
 	
-	private View.OnClickListener mBrowseArtistListener = new View.OnClickListener() {
+	private void loadSummary(AlbumSummary summary) {
+		final Resources res = getResources();
+		mNumTracksText.setText(TextUtils.getNumTracksText(res, summary.numTracks));
+		mDurationText.setText(TextUtils.getStatsDurationText(res, summary.duration));			
+		mYearsText.setText(TextUtils.getYearText(res, summary.firstYear, summary.lastYear));
+		
+		mArtists = summary.artists;
+		mArtistIds = summary.artistIds;
+	}
+	
+	private void launchArtistBrowser(String artist, long artistId) {
+		final Intent intent = new Intent(getActivity(), ArtistBrowserActivity.class);
+		intent.putExtra(ArtistBrowserActivity.EXTRA_ARTIST, artist);
+		intent.putExtra(ArtistBrowserActivity.EXTRA_ARTIST_ID, artistId);
+		
+		startActivity(intent);
+	}
+	
+	private View.OnClickListener mArtistButtonListener = new View.OnClickListener() {
 		
 		@Override
 		public void onClick(View v) {
-			/*final Intent i = new Intent(getActivity(), ArtistBrowserActivity.class);
-			i.putExtra(ArtistBrowserActivity.EXTRA_ARTIST_ID, mArtistId);
-			i.putExtra(ArtistBrowserActivity.EXTRA_ARTIST, mArtist);
-			
-			startActivity(i);*/
+			if (mArtists.isEmpty()) {
+				return;
+			}
+			if (mArtists.size() == 1) {
+				launchArtistBrowser(mArtists.get(0), mArtistIds.get(0));
+			} else {
+				final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+				builder.setItems(mArtists.toArray(new String[mArtists.size()]), mArtistDialogListener)
+					.setTitle("Browse artists")
+					.show();
+			}
 		}
 	};
-
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return CursorDefinitions.getAlbumBrowserCursorParams(mAlbumId)
-				.getCursorLoader(getActivity());
-	}
-
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-		switch (loader.getId()) {
-		case LOADER_ID:
-			mAdapter.swapCursor(data);
-			break;
-		default:
-			break;
-		}		
-	}
-
-	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		switch (loader.getId()) {
-		case LOADER_ID:
-			mAdapter.swapCursor(null);
-			break;
-		default:
-			break;
-		}		
-	}
 	
-	private class AlbumSummaryAdapter extends SummaryAdapter {
-
-		public AlbumSummaryAdapter(Context context, Cursor c) {
-			super(context, c);
-		}
-
-		@Override
-		public void loadSummary(Context context, Cursor cursor) {
-			// Get the column indexes
-			int durationColIdx = 
-					cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
-			int yearColIdx =
-					cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR);
-			/*int artistIdColIdx =
-					cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID);
-			int artistColIdx =
-					cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);*/
-						
-			int numTracks = cursor.getCount();
-						
-			long duration = 0;
-			int firstYear = Integer.MAX_VALUE;
-			int lastYear = 0;
-			if (cursor.moveToFirst()) {
-				do {
-					// Add up the duration
-					duration += cursor.getLong(durationColIdx);
-					
-					// Get the first/last year
-					int year = cursor.getInt(yearColIdx);
-					firstYear = Math.min(year, firstYear);
-					lastYear = Math.max(year, lastYear);
-								
-					// Maybe there is an easier way of getting the artist id
-					/*if (mArtistId < 0) {
-						long artistId = cursor.getLong(artistIdColIdx);
-						String artist = cursor.getString(artistColIdx);
-						if (artist.equals(mArtist)) {
-							mArtistId = artistId;
-						}
-					}*/
-								
-				} while (cursor.moveToNext());
-			}
-						
-			final Resources res = context.getResources();
-			mNumTracksText.setText(TextUtils.getNumTracksText(res, numTracks));
-			mDurationText.setText(TextUtils.getStatsDurationText(res, duration));			
-			mYearsText.setText(TextUtils.getYearText(res, firstYear, lastYear));
-		}
+	private DialogInterface.OnClickListener mArtistDialogListener = new DialogInterface.OnClickListener() {
 		
-	}
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+			launchArtistBrowser(mArtists.get(which), mArtistIds.get(which));
+		}
+	};
 	
 }

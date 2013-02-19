@@ -1,33 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/artist_image_thumb_size" >
+    android:layout_height="128dp" >
     
     <ImageView
         android:id="@+id/albumThumb"
-        android:layout_width="@dimen/artist_image_thumb_size"
-        android:layout_height="@dimen/artist_image_thumb_size"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
         android:padding="@dimen/image_thumbnail_spacing" />
     
-    <LinearLayout
+    <RelativeLayout
     	android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:gravity="center_vertical" >
             
         <TextView
         	android:id="@+id/albumName"
-        	style="@style/ListItemText.Title" />
+        	style="@style/ListItemText.Title"
+        	android:layout_alignParentTop="true"
+        	android:layout_marginTop="16dp" />
         
-        <TextView
-        	android:id="@+id/albumYear"
-        	style="@style/ListItemText.Subtitle" />
-        
-        <TextView
-           	android:id="@+id/albumTracks"
-           	style="@style/ListItemText.Subtitle" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal" >
+            
+        	<TextView
+           		android:id="@+id/albumTracks"
+           		style="@style/ListItemText.Subtitle" />
+        	
+        	<TextView
+        		android:id="@+id/albumYear"
+        		style="@style/ListItemText.Subtitle" />
             
         </LinearLayout>
-    
-
+        
+	</RelativeLayout>
+   
 </LinearLayout>

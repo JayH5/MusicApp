@@ -1,11 +1,6 @@
 package com.jamie.play.activities;
 
 import static com.jamie.play.service.MusicServiceWrapper.mService;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-
 import net.simonvt.menudrawer.MenuDrawer;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -19,59 +14,75 @@ import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 
 import com.jamie.play.IMusicService;
 import com.jamie.play.R;
 import com.jamie.play.fragments.musicplayer.MusicPlayerFragment;
+import com.jamie.play.fragments.musicplayer.PlayQueueFragment;
 import com.jamie.play.service.MusicService;
 import com.jamie.play.service.MusicServiceWrapper;
 import com.jamie.play.service.MusicServiceWrapper.ServiceToken;
-import com.jamie.play.service.MusicStateListener;
 import com.jamie.play.utils.AppUtils;
 
-public class MusicActivity extends FragmentActivity implements ServiceConnection,
-		MusicStateListener, MenuDrawer.OnDrawerStateChangeListener {
+public class MusicActivity extends FragmentActivity implements ServiceConnection, 
+		MenuDrawer.OnDrawerStateChangeListener {
 	
-	private static final String PLAYER_TAG = "player";
+	private static final String TAG_PLAYER = "player";
+	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
 	private ServiceToken mServiceToken;
-	private BroadcastReceiver mPlaybackStatus;
-	private List<MusicStateListener> mMusicStateListeners = 
-			new ArrayList<MusicStateListener>();
+	
+	private ImageButton mPlayQueueButton;
 	
 	private boolean mIsBackPressed;
 	
 	private Vibrator mVibrator;
+	private static final long VIBRATION_LENGTH = 15;
 	
 	private MenuDrawer mDrawer;
+	
 	private MusicPlayerFragment mPlayer;
+	private PlayQueueFragment mPlayQueue;
 	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		mServiceToken = MusicServiceWrapper.bindToService(this, this);
-		mPlaybackStatus = new PlaybackStatus(this);
-		
-		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Set up the menu drawer to display the player
 		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
 		mDrawer.setMenuView(R.layout.slidingmenu_frame);
 		mDrawer.setDropShadow(R.drawable.slidingmenu_shadow);
 		mDrawer.setOnDrawerStateChangeListener(this);
+
+		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getSupportFragmentManager();
-		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(PLAYER_TAG);
+		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
 		if (mPlayer == null) {
 			mPlayer = new MusicPlayerFragment();
 			fm.beginTransaction()
-				.add(R.id.menu_frame, mPlayer, PLAYER_TAG)
-				.commit();	
+				.add(R.id.menu_frame, mPlayer, TAG_PLAYER)
+				.commit();
 		}
-		addMusicStateListener(mPlayer);
+		
+		mPlayQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
+		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				final FragmentManager fm = getSupportFragmentManager();
+				if (fm.findFragmentByTag(TAG_PLAY_QUEUE) == null) {
+					mPlayQueue = PlayQueueFragment.newInstance();
+					mPlayQueue.show(fm, TAG_PLAY_QUEUE);
+				}
+			}
+		});
 		
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
@@ -84,7 +95,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
     protected void onResume() {
         super.onResume();
         MusicServiceWrapper.killForegroundService(this);
-        refreshListeners();
 	}
 	
 	@Override
@@ -93,11 +103,13 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         
         final IntentFilter filter = new IntentFilter();
         filter.addAction(MusicService.PLAYSTATE_CHANGED);
+        filter.addAction(MusicService.META_CHANGED);
+        filter.addAction(MusicService.QUEUE_CHANGED);
         filter.addAction(MusicService.SHUFFLEMODE_CHANGED);
         filter.addAction(MusicService.REPEATMODE_CHANGED);
-        filter.addAction(MusicService.META_CHANGED);
         filter.addAction(MusicService.REFRESH);
-        registerReceiver(mPlaybackStatus, filter);
+        
+        registerReceiver(mPlayStatusReceiver, filter);
     }
 	
 	@Override
@@ -120,14 +132,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         }
 
         // Unregister the receiver
-        try {
-            unregisterReceiver(mPlaybackStatus);
-        } catch (final Throwable e) {
-            //$FALL-THROUGH$
-        }
-
-        // Remove any music status listeners
-        mMusicStateListeners.clear();
+        unregisterReceiver(mPlayStatusReceiver);
     }
 	
 	@Override
@@ -154,14 +159,12 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
-		mService = IMusicService.Stub.asInterface(service);
-		
+		mService = IMusicService.Stub.asInterface(service);		
 	}
 
 	@Override
 	public void onServiceDisconnected(ComponentName name) {
-		mService = null;
-		
+		mService = null;		
 	}
 	
 	@Override
@@ -175,103 +178,50 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         super.onSaveInstanceState(outState);
         outState.putParcelable(STATE_MENUDRAWER, mDrawer.saveState());
     }
-	
-	private void refreshListeners() {
-		for (MusicStateListener listener : mMusicStateListeners) {
-			listener.onMetaChanged();
-			listener.onPlayStateChanged();
-			listener.onRefresh();
-			listener.onShuffleOrRepeatModeChanged();
-		}
-	}
-	
-	private final static class PlaybackStatus extends BroadcastReceiver {
-
-        private final WeakReference<MusicStateListener> mReference;
-
-        public PlaybackStatus(final MusicStateListener listener) {
-            mReference = new WeakReference<MusicStateListener>(listener);
-        }
-
-        @Override
-        public void onReceive(final Context context, final Intent intent) {
-            final String action = intent.getAction();
-            if (action.equals(MusicService.META_CHANGED)) {
-                mReference.get().onMetaChanged();
-            } else if (action.equals(MusicService.PLAYSTATE_CHANGED)) {
-                mReference.get().onPlayStateChanged();
-            } else if (action.equals(MusicService.REPEATMODE_CHANGED)
-                    || action.equals(MusicService.SHUFFLEMODE_CHANGED)) {
-                mReference.get().onShuffleOrRepeatModeChanged();
-            } else if (action.equals(MusicService.REFRESH)) {
-                mReference.get().onRefresh();
-            }
-        }
-    }
-	
-	public void addMusicStateListener(MusicStateListener listener) {
-		if (listener != null) {
-			mMusicStateListeners.add(listener);
-		}
-	}
 
 	@Override
-	public void onMetaChanged() {
-		for (MusicStateListener listener : mMusicStateListeners) {
-			if (listener != null) {
-				listener.onMetaChanged();
-			}
-		}
-		
-	}
-
-	@Override
-	public void onPlayStateChanged() {
-		for (MusicStateListener listener : mMusicStateListeners) {
-			if (listener != null) {
-				listener.onPlayStateChanged();
-			}
-		}
-		
-	}
-
-	@Override
-	public void onShuffleOrRepeatModeChanged() {
-		for (MusicStateListener listener : mMusicStateListeners) {
-			if (listener != null) {
-				listener.onShuffleOrRepeatModeChanged();
-			}
-		}
-		
-	}
-
-	@Override
-	public void onRefresh() {
-		for (MusicStateListener listener : mMusicStateListeners) {
-			if (listener != null) {
-				listener.onRefresh();
-			}
-		}
-		
-	}
-
-	@Override
-	public void onDrawerStateChange(int oldState, int newState) {
-		if (oldState == MenuDrawer.STATE_CLOSED
-				&& newState == MenuDrawer.STATE_DRAGGING) {
-			mVibrator.vibrate(15);
-		} else if ((oldState == MenuDrawer.STATE_CLOSING 
-				|| oldState == MenuDrawer.STATE_DRAGGING)
-				&& newState == MenuDrawer.STATE_CLOSED) {
-			mVibrator.vibrate(15);
-		}
-		
+	public void onDrawerStateChange(int oldState, int newState) {		
 		if (newState == MenuDrawer.STATE_CLOSED) {
 			mPlayer.onHide();
-		} else if (newState == MenuDrawer.STATE_OPEN) {
+			mVibrator.vibrate(VIBRATION_LENGTH);
+		} else if (oldState == MenuDrawer.STATE_CLOSED) {
 			mPlayer.onShow();
+			if (newState == MenuDrawer.STATE_DRAGGING) {
+				mVibrator.vibrate(VIBRATION_LENGTH);
+			}
 		}
 		
 	}
+	
+	private final BroadcastReceiver mPlayStatusReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (action.equals(MusicService.PLAYSTATE_CHANGED)) {
+				if (mPlayer != null) {
+					mPlayer.updatePlayState();
+				}
+			} else if (action.equals(MusicService.META_CHANGED)) {
+				if (mPlayer != null) {
+					mPlayer.updateTrack();
+				}
+				if (mPlayQueue != null) {
+					mPlayQueue.updateQueuePosition();
+				}
+			} else if (action.equals(MusicService.QUEUE_CHANGED)) {
+				if (mPlayQueue != null) {
+					mPlayQueue.updateQueue();
+				}
+			} else if (action.equals(MusicService.SHUFFLEMODE_CHANGED)) {
+				
+			} else if (action.equals(MusicService.REPEATMODE_CHANGED)) {
+				
+			} else if (action.equals(MusicService.REFRESH)) {
+				
+			}
+		}
+		
+	};
 
 }

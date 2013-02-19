@@ -40,7 +40,7 @@ import com.jamie.play.BuildConfig;
 public abstract class ImageWorker {
     private static final String TAG = "ImageWorker";
     public static final String KEY = "key";
-    private static final int FADE_IN_TIME = 200;
+    private static final int FADE_IN_TIME = 150;
 
     protected ImageCache mImageCache;
     private Bitmap mLoadingBitmap;
@@ -81,7 +81,7 @@ public abstract class ImageWorker {
                     new AsyncDrawable(mContext.getResources(), mLoadingBitmap, task);
             imageView.setImageDrawable(asyncDrawable);
             data.putString(KEY, key);
-            task.execute(data);
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, data);
         }
     }
     

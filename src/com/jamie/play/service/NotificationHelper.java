@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.widget.RemoteViews;
 
 import com.jamie.play.R;
+import com.jamie.play.models.Track;
 
 public class NotificationHelper {
 	private final int NOTIFICATION_ID = 1;

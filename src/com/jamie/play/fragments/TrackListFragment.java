@@ -2,6 +2,7 @@ package com.jamie.play.fragments;
 
 import java.util.List;
 
+import android.os.AsyncTask;
 import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListAdapter;
@@ -9,8 +10,8 @@ import android.widget.ListView;
 
 import com.jamie.play.activities.MusicActivity;
 import com.jamie.play.adapters.abs.TrackAdapter;
+import com.jamie.play.models.Track;
 import com.jamie.play.service.MusicServiceWrapper;
-import com.jamie.play.service.Track;
 
 public class TrackListFragment extends ListFragment {
 	
@@ -24,11 +25,28 @@ public class TrackListFragment extends ListFragment {
 	}
 	
 	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
- 	   	List<Track> list = ((TrackAdapter) getListAdapter()).getTrackList();
- 	   	MusicServiceWrapper.playAll(getActivity(), list, position, false);
- 	   	
- 	   	((MusicActivity) getActivity()).getMenuDrawer().openMenu();
+	public void onListItemClick(ListView l, View v, final int position, long id) {
+		
+		(new AsyncTask<TrackAdapter, Void, List<Track>>() {
+
+			@Override
+			protected List<Track> doInBackground(TrackAdapter... params) {
+				final TrackAdapter adapter = params[0];
+				if (adapter != null) {
+					List<Track> trackList = adapter.getTrackList();
+					MusicServiceWrapper.playAll(getActivity(), trackList, position, false);
+				}
+				return null;
+			}
+			
+			@Override
+			protected void onPostExecute(List<Track> result) {
+				
+			}
+ 	   		
+ 	   	}).execute(((TrackAdapter) getListAdapter()));
+		
+		((MusicActivity) getActivity()).getMenuDrawer().openMenu();
     }
 
 }

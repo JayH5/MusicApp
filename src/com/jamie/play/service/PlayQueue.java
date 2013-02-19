@@ -8,7 +8,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
+import com.jamie.play.models.Track;
 import com.jamie.play.utils.HexUtils;
 
 public class PlayQueue {
@@ -24,7 +26,8 @@ public class PlayQueue {
         MediaStore.Audio.Media.ARTIST_ID,
         MediaStore.Audio.Media.ARTIST,
         MediaStore.Audio.Media.ALBUM_ID,
-        MediaStore.Audio.Media.ALBUM
+        MediaStore.Audio.Media.ALBUM,
+        MediaStore.Audio.Media.DURATION
     };
 	
     public PlayQueue() {
@@ -41,46 +44,38 @@ public class PlayQueue {
 	 * @param hexString
 	 */
 	public void open(Context context, String hexString) {
-		long[] trackIds = hexStringToTrackIds(hexString);
-		mPlayQueue.addAll(trackIdsToTracks(context, trackIds));
-		
-		// TODO: Test if this is necessary
-		//if (tracks == null || tracks.isEmpty()) {
-            //SystemClock.sleep(3000);
-            //tracks = trackIdsToTracks(context, trackIds);
-		//}
-
-	}
-	
-	private static long[] hexStringToTrackIds(String hexString) {
-    	final String[] hexes = hexString.split(";");
-    	final int length = hexes.length;
-    	long[] trackIds = new long[length];
+		// Split the hex string with the delimiter
+		final String[] hexes = hexString.split(HexUtils.DELIMITER);
+    	
+		// Initialise a store for the trackIds
+		int length = hexes.length;
+    	final long[] trackIds = new long[length];
+    	
+    	// Initialise a stringbuilder for the query
+    	final StringBuilder selection = new StringBuilder();
+    	selection.append(MediaStore.Audio.Media._ID + " IN (");
     	for (int i = 0; i < length; i++) {
-    		trackIds[i] = Long.parseLong(hexes[i], 16);
+    		// Get the trackId from the string
+    		long trackId = Long.parseLong(hexes[i], 16);
+    		Log.d("PlayQueue", "Track id from hex: " + trackId);
+    		
+    		// Store it
+    		trackIds[i] = trackId;
+    		
+    		// Add it to the query selection
+    		selection.append(trackId);
+    		if (i < length -1) {
+    			selection.append(",");
+    		}
     	}
-    	return trackIds;
-    }
-	
-	private static List<Track> trackIdsToTracks(Context context, long[] trackIds) {
-		final int len = trackIds.length;
-		final StringBuilder selection = new StringBuilder();
-        selection.append(MediaStore.Audio.Media._ID + " IN (");
-        for (int i = 0; i < len; i++) {
-            selection.append(trackIds[i]);
-            if (i < len - 1) {
-                selection.append(",");
-            }
-        }
-        selection.append(")");
-        
-        Cursor cursor = context.getContentResolver().query(
+    	selection.append(")");
+    	
+    	Cursor cursor = context.getContentResolver().query(
         		BASE_URI, PROJECTION, selection.toString(), null, null);
         
-        ArrayList<Track> tracks = null;
         if (cursor != null) {
         	// Load ids from cursor for fast sorting
-        	final int length = cursor.getCount();
+        	length = cursor.getCount();
         	long[] unsortedIds = new long[length];
         	if (cursor.moveToFirst()) {
 				for (int i = 0; i < length; i++) {
@@ -89,38 +84,36 @@ public class PlayQueue {
 				}
 			}
         	
-        	tracks = new ArrayList<Track>(length);
         	
         	for (long id : trackIds) {
         		int position = Arrays.binarySearch(unsortedIds, id);
         		if (cursor.moveToPosition(position)) {
-        			tracks.add(new Track(cursor.getLong(0), 
+        			mPlayQueue.add(new Track(cursor.getLong(0), 
         	        		cursor.getString(1), 
         	        		cursor.getLong(2), 
         	        		cursor.getString(3), 
         	        		cursor.getLong(4), 
-        	        		cursor.getString(5)));
+        	        		cursor.getString(5),
+        	        		cursor.getLong(6)));
         		}
         	}
         	cursor.close();
         	cursor = null;
         }
-        return tracks;
+
 	}
 	
 	public void addToQueue(final List<Track> list, int position) {
-        final int len = mPlayQueue.size();
-        // Be lenient on getting the position too high
-        if (position > len) {
-        	position = len;
-        }
-        
         mPlayQueue.addAll(position, list);
         
         // Update the play position
         if (position < mPlayPosition) {
         	mPlayPosition += list.size();
         }
+	}
+	
+	public void addToQueue(final List<Track> list) {
+		mPlayQueue.addAll(list);
 	}
 	
 	
