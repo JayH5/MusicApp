@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
@@ -47,11 +48,15 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
+	//private LocalBroadcastManager mBroadcastManager;
+	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		mServiceToken = MusicServiceWrapper.bindToService(this, this);
+		
+		//mBroadcastManager = LocalBroadcastManager.getInstance(this);
 		
 		// Set up the menu drawer to display the player
 		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
@@ -110,6 +115,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         filter.addAction(MusicService.REFRESH);
         
         registerReceiver(mPlayStatusReceiver, filter);
+        //mBroadcastManager.registerReceiver(mPlayStatusReceiver, filter);
     }
 	
 	@Override
@@ -133,6 +139,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 
         // Unregister the receiver
         unregisterReceiver(mPlayStatusReceiver);
+        //mBroadcastManager.unregisterReceiver(mPlayStatusReceiver);
     }
 	
 	@Override
@@ -159,7 +166,7 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
-		mService = IMusicService.Stub.asInterface(service);		
+		mService = IMusicService.Stub.asInterface(service);	
 	}
 
 	@Override

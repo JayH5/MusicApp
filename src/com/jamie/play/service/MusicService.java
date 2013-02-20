@@ -382,18 +382,14 @@ public class MusicService extends Service {
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mServiceStartId = startId;
         mDelayedStopHandler.removeCallbacksAndMessages(null);
-        if (intent != null) {
+        mIntentReceiver.onReceive(this, intent);
+        /*if (intent != null) {
             final String action = intent.getAction();
             final String command = intent.getStringExtra("command");
             if (CMD_NEXT.equals(command) || ACTION_NEXT.equals(action)) {
                 gotoNext(true);
             } else if (CMD_PREVIOUS.equals(command) || ACTION_PREVIOUS.equals(action)) {
-                if (position() < 2000) {
-                    prev();
-                } else {
-                    seek(0);
-                    play();
-                }
+                prev();
             } else if (CMD_TOGGLE_PLAYBACK.equals(command) || ACTION_TOGGLE_PLAYBACK.equals(action)) {
                 if (mIsSupposedToBePlaying) {
                     pause();
@@ -423,7 +419,7 @@ public class MusicService extends Service {
                 mBuildNotification = true;
                 buildNotification();
             }
-        }
+        }*/
 
         // Make sure the service will shut down on its own if it was
         // just started but not bound to and nothing is playing
@@ -1238,7 +1234,16 @@ public class MusicService extends Service {
      * Changes from the current track to the previous played track
      */
     public synchronized void prev() {
-        if (mShuffleMode == SHUFFLE_NORMAL) {
+    	if (position() < 2000) {
+            gotoPrev();
+        } else {
+            seek(0);
+            play();
+        }
+    }
+    
+    private void gotoPrev() {
+    	if (mShuffleMode == SHUFFLE_NORMAL) {
             // Go to previously-played track and remove it from the history
             final int histsize = mHistory.size();
             if (histsize == 0) {
@@ -1429,12 +1434,7 @@ public class MusicService extends Service {
             if (CMD_NEXT.equals(command) || ACTION_NEXT.equals(action)) {
                 gotoNext(true);
             } else if (CMD_PREVIOUS.equals(command) || ACTION_PREVIOUS.equals(action)) {
-                if (position() < 2000) {
-                    prev();
-                } else {
-                    seek(0);
-                    play();
-                }
+                prev();
             } else if (CMD_TOGGLE_PLAYBACK.equals(command) || ACTION_TOGGLE_PLAYBACK.equals(action)) {
                 if (mIsSupposedToBePlaying) {
                     pause();

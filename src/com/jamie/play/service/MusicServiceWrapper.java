@@ -142,22 +142,14 @@ public final class MusicServiceWrapper {
 
     /**
      * Changes to the previous track.
-     * 
-     * @NOTE The AIDL isn't used here in order to properly use the previous
-     *       action. When the user is shuffling, because {@link
-     *       MusicPlaybackService.#openCurrentAndNext()} is used, the user won't
-     *       be able to travel to the previously skipped track. To remedy this,
-     *       {@link MusicPlaybackService.#openCurrent()} is called in {@link
-     *       MusicPlaybackService.#prev()}. {@code #startService(Intent intent)}
-     *       is called here to specifically invoke the onStartCommand used by
-     *       {@link MusicPlaybackService}, which states if the current position
-     *       less than 2000 ms, start the track over, otherwise move to the
-     *       previously listened track.
      */
-    public static void previous(final Context context) {
-        final Intent previous = new Intent(context, MusicService.class);
-        previous.setAction(MusicService.ACTION_PREVIOUS);
-        context.startService(previous);
+    public static void prev() {
+    	try {
+            if (mService != null) {
+                mService.prev();
+            }
+        } catch (final RemoteException ignored) {
+        }
     }
 
     /**

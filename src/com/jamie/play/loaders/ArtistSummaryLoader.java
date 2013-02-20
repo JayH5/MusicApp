@@ -53,7 +53,7 @@ public class ArtistSummaryLoader extends WrappedAsyncTaskLoader<ArtistSummary> {
 				} while (cursor.moveToNext());
 				
 				
-				summary = new ArtistSummary(cursor.getCount(), albumSet.size(), duration);
+				summary = new ArtistSummary(albumSet.size(), cursor.getCount(), duration);
 			}
 			cursor.close();
 			cursor = null;

@@ -46,6 +46,9 @@ public class TrackListFragment extends ListFragment {
  	   		
  	   	}).execute(((TrackAdapter) getListAdapter()));
 		
+		//final List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
+		//MusicServiceWrapper2.playAll(getActivity(), trackList, position, false);
+		
 		((MusicActivity) getActivity()).getMenuDrawer().openMenu();
     }
 

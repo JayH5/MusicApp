@@ -32,7 +32,7 @@ public class ImageDownloadService extends IntentService {
 	private static final int IO_BUFFER_SIZE_BYTES = 1024;
 	
 	// TODO: Get own key.
-	private static final String LAST_FM_API_KEY = "0bec3f7ec1f914d7c960c12a916c8fb3";
+	private static final String LAST_FM_API_KEY = "5221fc4823ffde4ec61f8aef509d247c";
 	
 	public static final String KEY_BUNDLE = "com.jamie.play.bitmapfun.ImageDownloadService";
 	

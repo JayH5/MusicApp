@@ -94,7 +94,7 @@ public class MusicPlayerFragment extends Fragment implements
         queueNextRefresh(next);
     }
 	
-	@Override
+	/*@Override
 	public void onResume() {
 		super.onResume();
 		mImageWorker.setExitTasksEarly(false);
@@ -104,7 +104,7 @@ public class MusicPlayerFragment extends Fragment implements
 	public void onPause() {
 		super.onPause();
 		mImageWorker.setExitTasksEarly(true);
-	}
+	}*/
 	
 	public void onHide() {
 		mShown = false;
@@ -162,7 +162,7 @@ public class MusicPlayerFragment extends Fragment implements
 			
 			@Override
 			public void onClick(View v) {
-				MusicServiceWrapper.previous(getActivity());
+				MusicServiceWrapper.prev();
 				
 			}
 		});
@@ -239,7 +239,7 @@ public class MusicPlayerFragment extends Fragment implements
             long newpos = mStartSeekPos - delta;
             if (newpos < 0) {
                 // move to previous track
-            	MusicServiceWrapper.previous(getActivity());
+            	MusicServiceWrapper.prev();
                 mStartSeekPos += mDuration;
                 newpos += mDuration;
             }
