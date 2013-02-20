@@ -38,16 +38,17 @@ Assets
 Lastfm
 ------
 * Lastfm is used to fetch album and artist images. The files in src/com/jamie/play/lastfm/ are based on the lastfm-java code (http://code.google.com/p/lastfm-java/)
-* The API key used was "borrowed" from Apollo. Please for god's sake remember to get own API key before releasing....
+* ~~The API key used was "borrowed" from Apollo. Please for god's sake remember to get own API key before releasing....~~ Got own key
 
 Current issues
 --------------
 * Seek bar doesn't seek when dragged.
+* Notification doesn't display when backing out of app. Does when pressing home button or switching apps.
 * In the album grid view, the adapter constantly reloads the image for the first album.. not sure why.. is limiting performance.
 * ANDROID ISSUE: The MediaStore doesn't attribute albums to the correct artists in the case of compilations. Doesn't read the Album Artist metadata tag from the media file, instead adds the first artist of the album. FIXME: ??? Don't know how.
 * Shuffle/repeat modes are UNIMPLEMENTED, although some of the code is in the MusicService. Repeat mode really a matter of adding a button
-* Now playing drawer doesn't restore the current track on app launch.
-* Notification and lockscreen controls show themselves inconsistently.
+* ~~Now playing drawer doesn't restore the current track on app launch.~~
+* ~~Notification and lockscreen controls show themselves inconsistently.~~
 * ~~Now playing drawer restores itself inconsistently. Sometimes it works, sometimes it doesn't.~~
 * ~~App fails to restore state in all activities other than the Library activity. This causes a fc when resuming the app from the album or artist browser. FIXME: Need to ensure these activities can recover themselves.~~
 * ~~For artists who are only featured on an album by another artist (happens a lot with compilations), browsing the artist will bring up an empty list of albums but say that the artist has some albums.~~
@@ -59,7 +60,8 @@ Current issues
 
 Minor issues
 ------------
-* Album artwork and artist images are really low res... not sure why. But this is a pretty minor issue.
+* Player fragment needs a bit of testing when restoring state... mostly works
+* ~~Album artwork and artist images are really low res... not sure why. But this is a pretty minor issue.~~ Last.fm images are just not very big - "extra-large" is 300x300 px. There is a "mega" size option for album covers but those are really huge. Current res for artist images is as big as it gets.
 * Image fetching mechanism may leave a few stray files in the DownloadCache directory.
 
 Next features
@@ -68,6 +70,7 @@ Next features
 * Playlist creation
 * Long press song/album/artist/etc for contextual options
 * Play queue interface upgrade: Drag tracks to reorder. Press button to remove track from queue
+* Multi-threaded image processing/fetching from cache/downloading. See new Android training sample: http://developer.android.com/shareables/training/ThreadSample.zip
 * Settings of some kind
 * Landscape layout
 * Widgets
