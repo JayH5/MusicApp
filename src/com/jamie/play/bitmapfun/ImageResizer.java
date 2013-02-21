@@ -27,7 +27,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.WindowManager;
 
 /**
  * Resizes images from resources given a target width and height. Useful for when the input 
@@ -71,7 +73,12 @@ public class ImageResizer {
     
     public ImageResizer(Context context) {
     	mContext = context;
-    	setImageSize(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT);
+    	
+    	final DisplayMetrics displayMetrics = new DisplayMetrics();
+     	WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+     	wm.getDefaultDisplay().getMetrics(displayMetrics);
+    	
+    	setImageSize(displayMetrics.widthPixels, displayMetrics.heightPixels);
     }
 
     /**
