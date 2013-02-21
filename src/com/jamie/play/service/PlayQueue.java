@@ -8,14 +8,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.util.Log;
 
+import com.jamie.play.models.Id;
 import com.jamie.play.models.Track;
 import com.jamie.play.utils.HexUtils;
 
 public class PlayQueue {
 
-	private List<Track> mPlayQueue;
+	private ArrayList<Track> mPlayQueue;
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
@@ -29,6 +29,8 @@ public class PlayQueue {
         MediaStore.Audio.Media.ALBUM,
         MediaStore.Audio.Media.DURATION
     };
+    
+    //private static final String SORT_ORDER = MediaStore.Audio.Media._ID + " ASC";
 	
     public PlayQueue() {
     	mPlayQueue = new ArrayList<Track>();
@@ -49,56 +51,59 @@ public class PlayQueue {
     	
 		// Initialise a store for the trackIds
 		int length = hexes.length;
-    	final long[] trackIds = new long[length];
+    	final Id[] trackIds = new Id[length];
     	
-    	// Initialise a stringbuilder for the query
-    	final StringBuilder selection = new StringBuilder();
+    	// Don't know exactly how long the selection will be but it will be at least the
+    	// length of the number of tracks plus commas
+    	final StringBuilder selection = new StringBuilder(length * 2);
     	selection.append(MediaStore.Audio.Media._ID + " IN (");
-    	for (int i = 0; i < length; i++) {
-    		// Get the trackId from the string
-    		long trackId = Long.parseLong(hexes[i], 16);
-    		Log.d("PlayQueue", "Track id from hex: " + trackId);
+    	long trackId;
+    	for (int i = 0; i < length - 1; i++) {
+    		// Convert the hex to a long track id
+    		trackId = Long.parseLong(hexes[i], 16);
     		
-    		// Store it
-    		trackIds[i] = trackId;
+    		// Store the id as an object
+    		trackIds[i] = new Id(trackId);
     		
     		// Add it to the query selection
-    		selection.append(trackId);
-    		if (i < length -1) {
-    			selection.append(",");
-    		}
+    		selection.append(trackId)
+    			.append(',');
     	}
-    	selection.append(")");
+    	trackId = Long.parseLong(hexes[length - 1], 16);
+    	trackIds[length - 1] = new Id(trackId);
+    	selection.append(trackId)
+    		.append(')');
     	
     	Cursor cursor = context.getContentResolver().query(
         		BASE_URI, PROJECTION, selection.toString(), null, null);
         
-        if (cursor != null) {
-        	// Load ids from cursor for fast sorting
-        	length = cursor.getCount();
-        	long[] unsortedIds = new long[length];
+        // Create a list of tracks from the cursor
+    	if (cursor != null) {
+        	Track[] tracks = new Track[cursor.getCount()];
         	if (cursor.moveToFirst()) {
-				for (int i = 0; i < length; i++) {
-					unsortedIds[i] = cursor.getLong(0);
-					cursor.moveToNext();
-				}
-			}
-        	
-        	
-        	for (long id : trackIds) {
-        		int position = Arrays.binarySearch(unsortedIds, id);
-        		if (cursor.moveToPosition(position)) {
-        			mPlayQueue.add(new Track(cursor.getLong(0), 
-        	        		cursor.getString(1), 
-        	        		cursor.getLong(2), 
-        	        		cursor.getString(3), 
-        	        		cursor.getLong(4), 
-        	        		cursor.getString(5),
-        	        		cursor.getLong(6)));
-        		}
+        		int i = 0;
+        		do {
+        			tracks[i] = new Track(
+        					cursor.getLong(0), // Id
+        					cursor.getString(1), // Title
+        					cursor.getLong(2), // Artist id
+        					cursor.getString(3), // Artist
+        					cursor.getLong(4), // Album id
+        					cursor.getString(5), // Album
+        					cursor.getLong(6)); // Duration
+        			i++;
+        		} while (cursor.moveToNext());
         	}
+        	
         	cursor.close();
         	cursor = null;
+        	
+        	mPlayQueue.clear();
+        	mPlayQueue.ensureCapacity(length);
+        	for (Id id : trackIds) {
+        		int position = Arrays.binarySearch(tracks, id, Id.mComparator);
+        		mPlayQueue.add(tracks[position]);
+        	}
         }
 
 	}
