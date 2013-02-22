@@ -1,6 +1,7 @@
 package com.jamie.play.models;
 
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -81,6 +82,19 @@ public class Track implements Parcelable, IdProvider {
     public Uri getAlbumUri() {
     	return ContentUris.withAppendedId(
     			MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, mAlbumId);
+    }
+    
+    public ContentValues toContentValues() {
+    	final ContentValues values = new ContentValues();
+    	values.put(MediaStore.Audio.Media._ID, mId);
+    	values.put(MediaStore.Audio.Media.TITLE, mTitle);
+    	values.put(MediaStore.Audio.Media.ARTIST_ID, mArtistId);
+    	values.put(MediaStore.Audio.Media.ARTIST, mArtist);
+    	values.put(MediaStore.Audio.Media.ALBUM_ID, mAlbumId);
+    	values.put(MediaStore.Audio.Media.ALBUM, mAlbum);
+    	values.put(MediaStore.Audio.Media.DURATION, mDuration);
+    	
+    	return values;
     }
     
     @Override

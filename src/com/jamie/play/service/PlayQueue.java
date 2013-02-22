@@ -15,7 +15,7 @@ import com.jamie.play.utils.HexUtils;
 
 public class PlayQueue {
 
-	private ArrayList<Track> mPlayQueue;
+	private List<Track> mPlayQueue;
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
@@ -30,22 +30,30 @@ public class PlayQueue {
         MediaStore.Audio.Media.DURATION
     };
     
+    private final PlayQueueDatabase mDatabase;
+    
     //private static final String SORT_ORDER = MediaStore.Audio.Media._ID + " ASC";
 	
-    public PlayQueue() {
+    public PlayQueue(Context context) {
+    	mDatabase = new PlayQueueDatabase(context);
+    	
+    	mPlayQueue = mDatabase.getQueue();
+    }
+    
+    /*public PlayQueue() {
     	mPlayQueue = new ArrayList<Track>();
     }
     
 	public PlayQueue(int capacity) {
 		mPlayQueue = new ArrayList<Track>(capacity);
-	}
+	}*/
 	
 	/**
 	 * Uses the contents of a hex string to recreate a queue.
 	 * @param context
 	 * @param hexString
 	 */
-	public void open(Context context, String hexString) {
+	/*public void open(Context context, String hexString) {
 		// Split the hex string with the delimiter
 		final String[] hexes = hexString.split(HexUtils.DELIMITER);
     	
@@ -106,7 +114,7 @@ public class PlayQueue {
         	}
         }
 
-	}
+	}*/
 	
 	public void addToQueue(final List<Track> list, int position) {
         mPlayQueue.addAll(position, list);
@@ -115,10 +123,14 @@ public class PlayQueue {
         if (position < mPlayPosition) {
         	mPlayPosition += list.size();
         }
+        
+        mDatabase.open(mPlayQueue);
 	}
 	
 	public void addToQueue(final List<Track> list) {
 		mPlayQueue.addAll(list);
+		
+		mDatabase.addAll(list);
 	}
 	
 	
@@ -134,6 +146,8 @@ public class PlayQueue {
 		
 		mPlayQueue.clear();
 		mPlayQueue.addAll(list);
+		
+		mDatabase.open(list);
 		
 		return true;
 	}
@@ -169,6 +183,8 @@ public class PlayQueue {
         		}
         	}
         }
+        
+        mDatabase.remove(id);
         	
         return numRemoved;
     }
@@ -188,6 +204,8 @@ public class PlayQueue {
         
         mPlayQueue.subList(first, last).clear();
         
+        mDatabase.remove(first, last);
+        
         return numRemoved;
 	}
 	
@@ -205,6 +223,8 @@ public class PlayQueue {
 	
 	public void add(Track track) {
 		mPlayQueue.add(track);
+		
+		mDatabase.add(track);
 	}
 	
 	public int getPlayPosition() {
@@ -259,14 +279,14 @@ public class PlayQueue {
 		return null;
 	}
 	
-	public String toHexString() {
+	/*public String toHexString() {
 		final StringBuilder builder = new StringBuilder();
     	for (Track track : mPlayQueue) {
     		builder.append(Long.toHexString(track.getId()));
     		builder.append(HexUtils.DELIMITER);
     	}
     	return builder.toString();
-	}
+	}*/
 	
 	public boolean listEquals(List<Track> list) {
 		return mPlayQueue.equals(list);

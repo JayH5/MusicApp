@@ -129,7 +129,7 @@ public class MusicService extends Service {
     private boolean mPausedByTransientLossOfFocus = false;
     
     // Queue of tracks to be played
-    private final PlayQueue mPlayQueue = new PlayQueue();
+    private PlayQueue mPlayQueue;
     
     private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     private static final String[] PROJECTION = new String[] {
@@ -249,6 +249,8 @@ public class MusicService extends Service {
         mNotificationHelper = new NotificationHelper(this);
 
         mImageCache = ImageUtils.getImageCache(this);
+        
+        mPlayQueue = new PlayQueue(this);
         
         // Start up the thread running the service. Note that we create a
         // separate thread because the service normally runs in the process's
@@ -835,11 +837,11 @@ public class MusicService extends Service {
 
         final SharedPreferences.Editor editor = mPreferences.edit();
         if (saveQueue) {
-        	synchronized (mPlayQueue) {
+        	/*synchronized (mPlayQueue) {
         		if (!mPlayQueue.isEmpty()) {
         			editor.putString(PREF_QUEUE, mPlayQueue.toHexString());
         		}
-        	}
+        	}*/
             
             editor.putInt(PREF_CARD_ID, mCardId);
             
@@ -875,7 +877,7 @@ public class MusicService extends Service {
         if (q != null && !q.isEmpty()) {
         	synchronized (mPlayQueue) {
         		// Restore the queue
-        		mPlayQueue.open(this, q);
+        		//mPlayQueue.open(this, q);
         	
         		// Restore the queue position
         		final int pos = mPreferences.getInt(PREF_CURRENT_POSITION, 0);
