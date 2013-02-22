@@ -42,11 +42,6 @@ public class ImageResizer {
     
     private int mImageWidth;
     private int mImageHeight;
-    
-    private static final int DEFAULT_IMAGE_WIDTH = 1024;
-    private static final int DEFAULT_IMAGE_HEIGHT = 1024;
-    
-    //private static final int IO_BUFFER_SIZE_BYTES = 1024;
 
     /**
      * Initialize providing a single target image size (used for both width and height);
@@ -162,6 +157,8 @@ public class ImageResizer {
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        options.inDither = false;
         BitmapFactory.decodeFile(filename, options);
 
         // Calculate inSampleSize
@@ -193,6 +190,8 @@ public class ImageResizer {
     		// First decode with inJustDecodeBounds=true to check dimensions
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
+            options.inPreferredConfig = Bitmap.Config.RGB_565;
+            options.inDither = false;
             BitmapFactory.decodeStream(inputStream, null, options);
             
             // The most reliable way to rest the stream is to close it and then open it again
