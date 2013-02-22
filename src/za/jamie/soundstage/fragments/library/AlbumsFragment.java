@@ -75,6 +75,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         final GridView mGridView = (GridView) v.findViewById(R.id.gridView);
         mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(this);
+        mGridView.setFastScrollEnabled(true);
 
         // This listener is used to get the final width of the GridView and then calculate the
         // number of columns and the width of each column. The width of each column is variable
