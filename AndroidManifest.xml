@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.jamie.play"
+    package="za.jamie.soundstage"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -22,7 +22,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.jamie.play.activities.LibraryActivity"
+            android:name="za.jamie.soundstage.activities.LibraryActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
             <intent-filter>
@@ -32,7 +32,7 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.jamie.play.service.MusicIntentReceiver" >
+        <receiver android:name="za.jamie.soundstage.service.MusicIntentReceiver" >
             <intent-filter>
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
@@ -42,30 +42,30 @@
         </receiver>
 
         <service
-            android:name="com.jamie.play.service.MusicService"
+            android:name="za.jamie.soundstage.service.MusicService"
             android:label="@string/app_name"
             android:process=":musicservice" >
             <intent-filter>
-                <action android:name="com.jamie.play.action.TOGGLE_PLAYBACK" />
-                <action android:name="com.jamie.play.action.PLAY" />
-                <action android:name="com.jamie.play.action.PAUSE" />
-                <action android:name="com.jamie.play.action.NEXT" />
-                <action android:name="com.jamie.play.action.PREVIOUS" />
-                <action android:name="com.jamie.play.action.STOP" />
+                <action android:name="za.jamie.soundstage.action.TOGGLE_PLAYBACK" />
+                <action android:name="za.jamie.soundstage.action.PLAY" />
+                <action android:name="za.jamie.soundstage.action.PAUSE" />
+                <action android:name="za.jamie.soundstage.action.NEXT" />
+                <action android:name="za.jamie.soundstage.action.PREVIOUS" />
+                <action android:name="za.jamie.soundstage.action.STOP" />
             </intent-filter>
         </service>
         
          <service
-            android:name="com.jamie.play.bitmapfun.ImageDownloadService"
+            android:name="za.jamie.soundstage.bitmapfun.ImageDownloadService"
             android:label="@string/app_name" />
 
         <activity
-            android:name="com.jamie.play.activities.AlbumBrowserActivity"
+            android:name="za.jamie.soundstage.activities.AlbumBrowserActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
         </activity>
         <activity
-            android:name="com.jamie.play.activities.ArtistBrowserActivity"
+            android:name="za.jamie.soundstage.activities.ArtistBrowserActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
         </activity>
