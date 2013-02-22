@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -68,7 +69,6 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
     		COLUMNS_CREATE[6] + ", " +
     		COLUMNS_CREATE[7] + ")";
     
-    
 	public PlayQueueDatabase(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
@@ -91,32 +91,68 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
         onCreate(db);		
 	}
 	
-	public int remove(long id) {
-		String where = MediaStore.Audio.Media._ID + "=?";
-		String[] whereArgs = new String[] { String.valueOf(id) };
+	public void remove(long id) {
+		final String where = MediaStore.Audio.Media._ID + "=?";
 		
-		return getWritableDatabase().delete(TABLE_NAME_QUEUE, where, whereArgs);
+		new AsyncTask<Long, Void, Integer>() {
+
+			@Override
+			protected Integer doInBackground(Long... arg0) {
+				final String[] whereArgs = new String[] { String.valueOf(arg0[0]) };
+				return getWritableDatabase().delete(TABLE_NAME_QUEUE, where, whereArgs);
+			}
+			
+		}.execute(id);
+		
 	}
 	
-	public int remove(int from, int to) {
-		String where = COLUMN_NAME_QUEUE_POSITION + " >=? AND " + COLUMN_NAME_QUEUE_POSITION
-				+ "<=?";
-		String[] whereArgs = new String[] { String.valueOf(from), String.valueOf(to) };
+	public void remove(int from, int to) {
+		final String where = COLUMN_NAME_QUEUE_POSITION + " >=? AND " + 
+				COLUMN_NAME_QUEUE_POSITION + "<=?";
 		
-		return getWritableDatabase().delete(TABLE_NAME_QUEUE, where, whereArgs);
+		new AsyncTask<Integer, Void, Integer>() {
+
+			@Override
+			protected Integer doInBackground(Integer... params) {
+				String[] whereArgs = new String[] { String.valueOf(params[0]), 
+						String.valueOf(params[1]) };
+				return getWritableDatabase().delete(TABLE_NAME_QUEUE, where, whereArgs);
+			}
+			
+		}.execute(from, to);
+		
 	}
 	
-	public void open(List<Track> list) {
-		// Clear the current table and create a new one
-		final SQLiteDatabase db = getWritableDatabase();
-		dropTable(db, TABLE_NAME_QUEUE);
-		onCreate(db);
+	public void open(final List<Track> list) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				// Clear the current table and create a new one
+				final SQLiteDatabase db = getWritableDatabase();
+				dropTable(db, TABLE_NAME_QUEUE);
+				onCreate(db);
+				
+				addAll(db, list);
+				
+				return null;
+			}
+			
+		}.execute((Void[]) null);
 		
-		addAll(db, list);
 	}
 	
-	public void addAll(List<Track> list) {
-		addAll(getWritableDatabase(), list);
+	public void addAll(final List<Track> list) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				addAll(getWritableDatabase(), list);
+				return null;
+			}
+			
+		}.execute((Void[]) null);
+		
 	}
 	
 	private void addAll(SQLiteDatabase db, List<Track> list) {
@@ -135,7 +171,18 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	}
 	
 	public void add(Track track) {
-		getWritableDatabase().insert(TABLE_NAME_QUEUE, null, track.toContentValues());
+		new AsyncTask<Track, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Track... params) {
+				getWritableDatabase().insert(TABLE_NAME_QUEUE, null, 
+						params[0].toContentValues());
+				
+				return null;
+			}
+			
+		}.execute(track);
+		
 	}
 	
 	public List<Track> getQueue() {
