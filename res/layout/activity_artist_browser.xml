@@ -8,11 +8,6 @@
         android:id="@+id/summaryFrame"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-    
-    <View 
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="?android:attr/dividerHorizontal" />
         
     <com.viewpagerindicator.TitlePageIndicator
         android:id="@+id/indicator"

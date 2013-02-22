@@ -28,10 +28,7 @@
        	    android:layout_alignParentLeft="true"
        	    android:layout_alignParentTop="true"
        	    android:gravity="center_horizontal"
-       	    android:orientation="vertical"
-       	    android:divider="?android:attr/dividerHorizontal"
-       	    android:dividerPadding="@dimen/button_bar_divider_padding"
-       	    android:showDividers="end" >
+       	    android:orientation="vertical" >
             
            	<TextView
            		android:id="@+id/albumTracks"
@@ -44,6 +41,13 @@
        		<TextView
            		android:id="@+id/albumYear"
            		style="@style/NowText" />
+       		
+       		<View 
+       		    android:background="?android:attr/dividerHorizontal"
+       		    android:layout_width="match_parent"
+       		    android:layout_height="0.5dp"
+       		    android:layout_marginLeft="@dimen/button_bar_divider_padding"
+       		    android:layout_marginRight="@dimen/button_bar_divider_padding" />
            
        	</LinearLayout>
         

@@ -59,8 +59,8 @@
         android:layout_alignParentRight="true"
         android:layout_toRightOf="@+id/notification_expanded_image"
         android:background="?android:dividerHorizontal"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp" />
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp" />
     
     <LinearLayout
         android:id="@+id/notification_expanded_buttons"
