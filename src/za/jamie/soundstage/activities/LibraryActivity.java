@@ -15,8 +15,8 @@ import com.viewpagerindicator.TitlePageIndicator;
 
 public class LibraryActivity extends MusicActivity {
 
-	private static final int SECTION_ALBUMS = 0;
-	private static final int SECTION_ARTISTS = 1;
+	private static final int SECTION_ARTISTS = 0;
+	private static final int SECTION_ALBUMS = 1;
 	private static final int SECTION_SONGS = 2;
 	
 	private ViewPager mViewPager;
@@ -32,16 +32,19 @@ public class LibraryActivity extends MusicActivity {
 		mViewPager.setAdapter(new SectionsPagerAdapter(getSupportFragmentManager()));
 		
 		// Get the indicator for the view pager
-		TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
+		final TitlePageIndicator indicator = (TitlePageIndicator) 
+				findViewById(R.id.indicator);
         indicator.setViewPager(mViewPager);
 	}
 
 	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-		if (savedInstanceState.containsKey(STATE_SELECTED_PAGE)) {
+	public void onPostCreate(Bundle savedInstanceState) {
+		super.onPostCreate(savedInstanceState);
+		if (savedInstanceState != null) {
 			mViewPager.setCurrentItem(
 					savedInstanceState.getInt(STATE_SELECTED_PAGE));
+		} else {
+			mViewPager.setCurrentItem(SECTION_ALBUMS);
 		}
 	}
 
@@ -64,10 +67,10 @@ public class LibraryActivity extends MusicActivity {
 		@Override
 		public Fragment getItem(int position) {
 			switch (position) {
-			case SECTION_ALBUMS:
-				return new AlbumsFragment();
 			case SECTION_ARTISTS:
 				return new ArtistsFragment();
+			case SECTION_ALBUMS:
+				return new AlbumsFragment();
 			case SECTION_SONGS:
 				return new SongsFragment();
 			}
@@ -84,11 +87,11 @@ public class LibraryActivity extends MusicActivity {
 		@Override
 		public CharSequence getPageTitle(int position) {
 			switch (position) {
-			case 0:
-				return getString(R.string.title_albums).toUpperCase();
-			case 1:
+			case SECTION_ARTISTS:
 				return getString(R.string.title_artists).toUpperCase();
-			case 2:
+			case SECTION_ALBUMS:
+				return getString(R.string.title_albums).toUpperCase();
+			case SECTION_SONGS:
 				return getString(R.string.title_songs).toUpperCase();
 			}
 			return null;
