@@ -96,7 +96,7 @@ public class MusicService extends Service {
     // Shared preference keys
     private static final String PREFERENCES = "Service";
     private static final String PREF_CARD_ID = "cardid";
-    private static final String PREF_QUEUE = "queue";
+    //private static final String PREF_QUEUE = "queue";
     private static final String PREF_CURRENT_POSITION = "curpos";
     private static final String PREF_SEEK_POSITION = "seekpos";
     private static final String PREF_REPEAT_MODE = "repeatmode";
@@ -873,22 +873,15 @@ public class MusicService extends Service {
         }
         // If it matches our current card id then get the saved queue
         if (id == mCardId) {
-            q = mPreferences.getString(PREF_QUEUE, "");
-        }
-        if (q != null && !q.isEmpty()) {
-        	synchronized (mPlayQueue) {
-        		// Restore the queue
-        		//mPlayQueue.open(this, q);
-        	
-        		// Restore the queue position
-        		final int pos = mPreferences.getInt(PREF_CURRENT_POSITION, 0);
-        		if (pos < 0 || pos >= mPlayQueue.size()) {
-        			return;
-        		}
-        		mPlayQueue.setPlayPosition(pos);
-        	}
-            
-            // Try to open the current queue position
+            //q = mPreferences.getString(PREF_QUEUE, "");
+        	// Restore the queue position
+        	final int pos = mPreferences.getInt(PREF_CURRENT_POSITION, 0);
+    		if (pos < 0 || pos >= mPlayQueue.size()) {
+    			return;
+    		}
+    		mPlayQueue.setPlayPosition(pos);
+    		
+    		// Try to open the current queue position
             mOpenFailedCounter = 20;
             openCurrentAndNext();
             if (!mPlayer.isInitialized()) {
@@ -931,8 +924,6 @@ public class MusicService extends Service {
                 }
             }
             mShuffleMode = shuffleMode;
-        } else {
-        	Log.w(TAG, "Couldn't restore queue from shared preferences");
         }
     }    
 
