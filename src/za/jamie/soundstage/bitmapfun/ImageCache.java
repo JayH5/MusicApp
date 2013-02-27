@@ -24,8 +24,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import za.jamie.soundstage.utils.AppUtils;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Service;
 import android.content.ComponentCallbacks2;
@@ -35,10 +33,9 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.util.LruCache;
 import android.util.Log;
-import android.util.LruCache;
 
 import com.jakewharton.DiskLruCache;
 
@@ -195,15 +192,12 @@ public class ImageCache {
 
         context.registerComponentCallbacks(new ComponentCallbacks2() {
         
-        	@SuppressLint("NewApi")
 			@Override
             public void onTrimMemory(final int level) {
                 if (level >= TRIM_MEMORY_MODERATE) {
                     mMemoryCache.evictAll();
                 } else if (level >= TRIM_MEMORY_BACKGROUND) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    	mMemoryCache.trimToSize(mMemoryCache.size() / 2);
-                    }
+                    mMemoryCache.trimToSize(mMemoryCache.size() / 2);
                 }
             }
 
