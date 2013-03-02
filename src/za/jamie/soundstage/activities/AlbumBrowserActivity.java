@@ -18,8 +18,6 @@ public class AlbumBrowserActivity extends MusicActivity {
 	public static final String EXTRA_ARTIST = "extra_artist";
 	public static final String EXTRA_ALBUM_ID = "extra_album_id";
 	
-	//private Bundle mAlbumBundle = new Bundle();
-	
 	private String mAlbum;
 	private String mArtist;
 	private long mAlbumId;

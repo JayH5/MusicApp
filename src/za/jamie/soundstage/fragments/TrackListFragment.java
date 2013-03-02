@@ -6,7 +6,6 @@ import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.abs.TrackAdapter;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicServiceWrapper;
-
 import android.os.AsyncTask;
 import android.support.v4.app.ListFragment;
 import android.view.View;
@@ -35,7 +34,7 @@ public class TrackListFragment extends ListFragment {
 				final TrackAdapter adapter = params[0];
 				if (adapter != null) {
 					List<Track> trackList = adapter.getTrackList();
-					MusicServiceWrapper.playAll(getActivity(), trackList, position, false);
+					MusicServiceWrapper.playAll(getActivity(), trackList, position);
 				}
 				return null;
 			}

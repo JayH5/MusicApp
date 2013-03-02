@@ -6,6 +6,8 @@ import android.provider.MediaStore;
 
 public final class CursorDefinitions {
 	
+	public static final String SELECTION_IS_MUSIC = MediaStore.Audio.Media.IS_MUSIC + "=1";
+	
 	/**
 	 * 
 	 * @return the cursor parameter for the album grid view
@@ -18,7 +20,7 @@ public final class CursorDefinitions {
 	 				MediaStore.Audio.Albums.ALBUM,
 	 				MediaStore.Audio.Albums.ARTIST
 	 			})
-	 		.setSortOrder(MediaStore.Audio.Albums.DEFAULT_SORT_ORDER);
+	 		.setSortOrder(MediaStore.Audio.Albums.DEFAULT_SORT_ORDER);	 		
 	}
 	
 	/**
@@ -72,7 +74,7 @@ public final class CursorDefinitions {
 						MediaStore.Audio.Media.ALBUM,
 						MediaStore.Audio.Media.DURATION
 					})
-				.setSelection(MediaStore.Audio.Media.IS_MUSIC + "=1")
+				.setSelection(SELECTION_IS_MUSIC)
 				.setSortOrder(MediaStore.Audio.Media.DEFAULT_SORT_ORDER);
 	}
 	

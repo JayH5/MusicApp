@@ -115,10 +115,7 @@ public class ImageCache {
     public final static ImageCache getInstance(Context context, String cacheDir) {
         if (sInstance == null) {
             sInstance = new ImageCache(context.getApplicationContext(), cacheDir);
-            Log.d(TAG, "ImageCache instance not found. Creating a new one...");
-        } else {
-        	Log.d(TAG, "Image cache instance found.");
-        }
+        } 
         return sInstance;
     }
     
@@ -231,17 +228,17 @@ public class ImageCache {
      * @param bitmap The {@link Bitmap} to cache
      */
     private void addBitmapToMemCache(final String data, final Bitmap bitmap) {
-        if (mMemoryCache != null) {
+        //if (mMemoryCache != null) {
         	synchronized (mMemoryCache) {
-        		if (getBitmapFromMemCache(data) == null) {
+        		if (mMemoryCache.get(data) == null) {
         			mMemoryCache.put(data, bitmap);
         		}
         	}
-        }       
+        //}       
     }
     
     private void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
-    	if (mDiskCache != null) {
+    	//if (mDiskCache != null) {
     		 synchronized(mDiskCache) {
     			final String key = hashKeyForDisk(data);
     			OutputStream out = null;
@@ -271,7 +268,7 @@ public class ImageCache {
     				} 
     			}
     		}
-    	}
+    	//}
     }
     
     /**
@@ -281,8 +278,15 @@ public class ImageCache {
         if (key == null) {
             return;
         }
-        removeFromMemCache(key);
-        removeFromDiskCache(key);
+        
+        mMemoryCache.remove(key);
+        try {
+			mDiskCache.remove(key);
+		} catch (IOException e) {
+			Log.e(TAG, "Failed to remove file from disk cache.", e);
+		}
+        //removeFromMemCache(key);
+        //removeFromDiskCache(key);
     }
     
     private void removeFromMemCache(String key) {

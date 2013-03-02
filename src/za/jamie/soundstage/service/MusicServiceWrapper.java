@@ -130,93 +130,44 @@ public final class MusicServiceWrapper {
     /**
      * Changes to the next track
      */
-    public static void next() {
-        try {
-            if (mService != null) {
-                mService.next();
-            }
-        } catch (final RemoteException ignored) {
-        }
+    public static void next(Context context) {
+        context.startService(new Intent(MusicService.ACTION_NEXT));
     }
 
     /**
      * Changes to the previous track.
      */
-    public static void prev() {
-    	try {
-            if (mService != null) {
-                mService.prev();
-            }
-        } catch (final RemoteException ignored) {
-        }
+    public static void previous(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_PREVIOUS));
     }
 
     /**
      * Plays or pauses the music.
      */
-    public static void playOrPause() {
-        try {
-            if (mService != null) {
-                if (mService.isPlaying()) {
-                    mService.pause();
-                } else {
-                    mService.play();
-                }
-            }
-        } catch (final Exception ignored) {
-        }
+    public static void togglePlayback(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_TOGGLE_PLAYBACK));
+    }
+    
+    public static void play(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_PLAY));
+    }
+    
+    public static void pause(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_PAUSE));
     }
 
     /**
      * Cycles through the repeat options.
      */
-    public static void cycleRepeat() {
-        try {
-            if (mService != null) {
-                switch (mService.getRepeatMode()) {
-                    case MusicService.REPEAT_NONE:
-                        mService.setRepeatMode(MusicService.REPEAT_ALL);
-                        break;
-                    case MusicService.REPEAT_ALL:
-                        mService.setRepeatMode(MusicService.REPEAT_CURRENT);
-                        if (mService.getShuffleMode() != MusicService.SHUFFLE_NONE) {
-                            mService.setShuffleMode(MusicService.SHUFFLE_NONE);
-                        }
-                        break;
-                    default:
-                        mService.setRepeatMode(MusicService.REPEAT_NONE);
-                        break;
-                }
-            }
-        } catch (final RemoteException ignored) {
-        }
+    public static void cycleRepeat(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_REPEAT));
     }
 
     /**
      * Cycles through the shuffle options.
      */
-    public static void cycleShuffle() {
-        try {
-            if (mService != null) {
-                switch (mService.getShuffleMode()) {
-                    case MusicService.SHUFFLE_NONE:
-                        mService.setShuffleMode(MusicService.SHUFFLE_NORMAL);
-                        if (mService.getRepeatMode() == MusicService.REPEAT_CURRENT) {
-                            mService.setRepeatMode(MusicService.REPEAT_ALL);
-                        }
-                        break;
-                    case MusicService.SHUFFLE_NORMAL:
-                        mService.setShuffleMode(MusicService.SHUFFLE_NONE);
-                        break;
-                    case MusicService.SHUFFLE_AUTO:
-                        mService.setShuffleMode(MusicService.SHUFFLE_NONE);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } catch (final RemoteException ignored) {
-        }
+    public static void cycleShuffle(Context context) {
+    	context.startService(new Intent(MusicService.ACTION_SHUFFLE));
     }
 
     /**
@@ -270,19 +221,6 @@ public final class MusicServiceWrapper {
     	}
     	return null;
     }
-    
-    /**
-     * @return The current track id.
-     */
-    public static final long getCurrentTrackId() {
-    	if (mService != null) {
-    		try {
-    			return mService.getCurrentTrackId();
-    		} catch (final RemoteException ignored) {
-    		}
-    	}
-    	return -1;
-    }
 
     /**
      * @return The queue.
@@ -329,35 +267,25 @@ public final class MusicServiceWrapper {
      * @param context The {@link Context} to use.
      * @param list The list of songs to play.
      * @param position Specify where to start.
-     * @param forceShuffle True to force a shuffle, false otherwise.
      */
-    public static void playAll(final Context context, final List<Track> list, int position,
-            final boolean forceShuffle) {
+    public static void playAll(final Context context, final List<Track> list, int position) {
         if (list.size() == 0 || mService == null) {
             return;
         }
         try {
-            if (forceShuffle) {
-                mService.setShuffleMode(MusicService.SHUFFLE_NORMAL);
-            } else {
-                mService.setShuffleMode(MusicService.SHUFFLE_NONE);
-            }
-            final long currentId = getCurrentTrackId();
-            final int currentQueuePosition = getQueuePosition();
-            if (position != -1 && currentQueuePosition == position 
-            		&& currentId == list.get(position).getId()) {
-                
-            	final List<Track> playlist = getQueue();
-                if (list.equals(playlist)) {
-                    mService.play();
+            if (position != -1 && list.equals(getQueue())) {
+                if (position == getQueuePosition()) {
+                    play(context);
                     return;
+                } else {
+                	mService.setQueuePosition(position);
                 }
             }
             if (position < 0) {
                 position = 0;
             }
-            mService.open(list, forceShuffle ? -1 : position);
-            mService.play();
+            mService.open(list, position);
+            play(context);
         } catch (final RemoteException ignored) {
         }
     }
@@ -429,18 +357,6 @@ public final class MusicServiceWrapper {
             if (mService != null) {
                 mService.moveQueueItem(from, to);
             } else {
-            }
-        } catch (final RemoteException ignored) {
-        }
-    }
-
-    /**
-     * Called when one of the lists should refresh or requery.
-     */
-    public static void refresh() {
-        try {
-            if (mService != null) {
-                mService.refresh();
             }
         } catch (final RemoteException ignored) {
         }

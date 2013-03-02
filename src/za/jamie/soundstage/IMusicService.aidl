@@ -1,41 +1,29 @@
 package za.jamie.soundstage;
 
-import android.graphics.Bitmap;
-import android.net.Uri;
 import za.jamie.soundstage.models.Track;
 
 interface IMusicService {
+	// Queue creation
     void open(in List<Track> tracks, int position);
     
-    void play();
-    void pause();
-    void stop();
-    void prev();
-    void next();
-    
+    // Queue manipulation
     void enqueue(in List<Track> tracks, int action);
     void setQueuePosition(int index);
     void moveQueueItem(int from, int to);
+    int removeTracks(int first, int last);
+    int removeTrack(long id);
+        
+    // Queue state
     List<Track> getQueue();
     int getQueuePosition();
+    Track getCurrentTrack();
     
-    int removeTracks(int first, int last);
-    int removeTrack(long id); 
-    
-    void setShuffleMode(int shufflemode);
-    void setRepeatMode(int repeatmode);
+    // Play state
+    boolean isPlaying();
     int getShuffleMode();
     int getRepeatMode();
     
-    void refresh();
-    boolean isPlaying();
-    
+    // Time position in current track
     long position();
-    long seek(long pos);
-    
-    Track getCurrentTrack();
-    long getCurrentTrackId();
-    
-    int getMediaMountedCount();
-    int getAudioSessionId();
+    long seek(long pos);    
 }

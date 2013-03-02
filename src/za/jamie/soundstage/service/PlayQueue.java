@@ -1,26 +1,22 @@
 package za.jamie.soundstage.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import za.jamie.soundstage.models.Id;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.utils.HexUtils;
-
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
-import android.provider.MediaStore;
 
 
 public class PlayQueue {
 
 	private List<Track> mPlayQueue;
+	//private List<Long> mQueue = new LinkedList<Long>();
+	//private SortedSet<Track> mTrackSet = new TreeSet<Track>();
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
-	private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+	/*private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     private static final String[] PROJECTION = new String[] {
     	MediaStore.Audio.Media._ID,
         MediaStore.Audio.Media.TITLE,
@@ -29,7 +25,7 @@ public class PlayQueue {
         MediaStore.Audio.Media.ALBUM_ID,
         MediaStore.Audio.Media.ALBUM,
         MediaStore.Audio.Media.DURATION
-    };
+    };*/
     
     private final PlayQueueDatabase mDatabase;
     
@@ -120,6 +116,9 @@ public class PlayQueue {
 	public void addToQueue(final List<Track> list, int position) {
         mPlayQueue.addAll(position, list);
         
+        // TODO
+        //mTrackSet.addAll(list);
+        
         // Update the play position
         if (position < mPlayPosition) {
         	mPlayPosition += list.size();
@@ -130,6 +129,9 @@ public class PlayQueue {
 	
 	public void addToQueue(final List<Track> list) {
 		mPlayQueue.addAll(list);
+		
+		// TODO
+		//mTrackSet.addAll(list);
 		
 		mDatabase.addAll(list);
 	}
@@ -147,6 +149,9 @@ public class PlayQueue {
 		
 		mPlayQueue.clear();
 		mPlayQueue.addAll(list);
+		
+		// TODO
+		//mTrackSet = new TreeSet<Track>(list);
 		
 		mDatabase.open(list);
 		

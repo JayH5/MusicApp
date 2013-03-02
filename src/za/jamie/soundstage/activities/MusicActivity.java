@@ -6,15 +6,11 @@ import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.service.MusicServiceWrapper;
 import za.jamie.soundstage.service.MusicServiceWrapper.ServiceToken;
 import za.jamie.soundstage.utils.AppUtils;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -46,15 +42,12 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
-	//private LocalBroadcastManager mBroadcastManager;
-	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		// Bind the service
 		mServiceToken = MusicServiceWrapper.bindToService(this, this);
-		
-		//mBroadcastManager = LocalBroadcastManager.getInstance(this);
 		
 		// Set up the menu drawer to display the player
 		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
@@ -101,22 +94,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	}
 	
 	@Override
-    protected void onStart() {
-        super.onStart();
-        
-        final IntentFilter filter = new IntentFilter();
-        filter.addAction(MusicService.PLAYSTATE_CHANGED);
-        filter.addAction(MusicService.META_CHANGED);
-        filter.addAction(MusicService.QUEUE_CHANGED);
-        filter.addAction(MusicService.SHUFFLEMODE_CHANGED);
-        filter.addAction(MusicService.REPEATMODE_CHANGED);
-        filter.addAction(MusicService.REFRESH);
-        
-        registerReceiver(mPlayStatusReceiver, filter);
-        //mBroadcastManager.registerReceiver(mPlayStatusReceiver, filter);
-    }
-	
-	@Override
     protected void onPause() {
         super.onPause();
         if (MusicServiceWrapper.isPlaying() || mIsBackPressed) {
@@ -129,15 +106,12 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	@Override
     protected void onDestroy() {
         super.onDestroy();
+        
         // Unbind from the service
         if (mServiceToken != null) {
         	MusicServiceWrapper.unbindFromService(mServiceToken);
             mServiceToken = null;
         }
-
-        // Unregister the receiver
-        unregisterReceiver(mPlayStatusReceiver);
-        //mBroadcastManager.unregisterReceiver(mPlayStatusReceiver);
     }
 	
 	@Override
@@ -191,42 +165,9 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 			mVibrator.vibrate(VIBRATION_LENGTH);
 		} else if (oldState == MenuDrawer.STATE_CLOSED) {
 			mPlayer.onShow();
-			if (newState == MenuDrawer.STATE_DRAGGING) {
-				mVibrator.vibrate(VIBRATION_LENGTH);
-			}
+			mVibrator.vibrate(VIBRATION_LENGTH);
 		}
 		
 	}
-	
-	private final BroadcastReceiver mPlayStatusReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			final String action = intent.getAction();
-			if (action.equals(MusicService.PLAYSTATE_CHANGED)) {
-				if (mPlayer != null) {
-					mPlayer.updatePlayState();
-				}
-			} else if (action.equals(MusicService.META_CHANGED)) {
-				if (mPlayer != null) {
-					mPlayer.updateTrack();
-				}
-				if (mPlayQueue != null) {
-					mPlayQueue.updateQueuePosition();
-				}
-			} else if (action.equals(MusicService.QUEUE_CHANGED)) {
-				if (mPlayQueue != null) {
-					mPlayQueue.updateQueue();
-				}
-			} else if (action.equals(MusicService.SHUFFLEMODE_CHANGED)) {
-				
-			} else if (action.equals(MusicService.REPEATMODE_CHANGED)) {
-				
-			} else if (action.equals(MusicService.REFRESH)) {
-				
-			}
-		}
-		
-	};
 
 }
