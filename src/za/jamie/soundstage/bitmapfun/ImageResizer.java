@@ -66,6 +66,10 @@ public class ImageResizer {
     	setImageSize(imageSize);
     }
     
+    /**
+     * Initialize providing a single target image size (the size of the device's display)
+     * @param context
+     */
     public ImageResizer(Context context) {
     	mContext = context;
     	

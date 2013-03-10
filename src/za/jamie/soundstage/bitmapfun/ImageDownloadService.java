@@ -17,10 +17,10 @@ import za.jamie.soundstage.lastfm.Image;
 import za.jamie.soundstage.lastfm.ImageSize;
 import za.jamie.soundstage.lastfm.PaginatedResult;
 import za.jamie.soundstage.utils.AppUtils;
-
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -32,12 +32,16 @@ public class ImageDownloadService extends IntentService {
 	public static final String CACHE_DIR = "DownloadCache";
 	private static final int IO_BUFFER_SIZE_BYTES = 1024;
 	
-	// TODO: Get own key.
 	private static final String LAST_FM_API_KEY = "5221fc4823ffde4ec61f8aef509d247c";
 	
 	public static final String KEY_BUNDLE = "za.jamie.soundstage.bitmapfun.ImageDownloadService";
 	
+	// Keep track of images that have been downloaded since multiple requests
+	// may be waiting in the intent queue for a single image
 	private Set<String> mDownloadedSet = new HashSet<String>();
+	
+	private ImageCache mImageCache;
+	private ImageResizer mImageResizer;
 	
 	public ImageDownloadService() {
 		super(TAG);
@@ -46,6 +50,9 @@ public class ImageDownloadService extends IntentService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		
+		mImageCache = ImageCache.getInstance(this);
+		mImageResizer = new ImageResizer(this);
 	}
 
 	@Override
@@ -71,8 +78,22 @@ public class ImageDownloadService extends IntentService {
 						AppUtils.getCacheDir(this, CACHE_DIR));
 				
 				if (imageFile != null) {
-	    			mDownloadedSet.add(key);
-	    			Log.d(TAG, "Image successfully downloaded for key: " + key);
+					// Resize the image
+					Bitmap bitmap = mImageResizer.getBitmapFromFile(imageFile);
+					if (bitmap != null) {
+						mImageCache.addBitmapToDiskCache(key, bitmap);
+					
+						mDownloadedSet.add(key);
+						Log.d(TAG, "Image successfully downloaded for key: " + key);
+					
+						// Tidy up after ourselves
+						bitmap = null;
+					}
+					imageFile.delete();
+					imageFile = null;
+					System.gc();
+				} else {
+					Log.w(TAG, "Downloaded file was null.");
 				}
 			}
 		}	
@@ -115,7 +136,7 @@ public class ImageDownloadService extends IntentService {
     	return url;
     }
 	
-	/**
+    /**
      * Download a bitmap from a URL, write it to a disk and return the File pointer. This
      * implementation uses a simple disk cache.
      *

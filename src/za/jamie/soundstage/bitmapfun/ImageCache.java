@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
-import android.app.Service;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -53,6 +52,9 @@ public class ImageCache {
     private static final int DISK_CACHE_INDEX = 0;
     private static final CompressFormat COMPRESS_FORMAT = CompressFormat.JPEG;
     private static final int COMPRESS_QUALITY = 90;
+    
+    private static final String DEFAULT_CACHE_DIR = "ImageCache";
+    private static final boolean DEFAULT_MEM_ENABLED = true;
 
     private DiskLruCache mDiskCache;
     private LruCache<String, Bitmap> mMemoryCache;
@@ -66,129 +68,34 @@ public class ImageCache {
      * @param context The context to use
      * @param cacheParams The cache parameters to use to initialize the cache
      */
-    public ImageCache(Context context, String cacheDir) {
-        init(context, cacheDir);
-    }
-    
-    /**
-     * Creates a new ImageCache object synchronously and only with a disk cache.
-     * For use by asynchronous services.
-     * @param service
-     */
-    public ImageCache(Service service, String cacheDir) {
-    	initDiskCache(service, cacheDir);
-    }
-
-    /**
-     * Find and return an existing ImageCache stored in a {@link RetainFragment}, if not found a new
-     * one is created using the supplied params and saved to a {@link RetainFragment}.
-     *
-     * @param activity The calling {@link FragmentActivity}
-     * @param cacheDir The directory for the disk cache
-     * @return An existing retained ImageCache object or a new one if one did not exist
-     */
-    public static ImageCache findOrCreateCache(Activity activity, String cacheDir) {
-
-        // Search for, or create an instance of the non-UI RetainFragment
-        final RetainFragment mRetainFragment = RetainFragment.findOrCreateRetainFragment(
-                activity.getFragmentManager());
-
-        // See if we already have an ImageCache stored in RetainFragment
-        ImageCache imageCache = (ImageCache) mRetainFragment.getObject();
-
-        // No existing ImageCache, create one and store it in RetainFragment
-        if (imageCache == null) {
-        	Log.d(TAG, "Couldn't restore cache from retain frag. Creating new instance.");
-            imageCache = new ImageCache(activity, cacheDir);
-            mRetainFragment.setObject(imageCache);
+    public ImageCache(Context context, String cacheDir, boolean memCache) {
+        if (memCache) {
+        	mMemoryCache = createMemoryCache(context);
+        	registerComponentCallbacks2(context);
         }
-        
-        return imageCache;
+        initDiskCache(context, cacheDir);
     }
     
-    /**
-     * Used to create a singleton of {@link ImageCache}
-     * 
-     * @param context The {@link Context} to use
-     * @return A new instance of this class.
-     */
-    public final static ImageCache getInstance(Context context, String cacheDir) {
-        if (sInstance == null) {
-            sInstance = new ImageCache(context.getApplicationContext(), cacheDir);
-        } 
-        return sInstance;
+    public static ImageCache getInstance(Context context) {
+    	
+    	if (sInstance == null) {
+    		sInstance = new ImageCache(context.getApplicationContext(), 
+    				DEFAULT_CACHE_DIR, DEFAULT_MEM_ENABLED);
+    	}
+    	return sInstance;
     }
     
-    /**
-     * Initializes the disk cache. Note that this includes disk access so this
-     * should not be executed on the main/UI thread. By default an ImageCache
-     * does not initialize the disk cache when it is created, instead you should
-     * call initDiskCache() to initialize it on a background thread.
-     * 
-     * @param context The {@link Context} to use
-     */
-    private void init(final Context context, final String cacheDir) {
-    	// Set up the memory cache
-        initMemoryCache(context);
-        
-        // Initialize the disk cache in a background thread
-    	new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(final Void... unused) {
-                initDiskCache(context, cacheDir);
-                return null;
-            }
-        }.execute((Void[])null);
+    public ImageCache(Activity activity, String cacheDir, boolean memCache) {
+    	if (memCache) {
+    		mMemoryCache = findOrCreateMemoryCache(activity);
+    		registerComponentCallbacks2(activity);
+    	}
+    	initDiskCache(activity, cacheDir);
     }
     
-    /**
-     * Initializes the disk cache. Note that this includes disk access so this
-     * should not be executed on the main/UI thread. By default an ImageCache
-     * does not initialize the disk cache when it is created, instead you should
-     * call initDiskCache() to initialize it on a background thread.
-     * 
-     * @param context The {@link Context} to use
-     */
-    private void initDiskCache(Context context, String cacheDir) {
-        // Set up disk cache
-        if (mDiskCache == null || mDiskCache.isClosed()) {
-            File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
-            if (diskCacheDir != null) {
-                if (!diskCacheDir.exists()) {
-                    diskCacheDir.mkdirs();
-                }
-                if (diskCacheDir.getUsableSpace() > DISK_CACHE_SIZE) {
-                    try {
-                        mDiskCache = DiskLruCache.open(diskCacheDir, 1, 1, DISK_CACHE_SIZE);
-                    } catch (final IOException ioe) {
-                    	diskCacheDir = null; // TODO: Is there a reason for this line?
-                    	Log.w(TAG, "Error during opening of DiskLruCache.", ioe);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Sets up the Lru cache
-     * 
-     * @param context The {@link Context} to use
-     */
-    
-    private void initMemoryCache(final Context context) {
-        mMemoryCache = new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
-        		MEM_CACHE_DIVIDER)) {
+    private void registerComponentCallbacks2(Context context) {
+    	context.registerComponentCallbacks(new ComponentCallbacks2() {
             
-        	// Measure item size in bytes rather than units
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap) {
-                return bitmap.getByteCount();
-            }
-        };
-
-        context.registerComponentCallbacks(new ComponentCallbacks2() {
-        
 			@Override
             public void onTrimMemory(final int level) {
                 if (level >= TRIM_MEMORY_MODERATE) {
@@ -203,7 +110,103 @@ public class ImageCache {
 
 			@Override
 			public void onLowMemory() {}
-        });
+    	});
+    }
+
+    /**
+     * Find and return an existing LruCache stored in a {@link RetainFragment}, if not found a new
+     * one is created using the supplied params and saved to a {@link RetainFragment}.
+     *
+     * @param activity The calling {@link FragmentActivity}
+     */
+    @SuppressWarnings("unchecked")
+	private static LruCache<String, Bitmap> findOrCreateMemoryCache(Activity activity) {
+
+        LruCache<String, Bitmap> memoryCache = null;
+    	// Search for, or create an instance of the non-UI RetainFragment
+    	final RetainFragment retainFragment = RetainFragment.findOrCreateRetainFragment(
+    			activity.getFragmentManager());
+        	
+    	// See if we already have an LruCache stored in RetainFragment
+    	memoryCache = (LruCache<String, Bitmap>) retainFragment.getObject();
+        	
+        if (memoryCache == null) {
+        	// No existing LruCache, create one and store it in RetainFragment
+        	Log.d(TAG, "Couldn't restore mem cache from retain frag. Creating new instance.");
+        	memoryCache = createMemoryCache(activity);
+        	retainFragment.setObject(memoryCache);
+        }
+        
+        return memoryCache;
+    }
+    
+    /**
+     * Initializes the disk cache. Note that this includes disk access so this
+     * should not be executed on the main/UI thread. By default an ImageCache
+     * does not initialize the disk cache when it is created, instead you should
+     * call initDiskCache() to initialize it on a background thread.
+     * 
+     * @param context The {@link Context} to use
+     */
+    private void initDiskCache(final Context context, final String cacheDir) {        
+        // Get the actual file for the cache
+        final File diskCacheDir = AppUtils.getCacheDir(context, cacheDir);
+        
+        // Initialize the disk cache in a background thread
+        if (mDiskCache == null || mDiskCache.isClosed() || 
+        		!mDiskCache.getDirectory().equals(diskCacheDir)) {
+        	
+        	Log.d(TAG, "Creating disk cache");
+        	
+        	new AsyncTask<File, Void, DiskLruCache>() {
+
+        		@Override
+        		protected DiskLruCache doInBackground(File... params) {
+        			return createDiskCache(params[0]);
+        		}
+        		
+        		@Override
+        		protected void onPostExecute(DiskLruCache result) {
+        			mDiskCache = result;
+        		}
+        		
+        	}.execute(diskCacheDir);
+        }
+    }
+    
+    private static DiskLruCache createDiskCache(File diskCacheDir) {
+    	if (diskCacheDir != null) {
+    		if (!diskCacheDir.exists()) {
+                diskCacheDir.mkdirs();
+            }
+    		if (diskCacheDir.getUsableSpace() > DISK_CACHE_SIZE) {
+                try {
+                    return DiskLruCache.open(diskCacheDir, 1, 1, DISK_CACHE_SIZE);
+                } catch (final IOException ioe) {
+                	Log.e(TAG, "Error during opening of DiskLruCache.", ioe);
+                }
+            }
+    	}
+    	return null;
+    }
+
+    /**
+     * Sets up the Lru cache
+     * 
+     * @param context The {@link Context} to use
+     */
+    
+    private static LruCache<String, Bitmap> createMemoryCache(final Context context) {
+        return new LruCache<String, Bitmap>(AppUtils.calculateMemCacheSize(context, 
+        		MEM_CACHE_DIVIDER)) {
+            
+        	// Measure item size in bytes rather than units
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                return bitmap.getByteCount();
+            }
+        };
+
     }
 
     /**
@@ -217,7 +220,7 @@ public class ImageCache {
             return;
         }
 
-        addBitmapToMemCache(data, bitmap);
+       	addBitmapToMemCache(data, bitmap);
         addBitmapToDiskCache(data, bitmap);
     }
 
@@ -227,18 +230,18 @@ public class ImageCache {
      * @param data The key identifier
      * @param bitmap The {@link Bitmap} to cache
      */
-    private void addBitmapToMemCache(final String data, final Bitmap bitmap) {
-        //if (mMemoryCache != null) {
+    public void addBitmapToMemCache(final String data, final Bitmap bitmap) {
+        if (mMemoryCache != null) {
         	synchronized (mMemoryCache) {
         		if (mMemoryCache.get(data) == null) {
         			mMemoryCache.put(data, bitmap);
         		}
         	}
-        //}       
+        }       
     }
     
-    private void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
-    	//if (mDiskCache != null) {
+    public void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
+    	if (mDiskCache != null) {
     		 synchronized(mDiskCache) {
     			final String key = hashKeyForDisk(data);
     			OutputStream out = null;
@@ -251,7 +254,10 @@ public class ImageCache {
     						bitmap.compress(COMPRESS_FORMAT, COMPRESS_QUALITY, out);
     						editor.commit();
     						out.close();
-    						flush();
+    						
+    						if (!mDiskCache.isClosed()) {
+    		        			mDiskCache.flush();
+    		        		}
     					}
     				} else {
     					snapshot.getInputStream(DISK_CACHE_INDEX).close();
@@ -268,7 +274,7 @@ public class ImageCache {
     				} 
     			}
     		}
-    	//}
+    	}
     }
     
     /**
@@ -279,46 +285,21 @@ public class ImageCache {
             return;
         }
         
-        mMemoryCache.remove(key);
-        try {
-			mDiskCache.remove(key);
-		} catch (IOException e) {
-			Log.e(TAG, "Failed to remove file from disk cache.", e);
-		}
-        //removeFromMemCache(key);
-        //removeFromDiskCache(key);
-    }
-    
-    private void removeFromMemCache(String key) {
-    	if (mMemoryCache != null) {
-    		mMemoryCache.remove(key);
-    	}
-    }
-    
-    private void removeFromDiskCache(String key) {
-    	if (mDiskCache != null) {
-        	try {
-        		mDiskCache.remove(hashKeyForDisk(key));
-        	} catch (final IOException ioe) {
-                Log.e(TAG, "Failed to remove file from disk cache.", ioe);
-            }
-        	flush();
+        if (mMemoryCache != null) {
+        	mMemoryCache.remove(key);
         }
-    }
-    
-    /**
-     * flush() is called to synchronize up other methods that are accessing the
-     * cache first. The cache must not be null here.
-     */
-    private void flush() {
-        try {
+        if (mDiskCache != null) {
         	synchronized (mDiskCache) {
-        		if (!mDiskCache.isClosed()) {
-        			mDiskCache.flush();
+        		try {
+        			mDiskCache.remove(key);
+        			
+        			if (!mDiskCache.isClosed()) {
+            			mDiskCache.flush();
+            		}
+        		} catch (IOException e) {
+        			Log.e(TAG, "Failed to remove file from disk cache.", e);
         		}
         	}
-        } catch (final IOException ioe) {
-        	Log.e(TAG, "Error during disk cache flush.", ioe);
         }
     }
     
@@ -435,9 +416,35 @@ public class ImageCache {
                 }
                 return null;
             }
-        }.execute((Void[])null);
+        }.execute();
         
         // Clear the memory cache
-        mMemoryCache.evictAll();
+        if (mMemoryCache != null) {
+        	mMemoryCache.evictAll();
+        }
+    }
+    
+    public void clearMemoryCache() {
+    	if (mMemoryCache != null) {
+    		mMemoryCache.evictAll();
+    	}
+    }
+    
+    public void close() {
+    	if (mMemoryCache != null) {
+    		mMemoryCache.evictAll();
+    	}
+    	
+    	if (mDiskCache != null) {
+    		synchronized (mDiskCache) {
+    			try {
+    				mDiskCache.close();
+    			} catch(IOException e) {
+    				Log.e(TAG, "Error closing DiskLruCache -- LEAK", e);
+    			} finally {
+    				mDiskCache = null;
+    			}
+    		}
+    	}
     }
 }

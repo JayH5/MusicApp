@@ -1,10 +1,6 @@
 package za.jamie.soundstage.bitmapfun;
 
-import java.io.File;
-
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.utils.AppUtils;
-
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -63,28 +59,15 @@ public class ImageFetcher extends ImageWorker {
     			bitmap = mResizer.getBitmapFromContentUri(albumArtUri);
     		}
         }
-        
-    	// See if a bitmap has been downloaded by the download service
-    	if (bitmap == null) {
-    		String key = data.getString(ImageWorker.KEY);
-    		File downloadCacheFile = new File(AppUtils.getCacheDir(mContext, 
-    				ImageDownloadService.CACHE_DIR), key);
-    		
-    		if (downloadCacheFile.exists()) {
-    			bitmap = mResizer.getBitmapFromFile(downloadCacheFile);
-    			downloadCacheFile.delete();
-    		}
-    		
-    	}
     	
     	// If album art still not found or we're getting an artist image
     	// send an intent to the download service to go load the image into cache.
     	if (bitmap == null) {
     		Log.d(TAG, "Starting last fm fetch for image...");
     		
-    		final Intent intent = new Intent(mContext, ImageDownloadService.class);
+    		final Intent intent = new Intent(getContext(), ImageDownloadService.class);
     		intent.putExtra(ImageDownloadService.KEY_BUNDLE, data);
-    		mContext.startService(intent);
+    		getContext().startService(intent);
     	}
     	return bitmap;
     	

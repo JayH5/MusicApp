@@ -46,7 +46,7 @@ public abstract class ImageWorker {
     private boolean mFadeInBitmap = true;
     private boolean mExitTasksEarly = false;
 
-    protected Context mContext;
+    private final Context mContext;
 
     protected ImageWorker(Context context) {
         mContext = context;
@@ -130,6 +130,10 @@ public abstract class ImageWorker {
 
     public void setExitTasksEarly(boolean exitTasksEarly) {
         mExitTasksEarly = exitTasksEarly;
+    }
+    
+    public Context getContext() {
+    	return mContext;
     }
 
     /**
