@@ -2,27 +2,25 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import java.util.List;
 
+import za.jamie.soundstage.IQueueStatusCallback;
+import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
-import za.jamie.soundstage.loaders.WrappedAsyncTaskLoader;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicServiceWrapper;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.Loader;
 
-public class PlayQueueFragment extends DialogFragment implements  DialogInterface.OnClickListener, 
-		LoaderManager.LoaderCallbacks<List<Track>> {
+public class PlayQueueFragment extends DialogFragment implements DialogInterface.OnClickListener {
 		
 	private AlertDialog mAlertDialog;
 	private PlayQueueAdapter mAdapter;
 	
-	private int mQueuePosition;
+	private MusicQueueWrapper mService;
 	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
@@ -32,13 +30,16 @@ public class PlayQueueFragment extends DialogFragment implements  DialogInterfac
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mQueuePosition = MusicServiceWrapper.getQueuePosition();
-		
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_two_line_faded,
         		R.layout.list_item_two_line_bold, R.layout.list_item_two_line, 
-        		null, mQueuePosition);
+        		null, -1);
+	}
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 		
-		getLoaderManager().initLoader(0, null, this);
+		mService = (MusicQueueWrapper) activity;
 	}
 	
 	@Override
@@ -49,55 +50,68 @@ public class PlayQueueFragment extends DialogFragment implements  DialogInterfac
         		.setAdapter(mAdapter, this)
         		.create();
         
+        mService.registerQueueStatusCallback(mCallback);
+        mService.requestQueueStatusRefresh();
+        
 	    return mAlertDialog;
 	}
 	
-	public void updateQueuePosition() {
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		
+		mService.unregisterQueueStatusCallback(mCallback);
+	}
+	
+	/*public void updateQueuePosition() {
 		if (this.isVisible()) {
-			mQueuePosition = MusicServiceWrapper.getQueuePosition();
+			//mQueuePosition = MusicLibraryWrapper.getQueuePosition();
+			mQueuePosition = MusicQueueWrapper.getQueuePosition();
 			mAdapter.setQueuePosition(mQueuePosition);
 		}
 	}
 	
 	public void updateQueue() {
 		if (this.isVisible()) {
-			getLoaderManager().restartLoader(0, null, this);
+			
 		}
-	}
-	
-	private static class PlayQueueLoader extends WrappedAsyncTaskLoader<List<Track>> {		
-		public PlayQueueLoader(Context context) {
-			super(context);
-		}
-		
-		@Override
-		public List<Track> loadInBackground() {
-			return MusicServiceWrapper.getQueue();
-		}
-	}
-
-	@Override
-	public Loader<List<Track>> onCreateLoader(int id, Bundle args) {
-		return new PlayQueueLoader(getActivity());
-	}
-
-	@Override
-	public void onLoadFinished(Loader<List<Track>> loader, List<Track> data) {
-		mAdapter.setList(data);
-		
-		// Scroll to the current song
-		mAlertDialog.getListView().setSelectionFromTop(mQueuePosition, 0);
-	}
-
-	@Override
-	public void onLoaderReset(Loader<List<Track>> loader) {
-		mAdapter.setList(null);		
-	}
+	}*/
 
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
-		MusicServiceWrapper.setQueuePosition(which);		
+		mService.setQueuePosition(which);
 	}
 	
+	private IQueueStatusCallback mCallback = new IQueueStatusCallback.Stub() {
+
+		@Override
+		public void onQueueChanged(final List<Track> queue) throws RemoteException {
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					mAdapter.setList(queue);
+					
+				}
+				
+			});
+			
+		}
+
+		@Override
+		public void onQueuePositionChanged(final int position) throws RemoteException {
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					mAdapter.setQueuePosition(position);
+					
+				}
+				
+			});
+			
+		}
+		
+	};
 	
 }

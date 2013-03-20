@@ -27,7 +27,7 @@ public class ArtistBrowserActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		getMenuDrawer().setContentView(R.layout.activity_artist_browser);
+		setMainContentView(R.layout.activity_artist_browser);
 		
 		// Set up the view pager and its indicator
 		ViewPager viewPager = (ViewPager) findViewById(R.id.pager);

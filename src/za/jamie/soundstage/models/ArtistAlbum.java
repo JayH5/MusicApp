@@ -1,6 +1,6 @@
 package za.jamie.soundstage.models;
 
-public class ArtistAlbum implements IdProvider {
+public class ArtistAlbum {
 
 	public final String album;
 	public final long albumId;
@@ -16,10 +16,5 @@ public class ArtistAlbum implements IdProvider {
 		this.numTracks = numTracks;
 		this.firstYear = firstYear;
 		this.lastYear = lastYear;
-	}
-
-	@Override
-	public long getId() {
-		return albumId;
 	}
 }

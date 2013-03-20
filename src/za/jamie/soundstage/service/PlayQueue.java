@@ -1,141 +1,105 @@
 package za.jamie.soundstage.service;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import za.jamie.soundstage.models.Track;
+import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
+import android.provider.MediaStore;
 
 
 public class PlayQueue {
 
-	private List<Track> mPlayQueue;
-	//private List<Long> mQueue = new LinkedList<Long>();
-	//private SortedSet<Track> mTrackSet = new TreeSet<Track>();
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
-	/*private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-    private static final String[] PROJECTION = new String[] {
-    	MediaStore.Audio.Media._ID,
-        MediaStore.Audio.Media.TITLE,
-        MediaStore.Audio.Media.ARTIST_ID,
-        MediaStore.Audio.Media.ARTIST,
-        MediaStore.Audio.Media.ALBUM_ID,
-        MediaStore.Audio.Media.ALBUM,
-        MediaStore.Audio.Media.DURATION
-    };*/
-    
+	private List<Long> mTrackIdList;
+	private Map<Long, Track> mTrackMap;
+	
+	private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+	
     private final PlayQueueDatabase mDatabase;
-    
-    //private static final String SORT_ORDER = MediaStore.Audio.Media._ID + " ASC";
 	
     public PlayQueue(Context context) {
     	mDatabase = new PlayQueueDatabase(context);
     	
-    	mPlayQueue = mDatabase.getQueue();
+    	mTrackMap = mDatabase.getTrackMap();
+    	mTrackIdList = mDatabase.getTrackIdList();
     }
-    
-    /*public PlayQueue() {
-    	mPlayQueue = new ArrayList<Track>();
-    }
-    
-	public PlayQueue(int capacity) {
-		mPlayQueue = new ArrayList<Track>(capacity);
-	}*/
 	
-	/**
-	 * Uses the contents of a hex string to recreate a queue.
-	 * @param context
-	 * @param hexString
-	 */
-	/*public void open(Context context, String hexString) {
-		// Split the hex string with the delimiter
-		final String[] hexes = hexString.split(HexUtils.DELIMITER);
-    	
-		// Initialise a store for the trackIds
-		int length = hexes.length;
-    	final Id[] trackIds = new Id[length];
-    	
-    	// Don't know exactly how long the selection will be but it will be at least the
-    	// length of the number of tracks plus commas
-    	final StringBuilder selection = new StringBuilder(length * 2);
-    	selection.append(MediaStore.Audio.Media._ID + " IN (");
-    	long trackId;
-    	for (int i = 0; i < length - 1; i++) {
-    		// Convert the hex to a long track id
-    		trackId = Long.parseLong(hexes[i], 16);
-    		
-    		// Store the id as an object
-    		trackIds[i] = new Id(trackId);
-    		
-    		// Add it to the query selection
-    		selection.append(trackId)
-    			.append(',');
-    	}
-    	trackId = Long.parseLong(hexes[length - 1], 16);
-    	trackIds[length - 1] = new Id(trackId);
-    	selection.append(trackId)
-    		.append(')');
-    	
-    	Cursor cursor = context.getContentResolver().query(
-        		BASE_URI, PROJECTION, selection.toString(), null, null);
-        
-        // Create a list of tracks from the cursor
-    	if (cursor != null) {
-        	Track[] tracks = new Track[cursor.getCount()];
-        	if (cursor.moveToFirst()) {
-        		int i = 0;
-        		do {
-        			tracks[i] = new Track(
-        					cursor.getLong(0), // Id
-        					cursor.getString(1), // Title
-        					cursor.getLong(2), // Artist id
-        					cursor.getString(3), // Artist
-        					cursor.getLong(4), // Album id
-        					cursor.getString(5), // Album
-        					cursor.getLong(6)); // Duration
-        			i++;
-        		} while (cursor.moveToNext());
-        	}
-        	
-        	cursor.close();
-        	cursor = null;
-        	
-        	mPlayQueue.clear();
-        	mPlayQueue.ensureCapacity(length);
-        	for (Id id : trackIds) {
-        		int position = Arrays.binarySearch(tracks, id, Id.mComparator);
-        		mPlayQueue.add(tracks[position]);
-        	}
+	public void addAll(int position, final Collection<? extends Track> list) {
+        // Keep a list of changes to the set
+		List<Track> positiveDiff = new LinkedList<Track>();
+		// Iterate through the list, adding ids to track id list, tracks to track set
+		Iterator<? extends Track> it = list.iterator();
+        for (int i = 0; i < list.size(); i++) {
+			Track track = it.next();
+			long trackId = track.getId();
+			mTrackIdList.add(i + position, trackId);
+			
+			if (mTrackMap.put(trackId, track) == null) {
+				positiveDiff.add(track);
+			}
         }
-
-	}*/
-	
-	public void addToQueue(final List<Track> list, int position) {
-        mPlayQueue.addAll(position, list);
-        
-        // TODO
-        //mTrackSet.addAll(list);
         
         // Update the play position
         if (position < mPlayPosition) {
         	mPlayPosition += list.size();
         }
         
-        mDatabase.open(mPlayQueue);
+        // Keep the db in sync
+        mDatabase.updateTrackSet(positiveDiff, null);
+        mDatabase.updateTrackIdList(mTrackIdList);
 	}
 	
-	public void addToQueue(final List<Track> list) {
-		mPlayQueue.addAll(list);
+	public void addAll(final Collection<? extends Track> list) {
+		// Keep a list of changes to the set
+		List<Track> positiveDiff = new LinkedList<Track>();
+		List<Long> trackIds = new LinkedList<Long>();
+		for (Track track : list) {
+			long trackId = track.getId();
+			trackIds.add(trackId);
+			
+			if (mTrackMap.put(trackId, track) == null) {
+				positiveDiff.add(track);
+			}
+		}
+		mTrackIdList.addAll(trackIds);
 		
-		// TODO
-		//mTrackSet.addAll(list);
-		
-		mDatabase.addAll(list);
+		mDatabase.updateTrackSet(positiveDiff, null);
+		mDatabase.appendTrackIdsToList(trackIds);
 	}
 	
+	public void add(int position, Track track) {
+		long trackId = track.getId();
+		
+		if (position <= mPlayPosition) {
+			mPlayPosition++;
+		}
+		
+		mTrackIdList.add(position, trackId);
+		if (mTrackMap.put(trackId, track) == null) {
+			mDatabase.addTrackToSet(track);
+		}
+		mDatabase.updateTrackIdList(mTrackIdList);
+	}
+	
+	public void add(Track track) {
+		long trackId = track.getId();
+		
+		mTrackIdList.add(trackId);
+		
+		if (mTrackMap.put(trackId, track) == null) {
+			mDatabase.addTrackToSet(track);
+		}		
+		mDatabase.appendTrackIdToList(trackId);
+	}
 	
 	/**
 	 * Swaps in a new list in place of the current queue
@@ -143,31 +107,29 @@ public class PlayQueue {
 	 * @return true if queue changed
 	 */
 	public boolean openList(List<Track> list) {
-		if (listEquals(list)) {
-			return false;
+		mTrackIdList.clear();
+		mTrackMap.clear();
+		for (Track track : list) {
+			final long trackId = track.getId();
+			mTrackIdList.add(trackId);
+			mTrackMap.put(trackId, track);
 		}
 		
-		mPlayQueue.clear();
-		mPlayQueue.addAll(list);
-		
-		// TODO
-		//mTrackSet = new TreeSet<Track>(list);
-		
-		mDatabase.open(list);
+		mDatabase.open(mTrackIdList, mTrackMap);
 		
 		return true;
 	}
 	
 	public void moveQueueItem(int from, int to) {
         if (from < to) {
-          	mPlayQueue.add(from, mPlayQueue.remove(to));
+          	mTrackIdList.add(from, mTrackIdList.remove(to));
             if (mPlayPosition == from) {
             	mPlayPosition = to;
             } else if (mPlayPosition >= from && mPlayPosition <= to) {
             	mPlayPosition--;
             }
         } else if (to < from) {
-         	mPlayQueue.add(to, mPlayQueue.remove(from));
+        	mTrackIdList.add(to, mTrackIdList.remove(from));
             if (mPlayPosition == from) {
             	mPlayPosition = to;
             } else if (mPlayPosition >= to && mPlayPosition <= from) {
@@ -178,43 +140,41 @@ public class PlayQueue {
 	
 	public int removeTrack(final long id) {
     	int numRemoved = 0;
+    	int position = 0;
     		
         // Iterate through play queue to find matching tracks
-        for (int i = 0; i < mPlayQueue.size(); i++) {
-        	if (mPlayQueue.get(i).getId() == id) {
-        		mPlayQueue.remove(i);
+        ListIterator<Long> it = mTrackIdList.listIterator();
+        while (it.hasNext()) {
+        	if (it.next() == id) {
+        		it.remove();
         		numRemoved++;
-        		if (i < mPlayPosition) {
+        		if (position < mPlayPosition) {
         			mPlayPosition--;
         		}
         	}
+        	position++;
         }
-        
-        mDatabase.remove(id);
+        mTrackMap.remove(id);
+    	
+        mDatabase.removeTrackFromSet(id);
         	
         return numRemoved;
     }
 	
-	public int removeTracks(int first, int last) {
-		if (last < first) {
-            return 0;
-        }
-
-    	final int numRemoved = last - first + 1;
-    	
-        if (first <= mPlayPosition && mPlayPosition <= last) {
-        	mPlayPosition = first;
-        } else if (mPlayPosition > last) {
-        	mPlayPosition -= numRemoved;
-        }
-        
-        mPlayQueue.subList(first, last).clear();
-        
-        mDatabase.remove(first, last);
-        
-        return numRemoved;
+	public void removeTrack(int position) {
+		Long removedTrackId = mTrackIdList.remove(position); // Keep it boxed inside
+		if (!mTrackIdList.contains(removedTrackId)) {
+			mTrackMap.remove(removedTrackId);
+			mDatabase.removeTrackFromSet(removedTrackId);
+		}
+		
+		mDatabase.updateTrackIdList(mTrackIdList);
 	}
 	
+	public void closeDb() {
+		mDatabase.close();
+	}
+		
 	public void goToNext() {
 		mPlayPosition = mNextPlayPosition;
 	}
@@ -224,13 +184,21 @@ public class PlayQueue {
 	}
 	
 	public List<Track> getQueue() {
-        return new ArrayList<Track>(mPlayQueue);
+        List<Track> queue = new LinkedList<Track>();
+        for (Long trackId : mTrackIdList) {
+        	queue.add(mTrackMap.get(trackId));
+        }
+		return queue;
     }
 	
-	public void add(Track track) {
-		mPlayQueue.add(track);
-		
-		mDatabase.add(track);
+	public long[] getQueueIds() {
+		long[] queueIds = new long[mTrackIdList.size()];
+		int i = 0;
+		for (long trackId : mTrackIdList) {
+			queueIds[i] = trackId;
+			i++;
+		}
+		return queueIds;
 	}
 	
 	public int getPlayPosition() {
@@ -250,52 +218,49 @@ public class PlayQueue {
 	}
 	
 	public int size() {
-		return mPlayQueue.size();
+		return mTrackIdList.size();
 	}
 	
 	public boolean isEmpty() {
-		return mPlayQueue.isEmpty();
+		return mTrackIdList.isEmpty();
 	}
 	
 	public Track getCurrentTrack() {
-		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
-			return mPlayQueue.get(mPlayPosition);
+		long trackId = getCurrentId();
+		if (trackId > -1) {
+			return mTrackMap.get(trackId);
 		}
 		return null;
 	}
 	
 	public long getCurrentId() {
-		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
-			return mPlayQueue.get(mPlayPosition).getId();
+		if (mPlayPosition >= 0 && mPlayPosition < mTrackIdList.size()) {
+			return mTrackIdList.get(mPlayPosition);
+		}
+		return -1;
+	}
+	
+	public long getNextId() {
+		if (mNextPlayPosition >= 0 && mNextPlayPosition < mTrackIdList.size()) {
+			return mTrackIdList.get(mNextPlayPosition);
 		}
 		return -1;
 	}
 	
 	public Uri getCurrentUri() {
-		if (mPlayPosition >= 0 && mPlayPosition < mPlayQueue.size()) {
-			return mPlayQueue.get(mPlayPosition).getUri();
+		long trackId = getCurrentId();
+		if (trackId > -1) {
+			return ContentUris.withAppendedId(BASE_URI, trackId);
 		}
 		return null;
 	}
 	
 	public Uri getNextUri() {
-		if (mNextPlayPosition >= 0 && mNextPlayPosition < mPlayQueue.size()) {
-			return mPlayQueue.get(mNextPlayPosition).getUri();
+		long trackId = getNextId();
+		if (trackId > -1) {
+			return ContentUris.withAppendedId(BASE_URI, trackId);
 		}
 		return null;
-	}
-	
-	/*public String toHexString() {
-		final StringBuilder builder = new StringBuilder();
-    	for (Track track : mPlayQueue) {
-    		builder.append(Long.toHexString(track.getId()));
-    		builder.append(HexUtils.DELIMITER);
-    	}
-    	return builder.toString();
-	}*/
-	
-	public boolean listEquals(List<Track> list) {
-		return mPlayQueue.equals(list);
 	}
 	
 }

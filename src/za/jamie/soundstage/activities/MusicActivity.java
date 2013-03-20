@@ -1,34 +1,46 @@
 package za.jamie.soundstage.activities;
 
-import static za.jamie.soundstage.service.MusicServiceWrapper.mService;
+//import static za.jamie.soundstage.service.MusicServiceWrapper.mService;
+import java.util.List;
+
 import net.simonvt.menudrawer.MenuDrawer;
 import za.jamie.soundstage.IMusicService;
+import za.jamie.soundstage.IMusicStatusCallback;
+import za.jamie.soundstage.IQueueStatusCallback;
+import za.jamie.soundstage.MusicLibraryWrapper;
+import za.jamie.soundstage.MusicPlaybackWrapper;
+import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.service.MusicServiceWrapper;
-import za.jamie.soundstage.service.MusicServiceWrapper.ServiceToken;
+import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.AppUtils;
+import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.SearchView;
 
-public class MusicActivity extends FragmentActivity implements ServiceConnection, 
-		MenuDrawer.OnDrawerStateChangeListener {
+public class MusicActivity extends FragmentActivity implements MusicLibraryWrapper,
+		MusicQueueWrapper, MusicPlaybackWrapper, MenuDrawer.OnDrawerStateChangeListener {
 	
 	private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
-	private ServiceToken mServiceToken;
+	//private ServiceToken mServiceToken;
 	
 	private ImageButton mPlayQueueButton;
 	
@@ -42,12 +54,32 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
+	private IMusicService mService = null;
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mService = IMusicService.Stub.asInterface(service);
+			
+			mPlayer.onServiceConnected();
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			mService = null;			
+		}
+		
+	};
+	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		// Bind the service
-		mServiceToken = MusicServiceWrapper.bindToService(this, this);
+		//mServiceToken = MusicLibraryWrapper.bindToService(this, this);
+		final Intent bindIntent = new Intent(this, MusicService.class)
+				.setAction(IMusicService.class.getName());
+		bindService(bindIntent, mConnection, Context.BIND_AUTO_CREATE);
 		
 		// Set up the menu drawer to display the player
 		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
@@ -82,24 +114,31 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 		
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
-	
-	public MenuDrawer getMenuDrawer() {
-		return mDrawer;
+
+	public void setMainContentView(int layoutResId) {
+		mDrawer.setContentView(layoutResId);
 	}
 	
 	@Override
     protected void onResume() {
         super.onResume();
-        MusicServiceWrapper.killForegroundService(this);
+        
+        final Intent killForgroundIntent = new Intent(this, MusicService.class);
+        killForgroundIntent.setAction(MusicService.KILL_FOREGROUND);
+        startService(killForgroundIntent);
 	}
 	
 	@Override
     protected void onPause() {
         super.onPause();
-        if (MusicServiceWrapper.isPlaying() || mIsBackPressed) {
-            if (AppUtils.isApplicationSentToBackground(this)) {
-            	MusicServiceWrapper.startBackgroundService(this);
-            }
+        
+        // If we're playing and the player is sent to background
+        if ((mPlayer.isPlaying() || mIsBackPressed) && 
+        		AppUtils.isApplicationSentToBackground(this)) {
+
+        	final Intent startBackgroundIntent = new Intent(this, MusicService.class);
+            startBackgroundIntent.setAction(MusicService.START_BACKGROUND);
+            startService(startBackgroundIntent);
         }
     }
 	
@@ -108,10 +147,11 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         super.onDestroy();
         
         // Unbind from the service
-        if (mServiceToken != null) {
-        	MusicServiceWrapper.unbindFromService(mServiceToken);
+        /*if (mServiceToken != null) {
+        	MusicLibraryWrapper.unbindFromService(mServiceToken);
             mServiceToken = null;
-        }
+        }*/
+        unbindService(mConnection);
     }
 	
 	@Override
@@ -137,16 +177,6 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
 	}
 	
 	@Override
-	public void onServiceConnected(ComponentName name, IBinder service) {
-		mService = IMusicService.Stub.asInterface(service);	
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName name) {
-		mService = null;		
-	}
-	
-	@Override
     protected void onRestoreInstanceState(Bundle inState) {
         super.onRestoreInstanceState(inState);
         mDrawer.restoreState(inState.getParcelable(STATE_MENUDRAWER));
@@ -157,15 +187,178 @@ public class MusicActivity extends FragmentActivity implements ServiceConnection
         super.onSaveInstanceState(outState);
         outState.putParcelable(STATE_MENUDRAWER, mDrawer.saveState());
     }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	getMenuInflater().inflate(R.menu.search, menu);
+    	
+    	SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        
+        return true;
+    }
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if (newState == MenuDrawer.STATE_CLOSED) {
-			mPlayer.onHide();
+		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
 			mVibrator.vibrate(VIBRATION_LENGTH);
-		} else if (oldState == MenuDrawer.STATE_CLOSED) {
-			mPlayer.onShow();
-			mVibrator.vibrate(VIBRATION_LENGTH);
+		}
+	}
+
+	//////////////////////////
+	// AIDL interface
+	
+	@Override
+	public void setQueuePosition(int position) {
+		try {
+			mService.setQueuePosition(position);
+		} catch (RemoteException ignored) {
+
+		}
+		
+	}
+
+	@Override
+	public void moveQueueItem(int from, int to) {
+		try {
+			mService.moveQueueItem(from, to);
+		} catch (RemoteException ignored) {
+			
+		}		
+	}
+
+	@Override
+	public void removeTrack(int position) {
+		try {
+			mService.removeTrack(position);
+		} catch (RemoteException ignored) {
+			
+		}		
+	}
+
+	@Override
+	public void removeTrackById(long id) {
+		try {
+			mService.removeTrackById(id);
+		} catch (RemoteException e) {
+
+		}		
+	}
+
+	@Override
+	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
+		try {
+			mService.registerMusicStatusCallback(callback);
+		} catch (RemoteException ignored) {
+			
+		}		
+	}
+
+	@Override
+	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
+		try {
+			mService.unregisterMusicStatusCallback(callback);
+		} catch (RemoteException ignored) {
+			
+		}		
+	}
+
+	@Override
+	public void open(List<Track> tracks, int position) {
+		try {
+			mService.open(tracks, position);
+		} catch (RemoteException ignored) {
+			
+		}
+		mDrawer.openMenu();
+	}
+
+	@Override
+	public void enqueue(List<Track> tracks, final int action) {
+		try {
+			mService.enqueue(tracks, action);
+		} catch (RemoteException ignored) {
+			
+		}
+	}
+
+	@Override
+	public void togglePlayback() {
+		try {
+			mService.togglePlayback();
+		} catch (RemoteException e) {
+			
+		}
+		
+	}
+
+	@Override
+	public void next() {
+		try {
+			mService.next();
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void previous() {
+		try {
+			mService.previous();
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void seek(long position) {
+		try {
+			mService.seek(position);
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void requestMusicStatusRefresh() {
+		try {
+			mService.requestMusicStatusRefresh();
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void requestQueueStatusRefresh() {
+		try {
+			mService.requestQueueStatusRefresh();
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void registerQueueStatusCallback(IQueueStatusCallback callback) {
+		try {
+			mService.registerQueueStatusCallback(callback);
+		} catch (RemoteException e) {
+
+		}
+		
+	}
+
+	@Override
+	public void unregisterQueueStatusCallback(IQueueStatusCallback callback) {
+		try {
+			mService.unregisterQueueStatusCallback(callback);
+		} catch (RemoteException e) {
+
 		}
 		
 	}

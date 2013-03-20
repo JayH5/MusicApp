@@ -26,7 +26,7 @@ public class LibraryActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		getMenuDrawer().setContentView(R.layout.activity_library);
+		setMainContentView(R.layout.activity_library);
 		
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(new SectionsPagerAdapter(getSupportFragmentManager()));

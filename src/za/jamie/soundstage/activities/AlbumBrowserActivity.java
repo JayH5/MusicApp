@@ -25,7 +25,7 @@ public class AlbumBrowserActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		getMenuDrawer().setContentView(R.layout.activity_browser);
+		setMainContentView(R.layout.activity_browser);
 
 		final Intent launchIntent = getIntent();
 		if (launchIntent != null) {

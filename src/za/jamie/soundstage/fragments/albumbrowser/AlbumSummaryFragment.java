@@ -42,7 +42,7 @@ public class AlbumSummaryFragment extends Fragment implements
 	
 	private ImageView mAlbumArt;
 	
-	//private SummaryAdapter mAdapter;
+	private AlbumArtistsCallback mListener;
 	
 	private long mAlbumId;
 	
@@ -118,6 +118,10 @@ public class AlbumSummaryFragment extends Fragment implements
 		return view;
 	}
 	
+	public void setCallback(AlbumArtistsCallback listener) {
+		mListener = listener;
+	}
+	
 	private View.OnClickListener mAddToQueueListener = new View.OnClickListener() {
 		
 		@Override
@@ -159,6 +163,10 @@ public class AlbumSummaryFragment extends Fragment implements
 		
 		mArtists = summary.artists;
 		mArtistIds = summary.artistIds;
+		
+		if (mListener != null) {
+			mListener.onArtistsFound(mArtists);
+		}
 	}
 	
 	private void launchArtistBrowser(String artist, long artistId) {
@@ -194,5 +202,9 @@ public class AlbumSummaryFragment extends Fragment implements
 			launchArtistBrowser(mArtists.get(which), mArtistIds.get(which));
 		}
 	};
+	
+	public interface AlbumArtistsCallback {
+		public void onArtistsFound(List<String> artists);
+	}
 	
 }

@@ -16,6 +16,8 @@
         <item>Genres</item>
     </string-array>
     
+    <string name="menu_search">Search</string>
+    
     <string name="title_albums">Albums</string>
     <string name="title_artists">Artists</string>
     <string name="title_songs">Songs</string>

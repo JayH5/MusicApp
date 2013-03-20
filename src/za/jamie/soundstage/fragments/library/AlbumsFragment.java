@@ -42,7 +42,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size);
         mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_spacing);
         
-        // Get the image fetcher
+        // Set up the image fetcher
         mImageWorker = ImageUtils.getImageFetcher(getActivity());
         
         // Set up the adapter to create the views

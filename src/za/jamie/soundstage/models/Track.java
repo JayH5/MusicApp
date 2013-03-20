@@ -7,7 +7,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 
-public class Track implements Parcelable, IdProvider {
+public class Track implements Parcelable {
 	private long mId;
 	private String mTitle;
     
@@ -33,12 +33,10 @@ public class Track implements Parcelable, IdProvider {
         mDuration = duration;
     }
     
-    /**
-     * Dummy constructor for creating comparison tracks
-     * @param id
-     */
-    public Track(long id) {
-    	mId = id;
+    public Track() {
+    	mId = -1;
+    	mArtistId = -1;
+    	mAlbumId = -1;
     }
 
     public long getId() {
@@ -84,17 +82,14 @@ public class Track implements Parcelable, IdProvider {
     			MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, mAlbumId);
     }
     
-    public ContentValues toContentValues() {
-    	final ContentValues values = new ContentValues();
-    	values.put(MediaStore.Audio.Media._ID, mId);
-    	values.put(MediaStore.Audio.Media.TITLE, mTitle);
-    	values.put(MediaStore.Audio.Media.ARTIST_ID, mArtistId);
-    	values.put(MediaStore.Audio.Media.ARTIST, mArtist);
-    	values.put(MediaStore.Audio.Media.ALBUM_ID, mAlbumId);
-    	values.put(MediaStore.Audio.Media.ALBUM, mAlbum);
-    	values.put(MediaStore.Audio.Media.DURATION, mDuration);
-    	
-    	return values;
+    public void writeToContentValues(ContentValues out) {
+    	out.put(MediaStore.Audio.Media._ID, mId);
+    	out.put(MediaStore.Audio.Media.TITLE, mTitle);
+    	out.put(MediaStore.Audio.Media.ARTIST_ID, mArtistId);
+    	out.put(MediaStore.Audio.Media.ARTIST, mArtist);
+    	out.put(MediaStore.Audio.Media.ALBUM_ID, mAlbumId);
+    	out.put(MediaStore.Audio.Media.ALBUM, mAlbum);
+    	out.put(MediaStore.Audio.Media.DURATION, mDuration);    	
     }
     
     @Override

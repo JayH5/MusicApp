@@ -93,57 +93,7 @@ public class ArtistAlbumListFragment extends ListFragment implements
 		
 		startActivity(i);
 	}
-	
-	/*private class ArtistAlbumsAdapter extends AlbumAdapter {
-
-		private int mNumTracksColIdx;
-		private int mFirstYearColIdx;
-		private int mLastYearColIdx;
 		
-		public ArtistAlbumsAdapter(Context context, int layout,
-				Cursor c, int flags) {
-			super(context, layout, c, flags);
-		}
-
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-			final ImageView albumArt = (ImageView) view.findViewById(R.id.albumThumb);
-			final TextView titleText = (TextView) view.findViewById(R.id.albumName);
-			final TextView yearText = (TextView) view.findViewById(R.id.albumYear);
-			final TextView numTracksText = (TextView) view.findViewById(R.id.albumTracks);
-			
-			String album = cursor.getString(getAlbumColIdx());
-			titleText.setText(album);
-			
-			long albumId = cursor.getLong(getIdColIdx());
-			mImageWorker.loadAlbumImage(albumId, albumArt);
-			
-			final Resources res = getResources();
-			
-			int numTracks = cursor.getInt(mNumTracksColIdx);
-			numTracksText.setText(TextUtils.getNumTracksText(res, numTracks));
-			
-			int firstYear = cursor.getInt(mFirstYearColIdx);
-			int lastYear = cursor.getInt(mLastYearColIdx);
-			yearText.setText(TextUtils.getYearText(res, firstYear, lastYear));
-		}
-		
-		@Override
-		public void getColumnIndices(Cursor cursor) {
-			super.getColumnIndices(cursor);
-			if (cursor != null) {
-				mNumTracksColIdx = cursor
-						.getColumnIndexOrThrow(
-								MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST);
-				mFirstYearColIdx = cursor
-						.getColumnIndexOrThrow(MediaStore.Audio.Albums.FIRST_YEAR);
-				mLastYearColIdx = cursor
-						.getColumnIndexOrThrow(MediaStore.Audio.Albums.LAST_YEAR);
-			}
-		}
-		
-	}*/
-	
 	private class ArtistAlbumAdapter extends ResourceArrayAdapter<ArtistAlbum> {
 
 		public ArtistAlbumAdapter(Context context, int resource,
@@ -166,109 +116,19 @@ public class ArtistAlbumListFragment extends ListFragment implements
 			yearText.setText(TextUtils.getYearText(res, artistAlbum.firstYear, 
 					artistAlbum.lastYear));
 		}
+		
+		@Override
+		public long getItemId(int position) {
+			ArtistAlbum artistAlbum = (ArtistAlbum) getItem(position);
+			if (artistAlbum != null) {
+				return artistAlbum.albumId;
+			}
+			return -1;
+		}
 
 		
 	}
 	
-	/*private static class ArtistAlbumCursorLoader extends CursorLoader {
-
-		public ArtistAlbumCursorLoader(Context context, Uri uri,
-				String[] projection, String selection, String[] selectionArgs,
-				String sortOrder) {
-			super(context, uri, projection, selection, selectionArgs, sortOrder);
-		}
-		
-		@Override
-		public Cursor loadInBackground() {
-			final Cursor tracksCursor = super.loadInBackground();
-			
-			if (tracksCursor != null) {
-				final Map<String, Album> albumMap = new TreeMap<String, Album>();
-				
-				if (tracksCursor.moveToFirst()) {
-					int albumIdColIdx = tracksCursor
-							.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-					int albumColIdx = tracksCursor
-							.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
-					int artistColIdx = tracksCursor
-							.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-					int yearColIdx = tracksCursor
-							.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR);
-					
-					
-					do {
-						final String album = tracksCursor.getString(albumColIdx);
-						Album albumHolder = albumMap.get(album);
-						if (albumHolder != null) {
-							albumHolder.update(tracksCursor.getInt(yearColIdx));
-						} else {
-							albumHolder = new Album(album, // album title
-									tracksCursor.getLong(albumIdColIdx), // id
-									tracksCursor.getString(artistColIdx), // artist
-									tracksCursor.getInt(yearColIdx)); // year
-							
-							albumMap.put(album, albumHolder);
-						}
-					} while (tracksCursor.moveToNext());
-				}
-				tracksCursor.close();
-				
-				String[] projection = new String[] {
-					MediaStore.Audio.Albums._ID,
-					MediaStore.Audio.Albums.ALBUM,
-					MediaStore.Audio.Albums.ARTIST,
-					MediaStore.Audio.Albums.FIRST_YEAR,
-					MediaStore.Audio.Albums.LAST_YEAR,
-					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST
-				};
-				
-				MatrixCursor albumsCursor = new MatrixCursor(projection);
-				
-				for (Map.Entry<String, Album> entry : albumMap.entrySet()) {
-					albumsCursor.addRow(entry.getValue().toColumnValues());
-				}
-				
-				return albumsCursor;
-			}
-			return null;
-		}
-		
-		private class Album {
-			private long mId;
-			private String mTitle;
-			private String mArtist;
-			private int mFirstYear;
-			private int mLastYear;
-			private int mTracks = 1;
-			
-			Album(String title, long id, String artist, int year) {
-				mId = id;
-				mTitle = title;
-				mArtist = artist;
-				mFirstYear = year;
-				mLastYear = year;
-			}
-			
-			public void update(int year) {
-				mFirstYear = Math.min(year, mFirstYear);
-				mLastYear = Math.max(year, mLastYear);
-				mTracks++;
-			}
-			
-			public Object[] toColumnValues() {
-				return new Object[] {
-					mId,
-					mTitle,
-					mArtist,
-					mFirstYear,
-					mLastYear,
-					mTracks
-				};
-			}
-		}
-		
-	}*/
-
 	@Override
 	public Loader<List<ArtistAlbum>> onCreateLoader(int id, Bundle args) {
 		return new ArtistAlbumListLoader(getActivity(), mArtistId);

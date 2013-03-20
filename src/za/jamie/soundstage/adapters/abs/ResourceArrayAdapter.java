@@ -3,8 +3,6 @@ package za.jamie.soundstage.adapters.abs;
 import java.util.Arrays;
 import java.util.List;
 
-import za.jamie.soundstage.models.IdProvider;
-
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 
-public abstract class ResourceArrayAdapter<T extends IdProvider> extends BaseAdapter {
+public abstract class ResourceArrayAdapter<T> extends BaseAdapter {
 
 	/**
      * Contains the list of objects that represent the data of this ArrayAdapter.
@@ -89,10 +87,7 @@ public abstract class ResourceArrayAdapter<T extends IdProvider> extends BaseAda
 
 	@Override
 	public long getItemId(int position) {
-		if (mObjects != null) {
-			return mObjects.get(position).getId();
-		}
-		return 0;
+		return position;
 	}
 
 	/**

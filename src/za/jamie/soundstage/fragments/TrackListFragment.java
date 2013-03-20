@@ -2,11 +2,10 @@ package za.jamie.soundstage.fragments;
 
 import java.util.List;
 
-import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.MusicLibraryWrapper;
 import za.jamie.soundstage.adapters.abs.TrackAdapter;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicServiceWrapper;
-import android.os.AsyncTask;
+import android.app.Activity;
 import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListAdapter;
@@ -14,6 +13,15 @@ import android.widget.ListView;
 
 
 public class TrackListFragment extends ListFragment {
+	
+	private MusicLibraryWrapper mCallback;
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		mCallback = (MusicLibraryWrapper) activity;
+	}
 	
 	@Override
 	public void setListAdapter(ListAdapter adapter) {
@@ -26,15 +34,17 @@ public class TrackListFragment extends ListFragment {
 	
 	@Override
 	public void onListItemClick(ListView l, View v, final int position, long id) {
+		List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
+		mCallback.open(trackList, position);
 		
-		(new AsyncTask<TrackAdapter, Void, List<Track>>() {
+		/*(new AsyncTask<TrackAdapter, Void, List<Track>>() {
 
 			@Override
 			protected List<Track> doInBackground(TrackAdapter... params) {
 				final TrackAdapter adapter = params[0];
 				if (adapter != null) {
 					List<Track> trackList = adapter.getTrackList();
-					MusicServiceWrapper.playAll(getActivity(), trackList, position);
+					MusicLibraryWrapper.playAll(getActivity(), trackList, position);
 				}
 				return null;
 			}
@@ -49,7 +59,7 @@ public class TrackListFragment extends ListFragment {
 		//final List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
 		//MusicServiceWrapper2.playAll(getActivity(), trackList, position, false);
 		
-		((MusicActivity) getActivity()).getMenuDrawer().openMenu();
+		((MusicActivity) getActivity()).getMenuDrawer().openMenu();*/
     }
 
 }

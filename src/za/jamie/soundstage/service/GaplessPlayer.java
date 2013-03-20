@@ -23,6 +23,8 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     private MediaPlayer mNextMediaPlayer;
 
     private PlayerEventListener mListener;
+    
+    private final FadeHandler mHandler = new FadeHandler(this);
 
     private boolean mIsInitialized = false;
 
@@ -35,6 +37,12 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
         try {
             player.reset();
             Log.d("GaplessPlayer", "Attempting to open uri: " + uri);
+            if (mContext == null) {
+            	Log.e("GaplessPlayer", "Context is null!");
+            }
+            if (uri == null) {
+            	Log.e("GaplessPlayer", "Uri is null!");
+            }
             player.setDataSource(mContext, uri);
             player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.prepare();
@@ -110,6 +118,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
 
     public void stop() {
     	mCurrentMediaPlayer.reset();
+    	Log.d("GaplessPlayer", "Player stopped");
     	mIsInitialized = false;
     }
 
@@ -190,7 +199,30 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	public void onServerDied();
     }
     
-    public static class FadeHandler extends Handler {
+    public void fadeUp() {
+        mHandler.removeMessages(FadeHandler.FADEDOWN);
+        mHandler.sendEmptyMessage(FadeHandler.FADEUP);
+    }
+    
+    public void fadeDown() {
+        mHandler.removeMessages(FadeHandler.FADEUP);
+        mHandler.sendEmptyMessage(FadeHandler.FADEDOWN);
+    }
+    
+    public void stopFadeUp() {
+    	mHandler.removeMessages(FadeHandler.FADEUP);
+    }
+    
+    public void stopFade() {
+    	mHandler.removeCallbacksAndMessages(null);
+    }
+    
+    public void mute() {
+    	mHandler.mCurrentVolume = 0.0f;
+    	setVolume(0.0f);
+    }
+    
+    private static class FadeHandler extends Handler {
     	private static final float VOLUME_DUCK = 0.2f;
     	private static final int FADEDOWN = 1;
     	private static final int FADEUP = 2;
@@ -228,24 +260,5 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
             	break;
             }
     	}
-    	
-    	public void fadeUp() {
-            removeMessages(FADEDOWN);
-            sendEmptyMessage(FADEUP);
-        }
-        
-        public void fadeDown() {
-            removeMessages(FADEUP);
-            sendEmptyMessage(FADEDOWN);
-        }
-        
-        public void stopFadeUp() {
-        	removeMessages(FADEUP);
-        }
-        
-        public void mute() {
-        	mCurrentVolume = 0.0f;
-        	mPlayer.get().setVolume(mCurrentVolume);
-        }
     }
 }

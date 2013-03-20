@@ -8,11 +8,12 @@ import java.util.Random;
 import java.util.TreeSet;
 
 import za.jamie.soundstage.IMusicService;
+import za.jamie.soundstage.IMusicStatusCallback;
+import za.jamie.soundstage.IQueueStatusCallback;
 import za.jamie.soundstage.bitmapfun.ImageCache;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.utils.HexUtils;
-import za.jamie.soundstage.utils.ImageUtils;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -29,13 +30,14 @@ import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.provider.MediaStore;
+import android.util.Log;
 
 /**
  * A backbround {@link Service} used to keep music playing between activities
@@ -44,7 +46,7 @@ import android.provider.MediaStore;
 public class MusicService extends Service implements GaplessPlayer.PlayerEventListener, 
 		AudioManager.OnAudioFocusChangeListener {
 
-	//private static final String TAG = "MusicService";
+	private static final String TAG = "MusicService";
 	
 	// Intent actions for external control
 	public static final String SERVICECMD = "za.jamie.soundstage.musicservicecommand";
@@ -58,16 +60,11 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     public static final String ACTION_SHUFFLE = "za.jamie.soundstage.action.SHUFFLE";
     
     public static final String KILL_FOREGROUND = "za.jamie.soundstage.killforeground";
-    public static final String REFRESH = "za.jamie.soundstage.refresh";
     public static final String START_BACKGROUND = "za.jamie.soundstage.startbackground";
     
     // Status change flags
- 	public static final String PLAYSTATE_CHANGED = "za.jamie.soundstage.playstatechanged";
- 	public static final String PLAYSTATE_CHANGED_STATE = "za.jamie.sounstage.playstatechanged.STATE";
- 	
- 	public static final String META_CHANGED = "za.jamie.soundstage.metachanged";
- 	public static final String META_CHANGED_TRACK = "za.jamie.soundstage.metachanged.TRACK";
- 	
+ 	public static final String PLAYSTATE_CHANGED = "za.jamie.soundstage.playstatechanged"; 	
+ 	public static final String META_CHANGED = "za.jamie.soundstage.metachanged"; 	
     public static final String QUEUE_CHANGED = "za.jamie.soundstage.queuechanged";    
     
     public static final String REPEATMODE_CHANGED = "za.jamie.soundstage.repeatmodechanged";
@@ -142,8 +139,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     // Audio playback objects
     private AudioManager mAudioManager;
     private GaplessPlayer mPlayer;
-    private GaplessPlayer.FadeHandler mPlayerFader;
-    //private GaplessPlayer.PlayerHandler mPlayerHandler;
     private DelayedHandler mDelayedStopHandler;
     
     private NotificationHelper mNotificationHelper; // Notifications 
@@ -158,6 +153,13 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     private static final int IDLE_DELAY = 60000;
 	
 	private final IBinder mBinder = new ServiceStub(this);
+    
+    private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
+    		new RemoteCallbackList<IMusicStatusCallback>();
+    
+    private final RemoteCallbackList<IQueueStatusCallback> mQueueStatusCallbackList =
+    		new RemoteCallbackList<IQueueStatusCallback>();
+	
 	private int mServiceStartId = -1;
 	private WakeLock mWakeLock;
 
@@ -167,7 +169,14 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     public IBinder onBind(final Intent intent) {
         mDelayedStopHandler.removeCallbacksAndMessages(null);
         mServiceInUse = true;
-        return mBinder;
+        final String intentAction = intent.getAction();
+        if (IMusicService.class.getName().equals(intentAction)) {
+        	Log.d(TAG, "Binding a music status interface.");
+        	return mBinder;
+        }
+        
+        Log.d(TAG, "Binding nothing...");
+        return null;
     }
 
     /**
@@ -224,22 +233,13 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         // Initialze the notification helper
         mNotificationHelper = new NotificationHelper(this);
 
-        mImageCache = ImageUtils.getImageCache(this);
+        mImageCache = ImageCache.getInstance(this);
         
         mPlayQueue = new PlayQueue(this);
-        
-        // Start up the thread running the service. Note that we create a
-        // separate thread because the service normally runs in the process's
-        // main thread, which we don't want to block. We also make it
-        // background priority so CPU-intensive work will not disrupt the UI.
-        final HandlerThread playerThread = new HandlerThread("MusicPlayerHandler",
-                android.os.Process.THREAD_PRIORITY_BACKGROUND);
-        playerThread.start();
 
         // Initialize the player and the fader
         mPlayer = new GaplessPlayer(this);
         mPlayer.setPlayerEventListener(this);
-        mPlayerFader = new GaplessPlayer.FadeHandler(mPlayer);        
         
         mDelayedStopHandler = new DelayedHandler(this);
                 
@@ -263,8 +263,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
 
         // Bring the queue back
         restoreState();
-        notifyQueueChanged();
-        notifyMetaChanged();
 
         // Listen for the idle state
         final Message message = mDelayedStopHandler.obtainMessage();
@@ -299,7 +297,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     private void initBroadcastReceiver() {
     	// Initialize the intent filter and each action
         final IntentFilter filter = new IntentFilter();
-        //filter.addAction(SERVICECMD);
         filter.addAction(ACTION_TOGGLE_PLAYBACK);
         filter.addAction(ACTION_PAUSE);
         filter.addAction(ACTION_STOP);
@@ -307,6 +304,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         filter.addAction(ACTION_PREVIOUS);
         filter.addAction(ACTION_REPEAT);
         filter.addAction(ACTION_SHUFFLE);
+        
         filter.addAction(KILL_FOREGROUND);
         filter.addAction(START_BACKGROUND);
         
@@ -329,6 +327,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         sendBroadcast(audioEffectsIntent);
 
         // Release the player
+        mPlayer.stopFade();
         mPlayer.release();
         mPlayer = null;
 
@@ -338,8 +337,14 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonReceiverComponent);
 
         // Remove any callbacks from the handlers
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        mPlayerFader.removeCallbacksAndMessages(null);
+        mDelayedStopHandler.removeCallbacksAndMessages(null);        
+        
+        // Close play queue database
+        mPlayQueue.closeDb();
+        
+        // Remove music control callbacks
+        mMusicStatusCallbackList.kill();
+        mQueueStatusCallbackList.kill();
 
         // Unregister the mount listener
         unregisterReceiver(mIntentReceiver);
@@ -352,9 +357,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         mWakeLock.release();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mServiceStartId = startId;
@@ -737,17 +739,47 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
 
     private void notifyMetaChanged() {
-    	final Intent intent = new Intent(META_CHANGED);
-    	intent.putExtra(META_CHANGED_TRACK, getCurrentTrack());
-    	sendStickyBroadcast(intent);
+    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		final IMusicStatusCallback callback = mMusicStatusCallbackList.getBroadcastItem(i);
+    		try {
+				callback.onTrackChanged(getCurrentTrack());
+				callback.onPositionSync(position(), System.currentTimeMillis());
+			} catch (RemoteException e) {
+				Log.w(TAG, "Remote error while performing track changed callback.", e);
+			}
+    	}
+    	mMusicStatusCallbackList.finishBroadcast();
+    	
+    	i = mQueueStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		final IQueueStatusCallback callback = mQueueStatusCallbackList.getBroadcastItem(i);
+    		try {
+				callback.onQueuePositionChanged(getQueuePosition());
+			} catch (RemoteException e) {
+				Log.w(TAG, "Remote error while performing queue position changed callback.", e);
+			}
+    	}
+    	mQueueStatusCallbackList.finishBroadcast();
     	
     	updateRCCMetaData();
     }
     
     private void notifyPlayStateChanged() {
-    	final Intent intent = new Intent(PLAYSTATE_CHANGED);
-    	intent.putExtra(PLAYSTATE_CHANGED_STATE, isPlaying());
-    	sendStickyBroadcast(intent);
+    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		final IMusicStatusCallback callback = mMusicStatusCallbackList.getBroadcastItem(i);
+    		try {
+				callback.onPlayStateChanged(isPlaying());
+				callback.onPositionSync(position(), System.currentTimeMillis());
+			} catch (RemoteException e) {
+				Log.w(TAG, "Remote error while performing track changed callback.", e);
+			}
+    	}
+    	mMusicStatusCallbackList.finishBroadcast();
     	
     	updateRCCPlayState();
     }
@@ -769,8 +801,17 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
     
     private void notifyQueueChanged() {
-    	final Intent intent = new Intent(QUEUE_CHANGED);
-    	sendStickyBroadcast(intent);
+    	int i = mQueueStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		final IQueueStatusCallback callback = mQueueStatusCallbackList.getBroadcastItem(i);
+    		try {
+				callback.onQueueChanged(getQueue());
+			} catch (RemoteException e) {
+				Log.w(TAG, "Remote exception while performing queue changed callback.", e);
+			}
+    	}
+    	mQueueStatusCallbackList.finishBroadcast();
     	
     	saveState();
     }
@@ -891,14 +932,35 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @param list The list of tracks to open
      * @param position The position to start playback at
      */
-    public void open(final List<Track> list, final int position) {
+    public synchronized void open(final List<Track> list, final int position) {
     	if (mShuffleMode == SHUFFLE_AUTO) {
             mShuffleMode = SHUFFLE_NORMAL;
         }
+    	// Check if list is the same as current list
+    	if (list.size() == mPlayQueue.size()) {
+    		long[] trackIds = mPlayQueue.getQueueIds();
+    		int i = 0;
+    		boolean match = true;
+    		for (Track track : list) {
+    			if (track.getId() != trackIds[i]) {
+    				match = false;
+    				break;
+    			}
+    		}
+    		if (match) {
+    			if (position == getQueuePosition()) {
+    				play();
+    			} else {
+    				setQueuePosition(position);
+    			}
+    			return;
+    		}
+    	}
+    	
     	long oldId = mPlayQueue.getCurrentId();
-    	if (mPlayQueue.openList(list)) {
-    		notifyQueueChanged();
-    	} 
+    	mPlayQueue.openList(list);
+    	notifyQueueChanged(); 
+    	
     	if (position >= 0 || position > list.size()) {
     		mPlayQueue.setPlayPosition(position);
     	} else {
@@ -907,6 +969,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         
         mHistory.clear();
         openCurrentAndNext();
+        play();
         if (oldId != mPlayQueue.getCurrentId()) {
             notifyMetaChanged();
         }
@@ -918,17 +981,17 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @param list The list to queue
      * @param action The action to take
      */
-    public void enqueue(final List<Track> list, final int action) {
+    public synchronized void enqueue(final List<Track> list, final int action) {
     	int playPosition = -1;
    		playPosition = getQueuePosition();
    		if (action == NEXT && playPosition + 1 < mPlayQueue.size()) {
-   			mPlayQueue.addToQueue(list, playPosition + 1);
+   			mPlayQueue.addAll(playPosition + 1, list);
    			notifyQueueChanged();
    			if (mPlayQueue.isEmpty()) {
    				notifyMetaChanged();
    			}
    		} else {
-   			mPlayQueue.addToQueue(list);
+   			mPlayQueue.addAll(list);
    			notifyQueueChanged();
    			if (mPlayQueue.isEmpty()) {
    				notifyMetaChanged();
@@ -949,7 +1012,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * 
      * @param index The position to place the track
      */
-    public void setQueuePosition(final int index) {
+    public synchronized void setQueuePosition(final int index) {
         stop(false);
         openAndPlay(index);
         if (mShuffleMode == SHUFFLE_AUTO) {
@@ -963,7 +1026,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @param from The position the item is currently at
      * @param to The position the item is being moved to
      */
-    public void moveQueueItem(int from, int to) {
+    public synchronized void moveQueueItem(int from, int to) {
    		mPlayQueue.moveQueueItem(from, to);
         notifyQueueChanged();
     }   
@@ -978,7 +1041,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @return the number of tracks deleted
      */
     public int removeTracks(int first, int last) {
-    	int playPosition = -1;
+    	/*int playPosition = -1;
    		playPosition = mPlayQueue.getPlayPosition();
     	
    		int numRemoved = mPlayQueue.removeTracks(first, last);
@@ -990,7 +1053,18 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         if (numRemoved > 0) {
             notifyQueueChanged();
         }
-        return numRemoved;
+        return numRemoved;*/
+    	return 0;
+    }
+    
+    public synchronized void removeTrack(int position) {
+    	int playPosition = mPlayQueue.getPlayPosition();
+    	mPlayQueue.removeTrack(position);
+    	
+    	if (playPosition == position) {
+    		goToNextInternal();
+    	}
+    	notifyQueueChanged();
     }
 
     /**
@@ -999,7 +1073,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @param id The id to be removed
      * @return how many instances of the track were removed
      */
-    public int removeTrack(final long id) {
+    public synchronized int removeTrackById(final long id) {
    		boolean goToNext = (id == mPlayQueue.getCurrentId());
     		
     	int numRemoved = mPlayQueue.removeTrack(id);
@@ -1020,8 +1094,17 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * 
      * @return The queue as a List<Track>
      */
-    public List<Track> getQueue() {
+    public synchronized List<Track> getQueue() {
     	return mPlayQueue.getQueue();
+    }
+    
+    /**
+     * Returns the ids of the tracks in the play queue
+     * 
+     * @return The queue as a List<Track>
+     */
+    public synchronized long[] getQueueIds() {
+    	return mPlayQueue.getQueueIds();
     }
 
     /**
@@ -1029,14 +1112,14 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * 
      * @return the current position in the queue
      */
-    public int getQueuePosition() {
+    public synchronized int getQueuePosition() {
         return mPlayQueue.getPlayPosition();
     }
 
     /**
     * @return the Track that is currently playing/paused
     */
-    public Track getCurrentTrack() {
+    public synchronized Track getCurrentTrack() {
     	return mPlayQueue.getCurrentTrack();
     }
 
@@ -1070,7 +1153,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * 
      * @return The current playback position in miliseconds
      */
-    public long position() {
+    public synchronized long position() {
     	if (mPlayer.isInitialized()) {
     		return mPlayer.position();
     	}
@@ -1083,7 +1166,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
      * @param position The time to seek to
      * @return The time to play the track at
      */
-    public long seek(long position) {
+    public synchronized long seek(long position) {
     	if (mPlayer.isInitialized()) {
     		if (position < 0) {
     			position = 0;
@@ -1100,7 +1183,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
     * Toggles playback between playing/paused
     */
-    private void togglePlayback() {
+    public synchronized void togglePlayback() {
     	if (mIsSupposedToBePlaying) {
             pause();
         } else {
@@ -1111,7 +1194,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Stops playback.
      */
-    private void stop() {
+    public synchronized void stop() {
     	pause();
         seek(0);
         killNotification();
@@ -1121,7 +1204,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Resumes or starts playback.
      */
-    private void play() {
+    public synchronized void play() {
         mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN);
 
@@ -1139,7 +1222,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         	}
 
         	mPlayer.start();
-        	mPlayerFader.fadeUp();
+        	mPlayer.fadeUp();
         	
         	// Update the notification
             buildNotification();
@@ -1177,13 +1260,13 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Temporarily pauses playback.
      */
-    private void pause() {
+    public synchronized void pause() {
     	pause(false);
     }
     
     private void pause(boolean transientLossOfFocus) {
     	mPausedByTransientLossOfFocus = transientLossOfFocus;
-        mPlayerFader.stopFadeUp();
+        mPlayer.stopFadeUp();
         if (mIsSupposedToBePlaying) {
             mPlayer.pause();
             gotoIdleState();
@@ -1193,14 +1276,14 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Changes from the current track to the next to be played
      */
-    private void next() {
+    public void next() {
     	gotoNext(true);
     }
 
     /**
      * Changes from the current track to the previous played track
      */
-    private void previous() {
+    public synchronized void previous() {
     	if (position() < 2000) {
             gotoPrev();
         } else {
@@ -1234,7 +1317,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Cycles through the different repeat modes
      */
-    public void cycleRepeat() {
+    public synchronized void cycleRepeat() {
         if (mRepeatMode == REPEAT_NONE) {
             setRepeatMode(REPEAT_ALL);
         } else if (mRepeatMode == REPEAT_ALL) {
@@ -1262,7 +1345,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     /**
      * Cycles through the different shuffle modes
      */
-    public void cycleShuffle() {
+    public synchronized void cycleShuffle() {
         if (mShuffleMode == SHUFFLE_NONE) {
             setShuffleMode(SHUFFLE_NORMAL);
             if (mRepeatMode == REPEAT_CURRENT) {
@@ -1294,6 +1377,35 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         }
         saveState();
         notifyShuffleModeChanged();
+    }
+    /////////////////////////////////
+    
+    private void refreshMusicStatus() {
+    	notifyMetaChanged();
+    	notifyPlayStateChanged();
+    	notifyShuffleModeChanged();
+    	notifyRepeatModeChanged();
+    }
+    
+    private void registerMusicStatusCallback(IMusicStatusCallback callback) {
+    	mMusicStatusCallbackList.register(callback);
+    }
+    
+    private void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
+    	mMusicStatusCallbackList.unregister(callback);
+    }
+    
+    private void refreshQueueStatus() {
+    	notifyQueueChanged();
+    	notifyMetaChanged();
+    }
+    
+    private void registerQueueStatusCallback(IQueueStatusCallback callback) {
+    	mQueueStatusCallbackList.register(callback);
+    }
+    
+    private void unregisterQueueStatusCallback(IQueueStatusCallback callback) {
+    	mQueueStatusCallbackList.unregister(callback);
     }
 
     /////////////////////////////////
@@ -1437,129 +1549,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         }
     };
 
-    private static final class ServiceStub extends IMusicService.Stub {
-
-        private final WeakReference<MusicService> mService;
-
-        private ServiceStub(final MusicService service) {
-            mService = new WeakReference<MusicService>(service);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void open(final List<Track> list, final int position) 
-        		throws RemoteException {
-            mService.get().open(list, position);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void enqueue(final List<Track> list, final int action) throws RemoteException {
-            mService.get().enqueue(list, action);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void setQueuePosition(final int index) throws RemoteException {
-            mService.get().setQueuePosition(index);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void moveQueueItem(final int from, final int to) throws RemoteException {
-            mService.get().moveQueueItem(from, to);
-        }
-        
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int removeTracks(final int first, final int last) throws RemoteException {
-            return mService.get().removeTracks(first, last);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int removeTrack(final long id) throws RemoteException {
-            return mService.get().removeTrack(id);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public List<Track> getQueue() throws RemoteException {
-            return mService.get().getQueue();
-        }
-        
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getQueuePosition() throws RemoteException {
-            return mService.get().getQueuePosition();
-        }
-        
-        /**
-         * {@inheritDoc}
-         */
-        @Override 
-        public Track getCurrentTrack() throws RemoteException {
-        	return mService.get().getCurrentTrack();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long position() throws RemoteException {
-            return mService.get().position();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long seek(final long position) throws RemoteException {
-            return mService.get().seek(position);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isPlaying() throws RemoteException {
-            return mService.get().isPlaying();
-        }
-        
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getShuffleMode() throws RemoteException {
-            return mService.get().getShuffleMode();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getRepeatMode() throws RemoteException {
-            return mService.get().getRepeatMode();
-        }
-
-    }
-
 	@Override
 	public void onTrackWentToNext() {
 		mPlayQueue.goToNext();
@@ -1595,7 +1584,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
             pause(focusLoss);            
             break;
         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-            mPlayerFader.fadeDown();
+            mPlayer.fadeDown();
             break;
         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
             pause(isPlaying());
@@ -1603,15 +1592,114 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         case AudioManager.AUDIOFOCUS_GAIN:
             if (!isPlaying() && mPausedByTransientLossOfFocus) {
                 mPausedByTransientLossOfFocus = false;
-                mPlayerFader.mute();
+                mPlayer.mute();
                 play();
             } else {
-            	mPlayerFader.fadeUp();
+            	mPlayer.fadeUp();
             }
             break;
         default:
         	break;
         }
     }
+	
+	private static final class ServiceStub extends IMusicService.Stub {
+
+		private final WeakReference<MusicService> mService;
+		
+		public ServiceStub(MusicService service) {
+			mService = new WeakReference<MusicService>(service);
+		}
+
+		@Override
+		public void setQueuePosition(int position) throws RemoteException {
+			mService.get().setQueuePosition(position);
+		}
+
+		@Override
+		public void moveQueueItem(int from, int to) throws RemoteException {
+			mService.get().moveQueueItem(from, to);
+		}
+
+		@Override
+		public void removeTrack(int position) throws RemoteException {
+			mService.get().removeTrack(position);			
+		}
+
+		@Override
+		public void removeTrackById(long id) throws RemoteException {
+			mService.get().removeTrackById(id);
+		}
+		
+		@Override
+		public void requestMusicStatusRefresh() throws RemoteException {
+			mService.get().refreshMusicStatus();
+		}
+
+		@Override
+		public void registerMusicStatusCallback(IMusicStatusCallback callback)
+				throws RemoteException {
+			
+			mService.get().registerMusicStatusCallback(callback);
+		}
+
+		@Override
+		public void unregisterMusicStatusCallback(IMusicStatusCallback callback)
+				throws RemoteException {
+			
+			mService.get().unregisterMusicStatusCallback(callback);
+		}
+
+		@Override
+		public void open(List<Track> tracks, int position) throws RemoteException {
+			mService.get().open(tracks, position);
+		}
+
+		@Override
+		public void enqueue(List<Track> tracks, int action) throws RemoteException {
+			mService.get().enqueue(tracks, action);
+		}
+
+		@Override
+		public void requestQueueStatusRefresh() throws RemoteException {
+			mService.get().refreshQueueStatus();
+			
+		}
+
+		@Override
+		public void registerQueueStatusCallback(IQueueStatusCallback callback)
+				throws RemoteException {
+			
+			mService.get().registerQueueStatusCallback(callback);
+		}
+
+		@Override
+		public void unregisterQueueStatusCallback(IQueueStatusCallback callback)
+				throws RemoteException {
+			
+			mService.get().unregisterQueueStatusCallback(callback);
+		}
+
+		@Override
+		public void togglePlayback() throws RemoteException {
+			mService.get().togglePlayback();			
+		}
+
+		@Override
+		public void next() throws RemoteException {
+			mService.get().next();			
+		}
+
+		@Override
+		public void previous() throws RemoteException {
+			mService.get().previous();			
+		}
+
+		@Override
+		public void seek(long position) throws RemoteException {
+			mService.get().seek(position);			
+		}
+		
+	}
     
 }

@@ -2,21 +2,20 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import java.lang.ref.WeakReference;
 
+import za.jamie.soundstage.IMusicStatusCallback;
+import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.service.MusicServiceWrapper;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
-import android.content.BroadcastReceiver;
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.RemoteException;
 import android.os.SystemClock;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
@@ -36,34 +35,45 @@ public class MusicPlayerFragment extends Fragment implements
 	// Rate at which the repeat listeners for the seek buttons refresh in ms
 	private static final int REPEAT_INTERVAL = 260;
 	
-	// Time handler message
-    private static final int REFRESH_TIME = 1;
+	// Handler messages
+	private static final int MSG_UPDATE_TIME = 1;
+	
+	// Handle UI updates
+    private Handler mHandler;
+    
+    private static final String TAG = "MusicPlayerFragment";
 	
 	private ImageFetcher mImageWorker;
 	
+	// Play control buttons
 	private ImageButton mPlayPauseButton;
 	private RepeatingImageButton mPreviousButton;
 	private RepeatingImageButton mNextButton;
 	
+	// UI elements for metadata
 	private TextView mTrackText;
 	private TextView mAlbumText;
 	private TextView mArtistText;
 	private ImageView mAlbumArt;
 	
+	// UI elements for seeking
 	private SeekBar mProgress;
 	private TextView mElapsedTime;
 	private TextView mTotalTime;
 	private long mDuration;
 	
-	private TimeHandler mTimeHandler;
-	
+	// Seek bar
 	private long mStartSeekPos = 0;
     private long mLastSeekEventTime;
     private long mPosOverride = -1;
     private boolean mFromTouch = false;
-    private boolean mIsPaused = false;
+    
+    private boolean mIsPlaying = false;
 	
-	private boolean mShown = false;
+	private long mTimeSync;
+	private long mTimeSyncStamp;
+	
+	private MusicPlaybackWrapper mService;
 	
 	public MusicPlayerFragment() {}
 	
@@ -73,55 +83,35 @@ public class MusicPlayerFragment extends Fragment implements
 		
 		mImageWorker = ImageUtils.getImageFetcher(getActivity());
 		
-		mTimeHandler = new TimeHandler(this);
+		mHandler = new TimeHandler(this);
 	}
 	
 	@Override
-	public void onStart() {
-		super.onStart();
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
 		
-		final IntentFilter filter = new IntentFilter();
-        filter.addAction(MusicService.PLAYSTATE_CHANGED);
-        filter.addAction(MusicService.META_CHANGED);
-        filter.addAction(MusicService.SHUFFLEMODE_CHANGED);
-        filter.addAction(MusicService.REPEATMODE_CHANGED);
-        
-        getActivity().registerReceiver(mPlayStatusReceiver, filter);
+		mService = (MusicPlaybackWrapper) activity;
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		
+		updateTime();
+	}
+	
+	@Override
+	public void onStop() {
+		super.onStop();
+		
+		mHandler.removeCallbacksAndMessages(null);
 	}
 	
 	@Override
 	public void onDestroy() {
         super.onDestroy();
-        mIsPaused = false;
         
-        getActivity().unregisterReceiver(mPlayStatusReceiver);
-	}
-	
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		
-		setRetainInstance(true);
-		
-		// Make sure everything is up to date
-        updateMeta(MusicServiceWrapper.getCurrentTrack());
-		updatePlayState(MusicServiceWrapper.isPlaying());
-        
-        // Refresh the current time
-        final long next = refreshCurrentTime();
-        queueNextRefresh(next);
-	}
-	
-	public void onHide() {
-		mShown = false;
-		mTimeHandler.removeCallbacks(null);
-	}
-	
-	public void onShow() {
-		mShown = true;
-		// Refresh the current time
-        final long next = refreshCurrentTime();
-        queueNextRefresh(next);
+        mService.unregisterMusicStatusCallback(mCallback);
 	}
 	
 	@Override
@@ -174,8 +164,8 @@ public class MusicPlayerFragment extends Fragment implements
 	        new RepeatingImageButton.RepeatListener() {
 		
 		@Override    
-		public void onRepeat(View v, long howlong, int repcnt) {
-	        scanBackward(repcnt, howlong);
+		public void onRepeat(View v, long howlong, int repeatCount) {
+	        scanBackward(repeatCount, howlong);
 	    }
 	};
 	    
@@ -183,20 +173,20 @@ public class MusicPlayerFragment extends Fragment implements
 	        new RepeatingImageButton.RepeatListener() {
 	    
 		@Override
-		public void onRepeat(View v, long howlong, int repcnt) {
-	        scanForward(repcnt, howlong);
+		public void onRepeat(View v, long howlong, int repeatCount) {
+	        scanForward(repeatCount, howlong);
 	    }
 	};
 	
 	/**
      * Used to scan backwards in time through the current track
      * 
-     * @param repcnt The repeat count
+     * @param repeatCount The repeat count
      * @param delta The long press duration
      */
-    private void scanBackward(final int repcnt, long delta) {
-        if (repcnt == 0) {
-            mStartSeekPos = MusicServiceWrapper.position();
+    private void scanBackward(final int repeatCount, long delta) {
+        if (repeatCount == 0) {
+            mStartSeekPos = calculatePosition();
             mLastSeekEventTime = 0;
         } else {
             if (delta < 5000) {
@@ -209,15 +199,16 @@ public class MusicPlayerFragment extends Fragment implements
             long newpos = mStartSeekPos - delta;
             if (newpos < 0) {
                 // move to previous track
-            	MusicServiceWrapper.previous(getActivity());
+            	mService.previous();
                 mStartSeekPos += mDuration;
                 newpos += mDuration;
             }
-            if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
-            	MusicServiceWrapper.seek(newpos);
+            if (delta - mLastSeekEventTime > 250 || repeatCount < 0) {
+            	mService.seek(newpos);
+            	syncTime(newpos, System.currentTimeMillis());
                 mLastSeekEventTime = delta;
             }
-            if (repcnt >= 0) {
+            if (repeatCount >= 0) {
                 mPosOverride = newpos;
             } else {
                 mPosOverride = -1;
@@ -229,12 +220,12 @@ public class MusicPlayerFragment extends Fragment implements
     /**
      * Used to scan forwards in time through the current track
      * 
-     * @param repcnt The repeat count
+     * @param repeatCount The repeat count
      * @param delta The long press duration
      */
-    private void scanForward(final int repcnt, long delta) {
-        if (repcnt == 0) {
-            mStartSeekPos = MusicServiceWrapper.position();
+    private void scanForward(final int repeatCount, long delta) {
+        if (repeatCount == 0) {
+            mStartSeekPos = calculatePosition();
             mLastSeekEventTime = 0;
         } else {
             if (delta < 5000) {
@@ -247,15 +238,16 @@ public class MusicPlayerFragment extends Fragment implements
             long newpos = mStartSeekPos + delta;
             if (newpos >= mDuration) {
                 // move to next track
-            	MusicServiceWrapper.next(getActivity());
+            	mService.next();
                 mStartSeekPos -= mDuration; // is OK to go negative
                 newpos -= mDuration;
             }
-            if (delta - mLastSeekEventTime > 250 || repcnt < 0) {
-                MusicServiceWrapper.seek(newpos);
+            if (delta - mLastSeekEventTime > 250 || repeatCount < 0) {
+                mService.seek(newpos);
+                syncTime(newpos, System.currentTimeMillis());
                 mLastSeekEventTime = delta;
             }
-            if (repcnt >= 0) {
+            if (repeatCount >= 0) {
                 mPosOverride = newpos;
             } else {
                 mPosOverride = -1;
@@ -264,41 +256,47 @@ public class MusicPlayerFragment extends Fragment implements
         }
     }
     
-    /* Used to update the current time string */
     private long refreshCurrentTime() {
-        try {
-            final long pos = mPosOverride < 0 ? 
-            		MusicServiceWrapper.position() : mPosOverride;
+    	final long pos = mPosOverride < 0 ? calculatePosition() : mPosOverride;
+    	if (pos >= 0 && mDuration > 0) {
+            mElapsedTime.setText(TextUtils.getTrackDurationText(getResources(), pos));
+            final int progress = (int)(1000 * pos / mDuration);
+            mProgress.setProgress(progress);
             
-            if (pos >= 0 && mDuration > 0) {
-                mElapsedTime.setText(TextUtils.getTrackDurationText(getResources(), pos));
-                final int progress = (int)(1000 * pos / mDuration);
-                mProgress.setProgress(progress);
-                
-            } else {
-                mProgress.setProgress(0);
-            }
-            // calculate the number of milliseconds until the next full second,
-            // so the counter can be updated at just the right time
-            final long remaining = 1000 - pos % 1000;
-            // approximate how often we would need to refresh the slider to
-            // move it smoothly
-            int width = mProgress.getWidth();
-            if (width == 0) {
-                width = 320;
-            }
-            final long smoothrefreshtime = mDuration / width;
-            if (smoothrefreshtime > remaining) {
-                return remaining;
-            }
-            if (smoothrefreshtime < 20) {
-                return 20;
-            }
-            return smoothrefreshtime;
-        } catch (final Exception ignored) {
-
+        } else {
+            mProgress.setProgress(0);
         }
-        return 500;
+        // calculate the number of milliseconds until the next full second,
+        // so the counter can be updated at just the right time
+        final long remaining = 1000 - pos % 1000;
+        // approximate how often we would need to refresh the slider to
+        // move it smoothly
+        int width = mProgress.getWidth();
+        if (width == 0) {
+            width = 320;
+        }
+        final long smoothrefreshtime = mDuration / width;
+        if (smoothrefreshtime > remaining) {
+            return remaining;
+        }
+        if (smoothrefreshtime < 20) {
+            return 20;
+        }
+        return smoothrefreshtime;
+    }
+    
+    private long calculatePosition() {
+   		if (mIsPlaying) {
+   			return mTimeSync + (System.currentTimeMillis() - mTimeSyncStamp);
+   		} else {
+   			return mTimeSync;
+   		}    	
+    }
+    
+    private void syncTime(long position, long timeStamp) {
+    	mTimeSync = position;
+    	mTimeSyncStamp = timeStamp;
+    	updateTime();
     }
 
 	@Override
@@ -312,7 +310,7 @@ public class MusicPlayerFragment extends Fragment implements
         if (now - mLastSeekEventTime > 250) {
             mLastSeekEventTime = now;
             mPosOverride = mDuration * progress / 1000;
-            MusicServiceWrapper.seek(mPosOverride);
+            mService.seek(mPosOverride);
             if (!mFromTouch) {
                 // refreshCurrentTime();
                 mPosOverride = -1;
@@ -334,14 +332,14 @@ public class MusicPlayerFragment extends Fragment implements
     }
     
     private void queueNextRefresh(final long delay) {
-        if (!mIsPaused && mShown) {
-            final Message message = mTimeHandler.obtainMessage(REFRESH_TIME);
-            mTimeHandler.removeMessages(REFRESH_TIME);
-            mTimeHandler.sendMessageDelayed(message, delay);
+        if (mIsPlaying) {
+            final Message message = mHandler.obtainMessage(MSG_UPDATE_TIME);
+            mHandler.removeMessages(MSG_UPDATE_TIME);
+            mHandler.sendMessageDelayed(message, delay);
         }
     }
     
-    private void updateMeta(Track track) {
+    private void updateTrack(Track track) {
     	if (track != null) {
 			mTrackText.setText(track.getTitle());
 			mAlbumText.setText(track.getAlbum());
@@ -354,6 +352,7 @@ public class MusicPlayerFragment extends Fragment implements
     }
     
     private void updatePlayState(boolean isPlaying) {
+    	mIsPlaying = isPlaying;
     	if (isPlaying) {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_pause);
 			mElapsedTime.clearAnimation();
@@ -363,8 +362,18 @@ public class MusicPlayerFragment extends Fragment implements
 			refreshCurrentTime();
 			mElapsedTime.startAnimation(AnimationUtils.loadAnimation(getActivity(), 
 					R.anim.fade_in_out));
-			mTimeHandler.removeCallbacks(null);
+			mHandler.removeMessages(MSG_UPDATE_TIME);
 		}
+    }
+    
+    private void updateTime(long position, long timeStamp) {
+    	syncTime(position, timeStamp);
+    	updateTime();
+    }
+    
+    private void updateTime() {
+    	final long next = refreshCurrentTime();
+    	queueNextRefresh(next);
     }
     
     private View.OnClickListener mPlayButtonListener = new View.OnClickListener() {
@@ -372,57 +381,92 @@ public class MusicPlayerFragment extends Fragment implements
 		@Override
 		public void onClick(View v) {
 			if (v == mPlayPauseButton) {
-				MusicServiceWrapper.togglePlayback(getActivity());
+				mService.togglePlayback();
 			} else if (v == mNextButton) {
-				MusicServiceWrapper.next(getActivity());
+				mService.next();
 			} else if (v == mPreviousButton) {
-				MusicServiceWrapper.previous(getActivity());
+				mService.previous();
 			}
 			
 		}
 	};
+	
+	public boolean isPlaying() {
+		return mIsPlaying;
+	}
     
     /**
-     * Used to update the current time string
+     * Used to update the seek bar and elapsed time counter
      */
     private static final class TimeHandler extends Handler {
 
-        private final WeakReference<MusicPlayerFragment> mAudioPlayer;
+        private final WeakReference<MusicPlayerFragment> mPlayer;
 
         public TimeHandler(MusicPlayerFragment player) {
-            mAudioPlayer = new WeakReference<MusicPlayerFragment>(player);
+            mPlayer = new WeakReference<MusicPlayerFragment>(player);
         }
-
+        
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case REFRESH_TIME:
-                    final long next = mAudioPlayer.get().refreshCurrentTime();
-                    mAudioPlayer.get().queueNextRefresh(next);
-                    break;
+    			case MSG_UPDATE_TIME:
+    				mPlayer.get().updateTime();             
+    				break;
                 default:
+                	super.handleMessage(msg);
                     break;
             }
         }
     }
     
-    private final BroadcastReceiver mPlayStatusReceiver = new BroadcastReceiver() {
-
+    public void onServiceConnected() {
+    	mService.registerMusicStatusCallback(mCallback);
+    	mService.requestMusicStatusRefresh();
+    }
+	
+	public final IMusicStatusCallback mCallback = new IMusicStatusCallback.Stub() {
+		
 		@Override
-		public void onReceive(Context context, Intent intent) {
-			final String action = intent.getAction();
-			if (action.equals(MusicService.PLAYSTATE_CHANGED)) {
-				updatePlayState(intent.getBooleanExtra(MusicService.PLAYSTATE_CHANGED_STATE, 
-						false));
-			} else if (action.equals(MusicService.META_CHANGED)) {
-				updateMeta((Track) intent.getParcelableExtra(MusicService.META_CHANGED_TRACK));
-			} else if (action.equals(MusicService.SHUFFLEMODE_CHANGED)) {
-				// TODO: Shuffle
-			} else if (action.equals(MusicService.REPEATMODE_CHANGED)) {
-				// TODO: Repeat
-			}
+		public void onTrackChanged(final Track track) throws RemoteException {
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updateTrack(track);
+					
+				}
+				
+			});
 		}
 		
+		@Override
+		public void onPositionSync(final long position, final long timeStamp)
+				throws RemoteException {
+			
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updateTime(position, timeStamp);
+					
+				}
+				
+			});
+		}
+		
+		@Override
+		public void onPlayStateChanged(final boolean isPlaying) throws RemoteException {			
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updatePlayState(isPlaying);
+					
+				}
+				
+			});
+			
+		}
 	};
 
 }
