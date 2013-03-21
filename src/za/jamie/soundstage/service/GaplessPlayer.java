@@ -200,17 +200,21 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     }
     
     public void fadeUp() {
-        mHandler.removeMessages(FadeHandler.FADEDOWN);
+        stopFadeDown();
         mHandler.sendEmptyMessage(FadeHandler.FADEUP);
     }
     
     public void fadeDown() {
-        mHandler.removeMessages(FadeHandler.FADEUP);
+        stopFadeUp();
         mHandler.sendEmptyMessage(FadeHandler.FADEDOWN);
     }
     
     public void stopFadeUp() {
     	mHandler.removeMessages(FadeHandler.FADEUP);
+    }
+    
+    public void stopFadeDown() {
+    	mHandler.removeMessages(FadeHandler.FADEDOWN);
     }
     
     public void stopFade() {

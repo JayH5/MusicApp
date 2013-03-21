@@ -738,48 +738,67 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         return false;
     }
 
+    private void syncPosition() {
+    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		try {
+    			mMusicStatusCallbackList.getBroadcastItem(i)
+    					.onPositionSync(position(), System.currentTimeMillis());
+    		} catch (RemoteException e) {
+    			Log.w(TAG, "syncPosition()", e);
+    		}
+    	}
+    	mMusicStatusCallbackList.finishBroadcast();
+    }
+    
     private void notifyMetaChanged() {
     	int i = mMusicStatusCallbackList.beginBroadcast();
     	while (i > 0) {
     		i--;
-    		final IMusicStatusCallback callback = mMusicStatusCallbackList.getBroadcastItem(i);
     		try {
-				callback.onTrackChanged(getCurrentTrack());
-				callback.onPositionSync(position(), System.currentTimeMillis());
+    			mMusicStatusCallbackList.getBroadcastItem(i)
+    					.onTrackChanged(getCurrentTrack());
 			} catch (RemoteException e) {
 				Log.w(TAG, "Remote error while performing track changed callback.", e);
 			}
     	}
     	mMusicStatusCallbackList.finishBroadcast();
     	
-    	i = mQueueStatusCallbackList.beginBroadcast();
+    	syncPosition();
+    	notifyQueuePositionChanged();
+    	
+    	updateRCCMetaData();
+    }
+    
+    private void notifyQueuePositionChanged() {
+    	int i = mQueueStatusCallbackList.beginBroadcast();
     	while (i > 0) {
     		i--;
-    		final IQueueStatusCallback callback = mQueueStatusCallbackList.getBroadcastItem(i);
     		try {
-				callback.onQueuePositionChanged(getQueuePosition());
+    			mQueueStatusCallbackList.getBroadcastItem(i)
+    					.onQueuePositionChanged(getQueuePosition());
 			} catch (RemoteException e) {
 				Log.w(TAG, "Remote error while performing queue position changed callback.", e);
 			}
     	}
     	mQueueStatusCallbackList.finishBroadcast();
-    	
-    	updateRCCMetaData();
     }
     
     private void notifyPlayStateChanged() {
     	int i = mMusicStatusCallbackList.beginBroadcast();
     	while (i > 0) {
     		i--;
-    		final IMusicStatusCallback callback = mMusicStatusCallbackList.getBroadcastItem(i);
     		try {
-				callback.onPlayStateChanged(isPlaying());
-				callback.onPositionSync(position(), System.currentTimeMillis());
+    			mMusicStatusCallbackList.getBroadcastItem(i)
+    					.onPlayStateChanged(isPlaying());
 			} catch (RemoteException e) {
 				Log.w(TAG, "Remote error while performing track changed callback.", e);
 			}
     	}
     	mMusicStatusCallbackList.finishBroadcast();
+    	
+    	syncPosition();
     	
     	updateRCCPlayState();
     }
@@ -793,9 +812,17 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
     
     private void notifyRepeatModeChanged() {
-    	final Intent intent = new Intent(REPEATMODE_CHANGED);
-    	intent.putExtra(REPEATMODE_CHANGED_MODE, getRepeatMode());
-    	sendStickyBroadcast(intent);
+    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		try {
+    			mMusicStatusCallbackList.getBroadcastItem(i)
+    					.onShuffleModeChanged(getShuffleMode());
+    		} catch (RemoteException e) {
+    			Log.w(TAG, "notifyRepeatModeChanged()", e);
+    		}
+    	}
+    	mMusicStatusCallbackList.finishBroadcast();
     	
     	saveState();
     }
@@ -804,11 +831,11 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     	int i = mQueueStatusCallbackList.beginBroadcast();
     	while (i > 0) {
     		i--;
-    		final IQueueStatusCallback callback = mQueueStatusCallbackList.getBroadcastItem(i);
     		try {
-				callback.onQueueChanged(getQueue());
+    			mQueueStatusCallbackList.getBroadcastItem(i)
+    					.onQueueChanged(getQueue());
 			} catch (RemoteException e) {
-				Log.w(TAG, "Remote exception while performing queue changed callback.", e);
+				Log.w(TAG, "notifyQueueChanged()", e);
 			}
     	}
     	mQueueStatusCallbackList.finishBroadcast();
@@ -1289,6 +1316,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         } else {
             seek(0);
             play();
+            syncPosition();
         }
     }
     

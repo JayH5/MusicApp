@@ -467,6 +467,19 @@ public class MusicPlayerFragment extends Fragment implements
 			});
 			
 		}
+
+		@Override
+		public void onShuffleModeChanged(int shuffleMode)
+				throws RemoteException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onRepeatModeChanged(int repeatMode) throws RemoteException {
+			// TODO Auto-generated method stub
+			
+		}
 	};
 
 }
