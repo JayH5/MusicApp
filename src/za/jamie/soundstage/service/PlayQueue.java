@@ -1,17 +1,12 @@
 package za.jamie.soundstage.service;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 import za.jamie.soundstage.models.Track;
-import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
-import android.provider.MediaStore;
 
 
 public class PlayQueue {
@@ -19,86 +14,48 @@ public class PlayQueue {
 	private int mPlayPosition = -1;
 	private int mNextPlayPosition = -1;
 	
-	private List<Long> mTrackIdList;
-	private Map<Long, Track> mTrackMap;
-	
-	private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+	private List<Track> mTrackList;
 	
     private final PlayQueueDatabase mDatabase;
 	
     public PlayQueue(Context context) {
     	mDatabase = new PlayQueueDatabase(context);
     	
-    	mTrackMap = mDatabase.getTrackMap();
-    	mTrackIdList = mDatabase.getTrackIdList();
+    	mTrackList = mDatabase.getTrackList();
     }
 	
-	public void addAll(int position, final Collection<? extends Track> list) {
-        // Keep a list of changes to the set
-		List<Track> positiveDiff = new LinkedList<Track>();
-		// Iterate through the list, adding ids to track id list, tracks to track set
-		Iterator<? extends Track> it = list.iterator();
-        for (int i = 0; i < list.size(); i++) {
-			Track track = it.next();
-			long trackId = track.getId();
-			mTrackIdList.add(i + position, trackId);
-			
-			if (mTrackMap.put(trackId, track) == null) {
-				positiveDiff.add(track);
-			}
-        }
+	public void addAll(int position, final Collection<? extends Track> tracks) {
+        mTrackList.addAll(position, tracks);
         
         // Update the play position
-        if (position < mPlayPosition) {
-        	mPlayPosition += list.size();
+        if (position <= mPlayPosition) {
+        	mPlayPosition += tracks.size();
         }
         
         // Keep the db in sync
-        mDatabase.updateTrackSet(positiveDiff, null);
-        mDatabase.updateTrackIdList(mTrackIdList);
+        mDatabase.addAll(position, tracks);
 	}
 	
-	public void addAll(final Collection<? extends Track> list) {
-		// Keep a list of changes to the set
-		List<Track> positiveDiff = new LinkedList<Track>();
-		List<Long> trackIds = new LinkedList<Long>();
-		for (Track track : list) {
-			long trackId = track.getId();
-			trackIds.add(trackId);
-			
-			if (mTrackMap.put(trackId, track) == null) {
-				positiveDiff.add(track);
-			}
-		}
-		mTrackIdList.addAll(trackIds);
+	public void addAll(final Collection<? extends Track> tracks) {
+		mTrackList.addAll(tracks);
 		
-		mDatabase.updateTrackSet(positiveDiff, null);
-		mDatabase.appendTrackIdsToList(trackIds);
+		mDatabase.addAll(tracks);
 	}
 	
-	public void add(int position, Track track) {
-		long trackId = track.getId();
-		
+	public void add(int position, Track track) {		
+		mTrackList.add(position, track);
+
 		if (position <= mPlayPosition) {
 			mPlayPosition++;
 		}
 		
-		mTrackIdList.add(position, trackId);
-		if (mTrackMap.put(trackId, track) == null) {
-			mDatabase.addTrackToSet(track);
-		}
-		mDatabase.updateTrackIdList(mTrackIdList);
+		mDatabase.add(track);
 	}
 	
 	public void add(Track track) {
-		long trackId = track.getId();
+		mTrackList.add(track);
 		
-		mTrackIdList.add(trackId);
-		
-		if (mTrackMap.put(trackId, track) == null) {
-			mDatabase.addTrackToSet(track);
-		}		
-		mDatabase.appendTrackIdToList(trackId);
+		mDatabase.add(track);
 	}
 	
 	/**
@@ -106,69 +63,68 @@ public class PlayQueue {
 	 * @param list
 	 * @return true if queue changed
 	 */
-	public boolean openList(List<Track> list) {
-		mTrackIdList.clear();
-		mTrackMap.clear();
-		for (Track track : list) {
-			final long trackId = track.getId();
-			mTrackIdList.add(trackId);
-			mTrackMap.put(trackId, track);
+	public boolean openList(Collection<? extends Track> tracks) {
+		if (!mTrackList.equals(tracks)) {
+			mTrackList.clear();
+			mTrackList.addAll(tracks);
+				
+			mDatabase.open(tracks);
+
+			return true;
 		}
-		
-		mDatabase.open(mTrackIdList, mTrackMap);
-		
-		return true;
+
+		return false;
 	}
 	
 	public void moveQueueItem(int from, int to) {
-        if (from < to) {
-          	mTrackIdList.add(from, mTrackIdList.remove(to));
-            if (mPlayPosition == from) {
-            	mPlayPosition = to;
-            } else if (mPlayPosition >= from && mPlayPosition <= to) {
-            	mPlayPosition--;
-            }
+        Track track = mTrackList.remove(from);
+		mTrackList.add(to, track);
+
+        if (mPlayPosition == from) {
+        	mPlayPosition = to;
+        } else if (from < to) {
+        	if (mPlayPosition >= from && mPlayPosition <= to) {
+        		mPlayPosition--;
+        	}
         } else if (to < from) {
-        	mTrackIdList.add(to, mTrackIdList.remove(from));
-            if (mPlayPosition == from) {
-            	mPlayPosition = to;
-            } else if (mPlayPosition >= to && mPlayPosition <= from) {
-            	mPlayPosition++;
-            }
+        	if (mPlayPosition >= to && mPlayPosition <= from) {
+        		mPlayPosition++;
+        	}
         }
+
+        mDatabase.moveQueueItem(from, to, track);
     }
 	
-	public int removeTrack(final long id) {
+	public int removeTrack(long id) {
     	int numRemoved = 0;
     	int position = 0;
     		
         // Iterate through play queue to find matching tracks
-        ListIterator<Long> it = mTrackIdList.listIterator();
+        ListIterator<Track> it = mTrackList.listIterator();
         while (it.hasNext()) {
-        	if (it.next() == id) {
+        	if (it.next().getId() == id) {
         		it.remove();
         		numRemoved++;
-        		if (position < mPlayPosition) {
+        		if (position <= mPlayPosition) {
         			mPlayPosition--;
         		}
         	}
         	position++;
         }
-        mTrackMap.remove(id);
     	
-        mDatabase.removeTrackFromSet(id);
+        //mDatabase.removeTrack(id);
         	
         return numRemoved;
     }
 	
 	public void removeTrack(int position) {
-		Long removedTrackId = mTrackIdList.remove(position); // Keep it boxed inside
-		if (!mTrackIdList.contains(removedTrackId)) {
-			mTrackMap.remove(removedTrackId);
-			mDatabase.removeTrackFromSet(removedTrackId);
+		mTrackList.remove(position);
+
+		if (position == mPlayPosition) {
+			mPlayPosition++;
 		}
 		
-		mDatabase.updateTrackIdList(mTrackIdList);
+		mDatabase.remove(position);
 	}
 	
 	public void closeDb() {
@@ -184,18 +140,14 @@ public class PlayQueue {
 	}
 	
 	public List<Track> getQueue() {
-        List<Track> queue = new LinkedList<Track>();
-        for (Long trackId : mTrackIdList) {
-        	queue.add(mTrackMap.get(trackId));
-        }
-		return queue;
+        return mTrackList;
     }
 	
 	public long[] getQueueIds() {
-		long[] queueIds = new long[mTrackIdList.size()];
+		long[] queueIds = new long[mTrackList.size()];
 		int i = 0;
-		for (long trackId : mTrackIdList) {
-			queueIds[i] = trackId;
+		for (Track track : mTrackList) {
+			queueIds[i] = track.getId();
 			i++;
 		}
 		return queueIds;
@@ -218,47 +170,55 @@ public class PlayQueue {
 	}
 	
 	public int size() {
-		return mTrackIdList.size();
+		return mTrackList.size();
 	}
 	
 	public boolean isEmpty() {
-		return mTrackIdList.isEmpty();
+		return mTrackList.isEmpty();
 	}
 	
 	public Track getCurrentTrack() {
-		long trackId = getCurrentId();
-		if (trackId > -1) {
-			return mTrackMap.get(trackId);
+		if (mPlayPosition >= 0 && mPlayPosition < mTrackList.size()) {
+			return mTrackList.get(mPlayPosition);
+		}
+		return null;
+	}
+
+	public Track getNextTrack() {
+		if (mNextPlayPosition >= 0 && mNextPlayPosition < mTrackList.size()) {
+			return mTrackList.get(mNextPlayPosition);
 		}
 		return null;
 	}
 	
 	public long getCurrentId() {
-		if (mPlayPosition >= 0 && mPlayPosition < mTrackIdList.size()) {
-			return mTrackIdList.get(mPlayPosition);
+		Track currentTrack = getCurrentTrack();
+		if (currentTrack != null) {
+			return currentTrack.getId();
 		}
 		return -1;
 	}
 	
 	public long getNextId() {
-		if (mNextPlayPosition >= 0 && mNextPlayPosition < mTrackIdList.size()) {
-			return mTrackIdList.get(mNextPlayPosition);
+		Track nextTrack = getNextTrack();
+		if (nextTrack != null) {
+			return nextTrack.getId();
 		}
 		return -1;
 	}
 	
 	public Uri getCurrentUri() {
-		long trackId = getCurrentId();
-		if (trackId > -1) {
-			return ContentUris.withAppendedId(BASE_URI, trackId);
+		Track currentTrack = getCurrentTrack();
+		if (currentTrack != null) {
+			return currentTrack.getUri();
 		}
 		return null;
 	}
 	
 	public Uri getNextUri() {
-		long trackId = getNextId();
-		if (trackId > -1) {
-			return ContentUris.withAppendedId(BASE_URI, trackId);
+		Track nextTrack = getNextTrack();
+		if (nextTrack != null) {
+			return nextTrack.getUri();
 		}
 		return null;
 	}
