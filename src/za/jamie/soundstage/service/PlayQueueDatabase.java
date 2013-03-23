@@ -21,22 +21,26 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	private static final String TAG = "PlayQueueDatabase";
 	
 	private static final String DATABASE_NAME = "playqueue.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
     
     private static final String TABLE_NAME_PLAY_QUEUE = "playqueue";
     
+    private static final String COLUMN_NAME_TRACK_ID = "track_id";
     private static final String COLUMN_NAME_QUEUE_POSITION = "queue_position";
     
     private static final String CREATE_TABLE_PLAY_QUEUE = "CREATE TABLE " + 
     			TABLE_NAME_PLAY_QUEUE + " (" + 
-    		COLUMN_NAME_QUEUE_POSITION + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-    		MediaStore.Audio.Media._ID + " INTEGER, " +
+    		"_id" + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+    		COLUMN_NAME_QUEUE_POSITION + " INTEGER, " +
+    		COLUMN_NAME_TRACK_ID + " INTEGER, " +
     		MediaStore.Audio.Media.TITLE + " STRING, " +
     		MediaStore.Audio.Media.ARTIST_ID + " INTEGER, " +
     		MediaStore.Audio.Media.ARTIST + " STRING, " +
     		MediaStore.Audio.Media.ALBUM_ID + " INTEGER, " +
     		MediaStore.Audio.Media.ALBUM + " STRING, " +
     		MediaStore.Audio.Media.DURATION + " INTEGER)";
+    
+    private int mQueueLength;
     
 	public PlayQueueDatabase(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -90,9 +94,13 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		db.beginTransaction();
 		try {
 			values.clear(); // clear out trackId values
+			mQueueLength = 0;
 			for (Track track : tracks) {
-				track.writeToContentValues(values);
+				long id = track.writeToContentValues(values);
+				values.put(COLUMN_NAME_TRACK_ID, id);
+				values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
 				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
+				mQueueLength++;
 			}
 
 			db.setTransactionSuccessful();
@@ -117,7 +125,10 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	private long add(SQLiteDatabase db, Track track) {
 		ContentValues values = new ContentValues();
-		track.writeToContentValues(values);
+		long id = track.writeToContentValues(values);
+		values.put(COLUMN_NAME_TRACK_ID, id);
+		values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
+		mQueueLength++;
 		return db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
 	}
 
@@ -135,20 +146,24 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	private long add(SQLiteDatabase db, int position, Track track) {
 		// Need to insert new value
 		ContentValues insertValues = new ContentValues();
-		track.writeToContentValues(insertValues);
+		long id = track.writeToContentValues(insertValues);
+		insertValues.put(COLUMN_NAME_TRACK_ID, id);
 		insertValues.put(COLUMN_NAME_QUEUE_POSITION, position);
 
 		// And update items after in list
 		ContentValues updateValues = new ContentValues();
-		updateValues.put(COLUMN_NAME_QUEUE_POSITION, COLUMN_NAME_QUEUE_POSITION + "+1");
-		String where = COLUMN_NAME_QUEUE_POSITION + ">?";
+		String where = COLUMN_NAME_QUEUE_POSITION + "=?";
 		String[] whereArgs = new String[] { String.valueOf(position) };
 
-		long id = 0;
+		long _id = 0;
 		db.beginTransaction();
 		try {
-			db.update(TABLE_NAME_PLAY_QUEUE, updateValues, where, whereArgs);
-			id = db.insert(TABLE_NAME_PLAY_QUEUE, null, insertValues);
+			for (int i = position; i < mQueueLength; i++) {
+				updateValues.put(COLUMN_NAME_QUEUE_POSITION, i + 1);
+				db.update(TABLE_NAME_PLAY_QUEUE, updateValues, where, whereArgs);
+			}			
+			
+			_id = db.insert(TABLE_NAME_PLAY_QUEUE, null, insertValues);
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
@@ -157,7 +172,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 			db.endTransaction();
 		}
 
-		return id;
+		return _id;
 	}
 	
 	public void addAll(final Collection<? extends Track> tracks) {
@@ -178,8 +193,11 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		db.beginTransaction();
 		try {
 			for (Track track : tracks) {
-				track.writeToContentValues(values);
+				long id = track.writeToContentValues(values);
+				values.put(COLUMN_NAME_TRACK_ID, id);
+				values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
 				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
+				mQueueLength++;
 			}
 			
 			db.setTransactionSuccessful();
@@ -207,24 +225,30 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		
 		ContentValues values = new ContentValues();
 		
-		String where = COLUMN_NAME_QUEUE_POSITION + ">?";
-		String[] whereArgs = new String[] { String.valueOf(position) };
-		values.put(COLUMN_NAME_QUEUE_POSITION, COLUMN_NAME_QUEUE_POSITION + "+" 
-				+ tracks.size());
+		String where = COLUMN_NAME_QUEUE_POSITION + "=?";
+		String[] whereArgs;
+		final int len = tracks.size();
 		
 		db.beginTransaction();
 		try {
-			db.update(TABLE_NAME_PLAY_QUEUE, values, where, whereArgs);
+			for (int i = position; i < position + len; i++) {
+				whereArgs = new String[] { String.valueOf(i) };
+				values.put(COLUMN_NAME_QUEUE_POSITION, i + len);
+				db.update(TABLE_NAME_PLAY_QUEUE, values, where, whereArgs);
+			}			
 			
 			values.clear();
 			int i = 0;
 			for (Track track : tracks) {
-				track.writeToContentValues(values);
+				long id = track.writeToContentValues(values);
+				values.put(COLUMN_NAME_TRACK_ID, id);
 				values.put(COLUMN_NAME_QUEUE_POSITION, position + i);
 				
 				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
 				i++;
 			}
+			
+			mQueueLength += len;
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
@@ -249,16 +273,23 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		String deleteWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
 		String[] deleteWhereArgs = new String[] { String.valueOf(position) };
 		
-		String updateWhere = COLUMN_NAME_QUEUE_POSITION + ">?";
-		String[] updateWhereArgs = new String[] { String.valueOf(position + 1) };
+		String updateWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
+		String[] updateWhereArgs;
 		ContentValues values = new ContentValues();
-		values.put(COLUMN_NAME_QUEUE_POSITION, COLUMN_NAME_QUEUE_POSITION + "-1");
 
 		int numRemoved = 0;
 		db.beginTransaction();
 		try {
 			numRemoved = db.delete(TABLE_NAME_PLAY_QUEUE, deleteWhere, deleteWhereArgs);
-			db.update(TABLE_NAME_PLAY_QUEUE, values, updateWhere, updateWhereArgs);
+			
+			for (int i = position + 1; i < mQueueLength; i++) {
+				updateWhereArgs = new String[] { String.valueOf(i) };
+				values.put(COLUMN_NAME_QUEUE_POSITION, i - 1);
+				
+				db.update(TABLE_NAME_PLAY_QUEUE, values, updateWhere, updateWhereArgs);
+			}
+			
+			mQueueLength--;
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
@@ -282,8 +313,6 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	}
 	
 	private void moveQueueItem(SQLiteDatabase db, int from, int to, Track track) {
-		int start = Math.min(from, to);
-		int end = Math.max(from, to);
 		int change = from < to ? -1 : 1;
 		
 		// Remove track from old position
@@ -291,10 +320,9 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		String[] deleteWhereArgs = new String[] { String.valueOf(from) };
 		
 		// Shift all the tracks between "from" and "to" up or down
-		String updateWhere = COLUMN_NAME_QUEUE_POSITION + ">? AND " + COLUMN_NAME_QUEUE_POSITION + "<?";
-		String[] updateWhereArgs = new String[] { String.valueOf(start), String.valueOf(end) };
+		String updateWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
+		String[] updateWhereArgs;
 		ContentValues updateValues = new ContentValues();
-		updateValues.put(COLUMN_NAME_QUEUE_POSITION, COLUMN_NAME_QUEUE_POSITION + "+" + change);
 		
 		// Insert the track back into the queue in its new position
 		ContentValues insertValues = new ContentValues();
@@ -304,7 +332,16 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		db.beginTransaction();
 		try {
 			db.delete(TABLE_NAME_PLAY_QUEUE, deleteWhere, deleteWhereArgs);
-			db.update(TABLE_NAME_PLAY_QUEUE, updateValues, updateWhere, updateWhereArgs);
+			
+			// Unfortunately Android gimps the SQL interface so we can't just increment
+			// a range of values in one go.
+			for (int i = from + 1; i <= to; i -= change) {
+				updateValues.put(COLUMN_NAME_QUEUE_POSITION, i + change);
+				updateWhereArgs = new String[] { String.valueOf(i) };
+				
+				db.update(TABLE_NAME_PLAY_QUEUE, updateValues, updateWhere, updateWhereArgs);
+			}	
+			
 			db.insert(TABLE_NAME_PLAY_QUEUE, null, insertValues);
 			
 			db.setTransactionSuccessful();
@@ -342,6 +379,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 				} while (cursor.moveToNext());
 			}
 			cursor.close();
+			mQueueLength = trackList.size();
 		}
 		return trackList;
 	}

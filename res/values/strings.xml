@@ -25,6 +25,8 @@
     <string name="title_activity_album_browser">AlbumBrowserActivity</string>
     <string name="title_activity_artist_browser">ArtistBrowserActivity</string>
     
+    <string name="title_play_queue">Play queue</string>
+    
     <!-- TextUtils string formatting -->
     <string name="year_delimiter" formatted="false"> - </string>
     

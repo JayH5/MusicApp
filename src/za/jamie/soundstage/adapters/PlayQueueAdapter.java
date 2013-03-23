@@ -129,16 +129,26 @@ public class PlayQueueAdapter extends BaseAdapter {
 	public List<Track> getList() {
 		return mList;
 	}
+	
+	public void remove(int position) {
+		mList.remove(position);
+		notifyDataSetChanged();
+	}
+	
+	public void moveQueueItem(int from, int to) {
+		mList.add(to, mList.remove(from));
+		notifyDataSetChanged();
+	}
 	 
-	 private void bindView(int position, View view) {
-		 final TextView titleText = (TextView) view.findViewById(R.id.title);
-		 final TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
+	private void bindView(int position, View view) {
+		final TextView titleText = (TextView) view.findViewById(R.id.title);
+		final TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
 		 
-		 final Track track = (Track) getItem(position);
-		 if (track != null) {
-			 titleText.setText(track.getTitle());
-			 subtitleText.setText(track.getArtist());
-		 }		 
-	 }
+		final Track track = (Track) getItem(position);
+		if (track != null) {
+			titleText.setText(track.getTitle());
+			subtitleText.setText(track.getArtist());
+		}		 
+	}
 
 }

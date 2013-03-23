@@ -82,14 +82,21 @@ public class Track implements Parcelable {
     			MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, mAlbumId);
     }
     
-    public void writeToContentValues(ContentValues out) {
-    	out.put(MediaStore.Audio.Media._ID, mId);
+    /**
+     * Writes the contents of the track to a ContentValues key-value store using the
+     * column keys used in MediaStore.Audio.Media
+     * @param out the ContentValues object to write to
+     * @return the id of the track
+     */
+    public long writeToContentValues(ContentValues out) {
     	out.put(MediaStore.Audio.Media.TITLE, mTitle);
     	out.put(MediaStore.Audio.Media.ARTIST_ID, mArtistId);
     	out.put(MediaStore.Audio.Media.ARTIST, mArtist);
     	out.put(MediaStore.Audio.Media.ALBUM_ID, mAlbumId);
     	out.put(MediaStore.Audio.Media.ALBUM, mAlbum);
-    	out.put(MediaStore.Audio.Media.DURATION, mDuration);    	
+    	out.put(MediaStore.Audio.Media.DURATION, mDuration);
+    	
+    	return mId;
     }
     
     @Override

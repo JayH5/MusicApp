@@ -804,9 +804,17 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
     
     private void notifyShuffleModeChanged() {
-    	final Intent intent = new Intent(SHUFFLEMODE_CHANGED);
-    	intent.putExtra(SHUFFLEMODE_CHANGED_MODE, getShuffleMode());
-    	sendStickyBroadcast(intent);
+    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	while (i > 0) {
+    		i--;
+    		try {
+    			mMusicStatusCallbackList.getBroadcastItem(i)
+    					.onShuffleModeChanged(getShuffleMode());
+    		} catch (RemoteException e) {
+    			Log.w(TAG, "Remote error during shuffle mode change.", e);
+    		}
+    	}
+    	mMusicStatusCallbackList.finishBroadcast();
     	
     	saveState();
     }
@@ -828,6 +836,10 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
     
     private void notifyQueueChanged() {
+    	saveState();
+    }
+    
+    private void deliverQueue() {
     	int i = mQueueStatusCallbackList.beginBroadcast();
     	while (i > 0) {
     		i--;
@@ -839,8 +851,6 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
 			}
     	}
     	mQueueStatusCallbackList.finishBroadcast();
-    	
-    	saveState();
     }
     
     private void updateRCCPlayState() {
@@ -1424,7 +1434,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     }
     
     private void refreshQueueStatus() {
-    	notifyQueueChanged();
+    	deliverQueue();
     	notifyMetaChanged();
     }
     
