@@ -369,13 +369,13 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 			if (cursor.moveToFirst()) {
 				do {
 					trackList.add(new Track(
-						cursor.getLong(1), // Id
-						cursor.getString(2), // Title
-						cursor.getLong(3), // Artist id
-						cursor.getString(4), // Artist
-						cursor.getLong(5), // Album id
-						cursor.getString(6), // Album
-						cursor.getLong(7))); // Duration
+						cursor.getLong(2), // Id
+						cursor.getString(3), // Title
+						cursor.getLong(4), // Artist id
+						cursor.getString(5), // Artist
+						cursor.getLong(6), // Album id
+						cursor.getString(7), // Album
+						cursor.getLong(8))); // Duration
 				} while (cursor.moveToNext());
 			}
 			cursor.close();
