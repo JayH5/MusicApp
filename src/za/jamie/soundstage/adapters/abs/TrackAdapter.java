@@ -79,7 +79,7 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 			trackList = new LinkedList<Track>();
 			do {
 				trackList.add(new Track(
-						cursor.getLong(mIdColIdx),
+						cursor.getLong(getIdColIdx()),
 						cursor.getString(mTitleColIdx),
 						cursor.getLong(mArtistIdColIdx),
 						cursor.getString(mArtistColIdx),

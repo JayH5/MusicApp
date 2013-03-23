@@ -69,16 +69,14 @@ public class ArtistsFragment extends ListFragment {
     public void onListItemClick(ListView l, View v, int position, long id) {
     	Cursor cursor = (Cursor) mAdapter.getItem(position);
 		
-		int artistIdIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
 		int artistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
 		
-		long artistId = cursor.getLong(artistIdIdx);
 		String artist = cursor.getString(artistIdx);
 		
 		Log.d(TAG, "Artist selected: " + artist);
 		
 		Intent i = new Intent(getActivity(), ArtistBrowserActivity.class);
-		i.putExtra(ArtistBrowserActivity.EXTRA_ARTIST_ID, artistId);
+		i.putExtra(ArtistBrowserActivity.EXTRA_ARTIST_ID, id);
 		i.putExtra(ArtistBrowserActivity.EXTRA_ARTIST, artist);
 		
 		startActivity(i);

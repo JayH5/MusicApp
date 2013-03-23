@@ -3,6 +3,7 @@ package za.jamie.soundstage.activities;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.library.AlbumsFragment;
 import za.jamie.soundstage.fragments.library.ArtistsFragment;
+import za.jamie.soundstage.fragments.library.PlaylistsFragment;
 import za.jamie.soundstage.fragments.library.SongsFragment;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ public class LibraryActivity extends MusicActivity {
 	private static final int SECTION_ARTISTS = 0;
 	private static final int SECTION_ALBUMS = 1;
 	private static final int SECTION_SONGS = 2;
+	private static final int SECTION_PLAYLISTS = 3;
 	
 	private ViewPager mViewPager;
 	
@@ -73,14 +75,16 @@ public class LibraryActivity extends MusicActivity {
 				return new AlbumsFragment();
 			case SECTION_SONGS:
 				return new SongsFragment();
+			case SECTION_PLAYLISTS:
+				return new PlaylistsFragment();
 			}
 			return null;
 		}
 
 		@Override
 		public int getCount() {
-			// Show 3 total pages.
-			return 3;
+			// Show 4 total pages.
+			return 4;
 		}
 
 		@SuppressLint("DefaultLocale")
@@ -93,6 +97,8 @@ public class LibraryActivity extends MusicActivity {
 				return getString(R.string.title_albums).toUpperCase();
 			case SECTION_SONGS:
 				return getString(R.string.title_songs).toUpperCase();
+			case SECTION_PLAYLISTS:
+				return getString(R.string.title_playlists).toUpperCase();
 			}
 			return null;
 		}

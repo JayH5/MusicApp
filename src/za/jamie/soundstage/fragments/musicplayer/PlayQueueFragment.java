@@ -22,8 +22,8 @@ import android.widget.AdapterView;
 
 import com.mobeta.android.dslv.DragSortListView;
 
-public class PlayQueueFragment extends DialogFragment implements AdapterView.OnItemClickListener, 
-		DragSortListView.DragSortListener {
+public class PlayQueueFragment extends DialogFragment implements 
+		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 		
 	private static final long VIBE_DURATION = 15;
 	

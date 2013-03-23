@@ -36,30 +36,6 @@ public class TrackListFragment extends ListFragment {
 	public void onListItemClick(ListView l, View v, final int position, long id) {
 		List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
 		mCallback.open(trackList, position);
-		
-		/*(new AsyncTask<TrackAdapter, Void, List<Track>>() {
-
-			@Override
-			protected List<Track> doInBackground(TrackAdapter... params) {
-				final TrackAdapter adapter = params[0];
-				if (adapter != null) {
-					List<Track> trackList = adapter.getTrackList();
-					MusicLibraryWrapper.playAll(getActivity(), trackList, position);
-				}
-				return null;
-			}
-			
-			@Override
-			protected void onPostExecute(List<Track> result) {
-				
-			}
- 	   		
- 	   	}).execute(((TrackAdapter) getListAdapter()));
-		
-		//final List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
-		//MusicServiceWrapper2.playAll(getActivity(), trackList, position, false);
-		
-		((MusicActivity) getActivity()).getMenuDrawer().openMenu();*/
     }
 
 }

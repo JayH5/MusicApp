@@ -21,6 +21,7 @@
     <string name="title_albums">Albums</string>
     <string name="title_artists">Artists</string>
     <string name="title_songs">Songs</string>
+    <string name="title_playlists">Playlists</string>
 
     <string name="title_activity_album_browser">AlbumBrowserActivity</string>
     <string name="title_activity_artist_browser">ArtistBrowserActivity</string>

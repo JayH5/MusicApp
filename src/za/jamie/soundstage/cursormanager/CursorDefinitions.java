@@ -104,4 +104,30 @@ public final class CursorDefinitions {
 				.setSelection(MediaStore.Audio.Albums.ARTIST + " = \"" + artist + "\"")
 				.setSortOrder(MediaStore.Audio.Albums.DEFAULT_SORT_ORDER);
 	}
+	
+	public static CursorParams getPlaylistsCursorParams() {
+		return new CursorParams()
+				.setBaseUri(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI)
+				.setProjection(new String[] {
+						MediaStore.Audio.Playlists._ID,
+						MediaStore.Audio.Playlists.NAME
+					})
+				.setSortOrder(MediaStore.Audio.Playlists.DEFAULT_SORT_ORDER);
+	}
+	
+	public static CursorParams getPlaylistCursorParams(long id) {
+		return new CursorParams()
+				.setBaseUri(MediaStore.Audio.Playlists.Members.getContentUri("external", id))
+				.setProjection(new String[] {
+						MediaStore.Audio.Playlists.Members._ID,
+						MediaStore.Audio.Playlists.Members.AUDIO_ID,
+						MediaStore.Audio.Media.TITLE,
+						MediaStore.Audio.Media.ARTIST_ID,
+						MediaStore.Audio.Media.ARTIST,
+						MediaStore.Audio.Media.ALBUM_ID,
+						MediaStore.Audio.Media.ALBUM,
+						MediaStore.Audio.Media.DURATION
+				})
+				.setSortOrder(MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
+	}
 }
