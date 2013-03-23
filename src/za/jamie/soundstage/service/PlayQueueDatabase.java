@@ -326,7 +326,8 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		
 		// Insert the track back into the queue in its new position
 		ContentValues insertValues = new ContentValues();
-		track.writeToContentValues(insertValues);
+		long id = track.writeToContentValues(insertValues);
+		insertValues.put(COLUMN_NAME_TRACK_ID, id);
 		insertValues.put(COLUMN_NAME_QUEUE_POSITION, to);
 		
 		db.beginTransaction();
