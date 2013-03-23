@@ -8,23 +8,30 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.os.Vibrator;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 
 import com.mobeta.android.dslv.DragSortListView;
 
 public class PlayQueueFragment extends DialogFragment implements AdapterView.OnItemClickListener, 
-		DragSortListView.DropListener, DragSortListView.RemoveListener {
+		DragSortListView.DragSortListener {
 		
+	private static final long VIBE_DURATION = 15;
+	
 	private PlayQueueAdapter mAdapter;
 	
 	private MusicQueueWrapper mService;
+	
+	private Vibrator mVibrator;
 	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
@@ -37,23 +44,8 @@ public class PlayQueueFragment extends DialogFragment implements AdapterView.OnI
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
         		R.layout.list_item_play_queue, R.layout.list_item_play_queue, 
         		null, -1);
-	}
-	
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
-			Bundle savedInstanceState) {
 		
-		final View v = inflater.inflate(R.layout.fragment_play_queue, container, false);
-		
-		DragSortListView dslv = (DragSortListView) v.findViewById(R.id.dslv);
-		
-		dslv.setAdapter(mAdapter);
-		
-		dslv.setDropListener(this);
-		dslv.setRemoveListener(this);
-		dslv.setOnItemClickListener(this);
-		
-		return v;
+		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
 	
 	@Override
@@ -65,13 +57,39 @@ public class PlayQueueFragment extends DialogFragment implements AdapterView.OnI
 	
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.setTitle(R.string.title_play_queue);
+		final LayoutInflater inflater = getActivity().getLayoutInflater();
+		final DragSortListView dslv = (DragSortListView) 
+				inflater.inflate(R.layout.fragment_play_queue, null);
+		dslv.setDragSortListener(this);
+		dslv.setOnItemClickListener(this);
+		dslv.setAdapter(mAdapter);
+        
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setView(dslv)
+        	.setTitle(R.string.title_play_queue)
+        	.setNegativeButton(R.string.play_queue_close, 
+        			new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							
+						}
+					})
+        	.setPositiveButton(R.string.play_queue_save, 
+        			new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							
+						}
+					});
         
         mService.registerQueueStatusCallback(mCallback);
         mService.requestQueueStatusRefresh();
         
-	    return dialog;
+	    return builder.create();
 	}
 	
 	@Override
@@ -135,6 +153,11 @@ public class PlayQueueFragment extends DialogFragment implements AdapterView.OnI
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
 		mService.setQueuePosition(which);
 		getDialog().dismiss();
+	}
+
+	@Override
+	public void drag(int from, int to) {
+		mVibrator.vibrate(VIBE_DURATION);		
 	}
 	
 }

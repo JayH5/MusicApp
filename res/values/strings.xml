@@ -26,6 +26,8 @@
     <string name="title_activity_artist_browser">ArtistBrowserActivity</string>
     
     <string name="title_play_queue">Play queue</string>
+    <string name="play_queue_save">Save as playlist</string>
+    <string name="play_queue_close">Close</string>
     
     <!-- TextUtils string formatting -->
     <string name="year_delimiter" formatted="false"> - </string>
