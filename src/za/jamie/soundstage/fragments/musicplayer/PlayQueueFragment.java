@@ -1,11 +1,13 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.IQueueStatusCallback;
 import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
+import za.jamie.soundstage.fragments.dialogs.CreatePlaylistDialog;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -25,6 +27,8 @@ import com.mobeta.android.dslv.DragSortListView;
 public class PlayQueueFragment extends DialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 		
+	private static final String TAG_CREATE_PLAYLIST_DIALOG = "playlist_dialog";
+	
 	private static final long VIBE_DURATION = 15;
 	
 	private PlayQueueAdapter mAdapter;
@@ -81,8 +85,11 @@ public class PlayQueueFragment extends DialogFragment implements
 						
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
-							// TODO Auto-generated method stub
+							CreatePlaylistDialog frag = 
+									CreatePlaylistDialog.newInstance(
+											(ArrayList<Track>) mAdapter.getList());
 							
+							frag.show(getChildFragmentManager(), TAG_CREATE_PLAYLIST_DIALOG);							
 						}
 					});
         

@@ -16,12 +16,18 @@ import com.viewpagerindicator.TitlePageIndicator;
 
 public class LibraryActivity extends MusicActivity {
 
-	private static final int SECTION_ARTISTS = 0;
-	private static final int SECTION_ALBUMS = 1;
-	private static final int SECTION_SONGS = 2;
-	private static final int SECTION_PLAYLISTS = 3;
+	// Extras used to recreate activity state when using home-as-up
+	public static final String EXTRA_SECTION = "extra_section";
+	public static final String EXTRA_ITEM_ID = "extra_item_id";
+	
+	public static final int SECTION_ARTISTS = 0;
+	public static final int SECTION_ALBUMS = 1;
+	public static final int SECTION_SONGS = 2;
+	public static final int SECTION_PLAYLISTS = 3;
 	
 	private ViewPager mViewPager;
+	
+	private int mSelectedPage;
 	
 	private static final String STATE_SELECTED_PAGE = "selected_page";
 
@@ -37,17 +43,19 @@ public class LibraryActivity extends MusicActivity {
 		final TitlePageIndicator indicator = (TitlePageIndicator) 
 				findViewById(R.id.indicator);
         indicator.setViewPager(mViewPager);
+        
+        if (savedInstanceState != null) {
+			mSelectedPage = savedInstanceState.getInt(STATE_SELECTED_PAGE);
+		} else {
+			mSelectedPage = getIntent().getIntExtra(EXTRA_SECTION, SECTION_ALBUMS);
+		}
 	}
 
 	@Override
 	public void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
-		if (savedInstanceState != null) {
-			mViewPager.setCurrentItem(
-					savedInstanceState.getInt(STATE_SELECTED_PAGE));
-		} else {
-			mViewPager.setCurrentItem(SECTION_ALBUMS);
-		}
+		
+		mViewPager.setCurrentItem(mSelectedPage);
 	}
 
 	@Override
@@ -68,15 +76,19 @@ public class LibraryActivity extends MusicActivity {
 
 		@Override
 		public Fragment getItem(int position) {
+			long itemId = -1;
+			if (position == mSelectedPage) {
+				itemId = getIntent().getLongExtra(EXTRA_ITEM_ID, -1);
+			}
 			switch (position) {
 			case SECTION_ARTISTS:
-				return new ArtistsFragment();
+				return ArtistsFragment.newInstance(itemId);
 			case SECTION_ALBUMS:
-				return new AlbumsFragment();
+				return AlbumsFragment.newInstance(itemId);
 			case SECTION_SONGS:
 				return new SongsFragment();
 			case SECTION_PLAYLISTS:
-				return new PlaylistsFragment();
+				return PlaylistsFragment.newInstance(itemId);
 			}
 			return null;
 		}

@@ -7,6 +7,7 @@ import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.view.MenuItem;
 
 public class AlbumBrowserActivity extends MusicActivity {
 	
@@ -26,6 +27,8 @@ public class AlbumBrowserActivity extends MusicActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setMainContentView(R.layout.activity_browser);
+		
+		getActionBar().setDisplayHomeAsUpEnabled(true);
 
 		final Intent launchIntent = getIntent();
 		if (launchIntent != null) {
@@ -59,6 +62,26 @@ public class AlbumBrowserActivity extends MusicActivity {
 						TAG_LIST_FRAG)
 				.commit();
 		}	
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case android.R.id.home:
+			// This is called when the Home (Up) button is pressed
+            // in the Action Bar.
+            Intent parentActivityIntent = new Intent(this, LibraryActivity.class);
+            parentActivityIntent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                    Intent.FLAG_ACTIVITY_NEW_TASK);
+            parentActivityIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
+            		LibraryActivity.SECTION_ALBUMS);
+            parentActivityIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mAlbumId);
+            startActivity(parentActivityIntent);
+            finish();
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 		
 	@Override

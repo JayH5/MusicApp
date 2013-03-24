@@ -41,7 +41,7 @@ public class MusicPlayerFragment extends Fragment implements
 	// Handle UI updates
     private Handler mHandler;
     
-    private static final String TAG = "MusicPlayerFragment";
+    //private static final String TAG = "MusicPlayerFragment";
 	
 	private ImageFetcher mImageWorker;
 	
@@ -91,6 +91,13 @@ public class MusicPlayerFragment extends Fragment implements
 		super.onAttach(activity);
 		
 		mService = (MusicPlaybackWrapper) activity;
+	}
+	
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		
+		mHandler.removeCallbacksAndMessages(null);
 	}
 	
 	@Override

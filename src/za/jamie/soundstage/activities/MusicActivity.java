@@ -28,7 +28,6 @@ import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
@@ -39,8 +38,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
-	
-	//private ServiceToken mServiceToken;
 	
 	private ImageButton mPlayQueueButton;
 	
@@ -66,7 +63,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			mService = null;			
+			mService = null;
 		}
 		
 	};
@@ -76,7 +73,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		super.onCreate(savedInstanceState);
 		
 		// Bind the service
-		//mServiceToken = MusicLibraryWrapper.bindToService(this, this);
 		final Intent bindIntent = new Intent(this, MusicService.class)
 				.setAction(IMusicService.class.getName());
 		bindService(bindIntent, mConnection, Context.BIND_AUTO_CREATE);
@@ -112,7 +108,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			}
 		});
 		
-		getActionBar().setDisplayHomeAsUpEnabled(true);
+		//getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
 
 	public void setMainContentView(int layoutResId) {
@@ -146,11 +142,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
     protected void onDestroy() {
         super.onDestroy();
         
-        // Unbind from the service
-        /*if (mServiceToken != null) {
-        	MusicLibraryWrapper.unbindFromService(mServiceToken);
-            mServiceToken = null;
-        }*/
         unbindService(mConnection);
     }
 	
@@ -165,7 +156,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		super.onBackPressed();
     }
 	
-	@Override
+	/*@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case android.R.id.home:
@@ -174,7 +165,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
-	}
+	}*/
 	
 	@Override
     protected void onRestoreInstanceState(Bundle inState) {
