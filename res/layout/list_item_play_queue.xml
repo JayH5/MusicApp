@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/list_item_height"
+    android:orientation="horizontal"
+    android:gravity="center_vertical" >
+    
+    <ImageView
+        android:id="@+id/drag_handle"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingLeft="8dp"
+        android:layout_alignParentLeft="true"
+        android:src="@drawable/btn_content_reorder"
+        android:background="?android:selectableItemBackground" />
+    
+    <LinearLayout
+    	android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toLeftOf="@+id/remove_button"
+        android:layout_toRightOf="@id/drag_handle"
+        android:orientation="vertical"
+        android:gravity="center_vertical" >
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/ListItemText.Title" />
+
+        <TextView
+            android:id="@+id/subtitle"
+            style="@style/ListItemText.Subtitle" />
+
+	</LinearLayout>
+	
+    <ImageView 
+        android:id="@+id/remove_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:src="@drawable/btn_content_remove"
+        android:background="?android:selectableItemBackground" />
+
+</RelativeLayout>
