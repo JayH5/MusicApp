@@ -13,7 +13,8 @@ Dependencies
 * DiskLruCache 1.3.1 (https://github.com/JakeWharton/DiskLruCache)
 * MenuDrawer 2.0.1 (https://github.com/SimonVT/android-menudrawer)
 * ViewPagerIndicator 2.4.1 (https://github.com/JakeWharton/Android-ViewPagerIndicator)
-* Android Support Library v4 R11
+* drag-sort-listview 0.6.1 (https://github.com/bauerca/drag-sort-listview)
+* Android Support Library v4 R12
 
 Requirements
 ------------
@@ -60,16 +61,16 @@ Current issues
 
 Minor issues
 ------------
-* Player fragment needs a bit of testing when restoring state... mostly works
+* ~~Player fragment needs a bit of testing when restoring state... mostly works~~
 * ~~Album artwork and artist images are really low res... not sure why. But this is a pretty minor issue.~~ Last.fm images are just not very big - "extra-large" is 300x300 px. There is a "mega" size option for album covers but those are really huge. Current res for artist images is as big as it gets.
-* Image fetching mechanism may leave a few stray files in the DownloadCache directory.
+* ~~Image fetching mechanism may leave a few stray files in the DownloadCache directory.~~
 
 Next features
 -------------
 * SEARCH
 * Playlist creation
 * Long press song/album/artist/etc for contextual options
-* Play queue interface upgrade: Drag tracks to reorder. Press button to remove track from queue
+* ~~Play queue interface upgrade: Drag tracks to reorder. Press button to remove track from queue~~
 * Multi-threaded image processing/fetching from cache/downloading. See new Android training sample: http://developer.android.com/shareables/training/ThreadSample.zip
 * Settings of some kind
 * Landscape layout
