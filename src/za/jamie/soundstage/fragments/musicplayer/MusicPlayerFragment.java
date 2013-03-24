@@ -7,6 +7,7 @@ import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
@@ -49,6 +50,10 @@ public class MusicPlayerFragment extends Fragment implements
 	private ImageButton mPlayPauseButton;
 	private RepeatingImageButton mPreviousButton;
 	private RepeatingImageButton mNextButton;
+	
+	// Shuffle/repeat buttons
+	private ImageButton mShuffleButton;
+	private ImageButton mRepeatButton;
 	
 	// UI elements for metadata
 	private TextView mTrackText;
@@ -133,17 +138,25 @@ public class MusicPlayerFragment extends Fragment implements
 		// inflate using the cloned inflater, not the passed in default	
         final View v = localInflater.inflate(R.layout.fragment_music_player, container, false);
         
+        // Playback controls
         mPlayPauseButton = (ImageButton) v.findViewById(R.id.action_button_play);
         mPreviousButton = (RepeatingImageButton) v.findViewById(R.id.action_button_previous);
         mNextButton = (RepeatingImageButton) v.findViewById(R.id.action_button_next);
         
-        mPlayPauseButton.setOnClickListener(mPlayButtonListener);
+        mPlayPauseButton.setOnClickListener(mButtonListener);
         
-        mPreviousButton.setOnClickListener(mPlayButtonListener);
+        mPreviousButton.setOnClickListener(mButtonListener);
         mPreviousButton.setRepeatListener(mRewListener, REPEAT_INTERVAL);
         
-        mNextButton.setOnClickListener(mPlayButtonListener);
+        mNextButton.setOnClickListener(mButtonListener);
         mNextButton.setRepeatListener(mFfwdListener, REPEAT_INTERVAL);
+        
+        // Shuffle/repeat
+        mShuffleButton = (ImageButton) v.findViewById(R.id.action_button_shuffle);
+        mRepeatButton = (ImageButton) v.findViewById(R.id.action_button_repeat);
+        
+        mShuffleButton.setOnClickListener(mButtonListener);
+        mRepeatButton.setOnClickListener(mButtonListener);
         
         mTrackText = (TextView) v.findViewById(R.id.music_player_track_name);
         mAlbumText = (TextView) v.findViewById(R.id.music_player_album_name);
@@ -383,7 +396,35 @@ public class MusicPlayerFragment extends Fragment implements
     	queueNextRefresh(next);
     }
     
-    private View.OnClickListener mPlayButtonListener = new View.OnClickListener() {
+    private void updateShuffleMode(int shuffleMode) {
+    	switch (shuffleMode) {
+		case MusicService.SHUFFLE_NONE:
+			mShuffleButton.setImageResource(R.drawable.btn_shuffle);
+			break;
+		case MusicService.SHUFFLE_AUTO:
+			mShuffleButton.setImageResource(R.drawable.btn_playback_shuffle_all);
+			break;
+		case MusicService.SHUFFLE_NORMAL:
+			mShuffleButton.setImageResource(R.drawable.btn_playback_shuffle_all);
+			break;
+		}
+    }
+    
+    private void updateRepeatMode(int repeatMode) {
+    	switch (repeatMode) {
+    	case MusicService.REPEAT_NONE:
+    		mRepeatButton.setImageResource(R.drawable.btn_repeat);
+    		break;
+    	case MusicService.REPEAT_ALL:
+    		mRepeatButton.setImageResource(R.drawable.btn_playback_repeat_all);
+    		break;
+    	case MusicService.REPEAT_CURRENT:
+    		mRepeatButton.setImageResource(R.drawable.btn_playback_repeat_one);
+    		break;
+    	}
+    }
+    
+    private View.OnClickListener mButtonListener = new View.OnClickListener() {
 		
 		@Override
 		public void onClick(View v) {
@@ -393,6 +434,10 @@ public class MusicPlayerFragment extends Fragment implements
 				mService.next();
 			} else if (v == mPreviousButton) {
 				mService.previous();
+			} else if (v == mShuffleButton) {
+				mService.cycleShuffleMode();
+			} else if (v == mRepeatButton) {
+				mService.cycleRepeatMode();
 			}
 			
 		}
@@ -476,15 +521,31 @@ public class MusicPlayerFragment extends Fragment implements
 		}
 
 		@Override
-		public void onShuffleModeChanged(int shuffleMode)
+		public void onShuffleModeChanged(final int shuffleMode)
 				throws RemoteException {
-			// TODO Auto-generated method stub
 			
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updateShuffleMode(shuffleMode);
+					
+				}
+				
+			});
 		}
 
 		@Override
-		public void onRepeatModeChanged(int repeatMode) throws RemoteException {
-			// TODO Auto-generated method stub
+		public void onRepeatModeChanged(final int repeatMode) throws RemoteException {
+			getActivity().runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updateRepeatMode(repeatMode);
+					
+				}
+				
+			});
 			
 		}
 	};

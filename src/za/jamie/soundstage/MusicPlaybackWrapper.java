@@ -6,6 +6,8 @@ public interface MusicPlaybackWrapper {
 	public void next();
 	public void previous();
 	public void seek(long position);
+	public void cycleShuffleMode();
+	public void cycleRepeatMode();
 	
 	// Callbacks
 	public void requestMusicStatusRefresh();

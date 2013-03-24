@@ -21,6 +21,8 @@ oneway interface IMusicService {
 	void next();
 	void previous();
 	void seek(long position);
+	void cycleShuffleMode();
+	void cycleRepeatMode();
 	
 	// MusicStatusCallback
 	void requestMusicStatusRefresh();
@@ -29,5 +31,6 @@ oneway interface IMusicService {
 	
 	// Opening new music/enqueueing music for the library
 	void open(in List<Track> tracks, int position);
+	void shuffle(in List<Track> tracks);
 	void enqueue(in List<Track> tracks, int action);
 }

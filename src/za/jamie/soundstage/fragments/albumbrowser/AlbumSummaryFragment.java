@@ -2,7 +2,9 @@ package za.jamie.soundstage.fragments.albumbrowser;
 
 import java.util.List;
 
+import za.jamie.soundstage.MusicLibraryWrapper;
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.AlbumBrowserActivity;
 import za.jamie.soundstage.activities.ArtistBrowserActivity;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.ImageDialogFragment;
@@ -10,6 +12,7 @@ import za.jamie.soundstage.loaders.AlbumSummaryLoader;
 import za.jamie.soundstage.models.AlbumSummary;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -42,9 +45,9 @@ public class AlbumSummaryFragment extends Fragment implements
 	
 	private ImageView mAlbumArt;
 	
-	private AlbumArtistsCallback mListener;
-	
 	private long mAlbumId;
+	
+	private AlbumArtistsCallback mCallback;
 	
 	private List<String> mArtists;
 	private List<Long> mArtistIds;
@@ -72,7 +75,7 @@ public class AlbumSummaryFragment extends Fragment implements
 		getLoaderManager().initLoader(LOADER_ID, null, this);
 	}
 	
-	@Override
+	/*@Override
 	public void onResume() {
 		super.onResume();
 		mImageWorker.setExitTasksEarly(false);
@@ -82,6 +85,20 @@ public class AlbumSummaryFragment extends Fragment implements
 	public void onPause() {
 		super.onPause();
 		mImageWorker.setExitTasksEarly(true);
+	}*/
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		mCallback = (AlbumArtistsCallback) activity;
+	}
+	
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		
+		mCallback = null;
 	}
 	
 	@Override
@@ -109,32 +126,27 @@ public class AlbumSummaryFragment extends Fragment implements
 		
 		final ImageButton browseArtistButton = (ImageButton) view
 				.findViewById(R.id.browse_artist_button);
-		final ImageButton addToQueueButton = (ImageButton) view
-				.findViewById(R.id.add_to_queue_button);
+		final ImageButton shuffleButton = (ImageButton) view
+				.findViewById(R.id.shuffle_button);
 		
 		browseArtistButton.setOnClickListener(mArtistButtonListener);		
-		addToQueueButton.setOnClickListener(mAddToQueueListener);
+		shuffleButton.setOnClickListener(mShuffleButtonListener);
 		
 		return view;
 	}
 	
-	public void setCallback(AlbumArtistsCallback listener) {
-		mListener = listener;
-	}
-	
-	private View.OnClickListener mAddToQueueListener = new View.OnClickListener() {
+	private View.OnClickListener mShuffleButtonListener = new View.OnClickListener() {
 		
 		@Override
 		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			
+			if (mCallback != null) {
+				mCallback.onShuffleAlbum();
+			}
 		}
 	};
 
 	@Override
 	public Loader<AlbumSummary> onCreateLoader(int id, Bundle args) {
-		/*return CursorDefinitions.getAlbumBrowserCursorParams(mAlbumId)
-				.getCursorLoader(getActivity());*/
 		return new AlbumSummaryLoader(getActivity(), mAlbumId);
 	}
 
@@ -142,7 +154,6 @@ public class AlbumSummaryFragment extends Fragment implements
 	public void onLoadFinished(Loader<AlbumSummary> loader, AlbumSummary data) {
 		switch (loader.getId()) {
 		case LOADER_ID:
-			//mAdapter.swapCursor(data);
 			loadSummary(data);
 			break;
 		default:
@@ -164,8 +175,8 @@ public class AlbumSummaryFragment extends Fragment implements
 		mArtists = summary.artists;
 		mArtistIds = summary.artistIds;
 		
-		if (mListener != null) {
-			mListener.onArtistsFound(mArtists);
+		if (mCallback != null) {
+			mCallback.onArtistsFound(mArtists);
 		}
 	}
 	
@@ -205,6 +216,7 @@ public class AlbumSummaryFragment extends Fragment implements
 	
 	public interface AlbumArtistsCallback {
 		public void onArtistsFound(List<String> artists);
+		public void onShuffleAlbum();
 	}
 	
 }

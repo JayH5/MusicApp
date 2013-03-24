@@ -70,8 +70,8 @@
                	style="@style/TransparentImageButton" />
            
            	<ImageButton
-               	android:id="@+id/add_to_queue_button"
-               	android:src="@drawable/btn_add_to_queue"
+               	android:id="@+id/shuffle_button"
+               	android:src="@drawable/btn_shuffle"
                	style="@style/TransparentImageButton" />
            
        	</LinearLayout>

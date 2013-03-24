@@ -825,7 +825,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     		i--;
     		try {
     			mMusicStatusCallbackList.getBroadcastItem(i)
-    					.onShuffleModeChanged(getShuffleMode());
+    					.onRepeatModeChanged(getRepeatMode());
     		} catch (RemoteException e) {
     			Log.w(TAG, "notifyRepeatModeChanged()", e);
     		}
@@ -998,7 +998,7 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
     	mPlayQueue.openList(list);
     	notifyQueueChanged(); 
     	
-    	if (position >= 0 || position > list.size()) {
+    	if (position >= 0 && position < list.size()) {
     		mPlayQueue.setPlayPosition(position);
     	} else {
     		mPlayQueue.setPlayPosition(mShuffler.nextInt(mPlayQueue.size()));
@@ -1010,6 +1010,11 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
         if (oldId != mPlayQueue.getCurrentId()) {
             notifyMetaChanged();
         }
+    }
+    
+    public synchronized void shuffle(List<Track> tracks) {
+    	setShuffleMode(SHUFFLE_NORMAL);
+    	open(tracks, -1);
     }
     
     /**
@@ -1692,6 +1697,11 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
 		public void open(List<Track> tracks, int position) throws RemoteException {
 			mService.get().open(tracks, position);
 		}
+		
+		@Override
+		public void shuffle(List<Track> tracks) throws RemoteException {
+			mService.get().shuffle(tracks);
+		}
 
 		@Override
 		public void enqueue(List<Track> tracks, int action) throws RemoteException {
@@ -1736,6 +1746,18 @@ public class MusicService extends Service implements GaplessPlayer.PlayerEventLi
 		@Override
 		public void seek(long position) throws RemoteException {
 			mService.get().seek(position);			
+		}
+
+		@Override
+		public void cycleShuffleMode() throws RemoteException {
+			mService.get().cycleShuffle();
+			
+		}
+
+		@Override
+		public void cycleRepeatMode() throws RemoteException {
+			mService.get().cycleRepeat();
+			
 		}
 		
 	}

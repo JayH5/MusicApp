@@ -8,6 +8,8 @@
 
     <string name="browse_all_tracks">Browse by tracks</string>
     
+    <string name="various_artists">Various artists</string>
+    
     <string-array name="library_sections">
         <item>Albums</item>
         <item>Artists</item>

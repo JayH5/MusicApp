@@ -1,15 +1,20 @@
 package za.jamie.soundstage.activities;
 
+import java.util.List;
+
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
+import za.jamie.soundstage.models.Track;
 import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.view.MenuItem;
 
-public class AlbumBrowserActivity extends MusicActivity {
+public class AlbumBrowserActivity extends MusicActivity implements AlbumSummaryFragment.AlbumArtistsCallback {
 	
 	//private static final String TAG = "AlbumBrowserActivity";
 	private static final String TAG_LIST_FRAG = "album_track_list";
@@ -22,6 +27,8 @@ public class AlbumBrowserActivity extends MusicActivity {
 	private String mAlbum;
 	private String mArtist;
 	private long mAlbumId;
+	
+	private TrackListFragment mTrackListFragment;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -55,11 +62,13 @@ public class AlbumBrowserActivity extends MusicActivity {
 						TAG_SUMMARY_FRAG)
 				.commit();
 		}
-							
-		if (fm.findFragmentByTag(TAG_LIST_FRAG) == null) {
+		
+		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
+		if (mTrackListFragment == null) {
+			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);
+			
 			fm.beginTransaction()
-				.add(R.id.listFrame, AlbumTrackListFragment.newInstance(mAlbumId), 
-						TAG_LIST_FRAG)
+				.add(R.id.listFrame, mTrackListFragment, TAG_LIST_FRAG)
 				.commit();
 		}	
 	}
@@ -90,5 +99,22 @@ public class AlbumBrowserActivity extends MusicActivity {
 		outState.putLong(EXTRA_ALBUM_ID, mAlbumId);
 		outState.putString(EXTRA_ALBUM, mAlbum);
 		outState.putString(EXTRA_ARTIST, mArtist);
+	}
+
+	@Override
+	public void onArtistsFound(List<String> artists) {
+		if (artists.size() == 1) {
+			getActionBar().setSubtitle(artists.get(0));
+		} else {
+			getActionBar().setSubtitle(R.string.various_artists);
+		}		
+	}
+
+	@Override
+	public void onShuffleAlbum() {
+		List<Track> tracks = ((TrackAdapter) mTrackListFragment
+				.getListAdapter()).getTrackList();
+		
+		shuffle(tracks);		
 	}
 }

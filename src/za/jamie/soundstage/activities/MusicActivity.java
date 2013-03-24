@@ -264,6 +264,16 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		}
 		mDrawer.openMenu();
 	}
+	
+	@Override
+	public void shuffle(List<Track> tracks) {
+		try {
+			mService.shuffle(tracks);
+		} catch (RemoteException ignored) {
+			
+		}
+		mDrawer.openMenu();
+	}
 
 	@Override
 	public void enqueue(List<Track> tracks, final int action) {
@@ -310,6 +320,26 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			mService.seek(position);
 		} catch (RemoteException e) {
 
+		}
+		
+	}
+	
+	@Override
+	public void cycleShuffleMode() {
+		try {
+			mService.cycleShuffleMode();
+		} catch (RemoteException e) {
+			
+		}
+		
+	}
+
+	@Override
+	public void cycleRepeatMode() {
+		try {
+			mService.cycleRepeatMode();
+		} catch (RemoteException e) {
+			
 		}
 		
 	}
