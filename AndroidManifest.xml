@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="za.jamie.soundstage"
     android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionName="0.4" >
 
     <uses-sdk
         android:minSdkVersion="16"
@@ -30,6 +30,28 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                
+                <category android:name="android.intent.category.APP_MUSIC"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+                
+                <data android:mimeType="vnd.android.cursor.dir/artist" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+                
+                <data android:mimeType="vnd.android.cursor.dir/album" />
+                <data android:mimeType="vnd.android.cursor.dir/artist" />
+                <data android:mimeType="vnd.android.cursor.dir/playlist" />
+            </intent-filter>
+            
         	
         </activity>
 
@@ -64,16 +86,34 @@
             android:name=".activities.AlbumBrowserActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.item/album" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".activities.ArtistBrowserActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                
+                <data android:mimeType="vnd.android.cursor.item/artist" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".activities.PlaylistBrowserActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
+            <intent-filter >
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                
+                <data android:mimeType="vnd.android.cursor.item/playlist" />
+            </intent-filter>
         </activity>
     </application>
 

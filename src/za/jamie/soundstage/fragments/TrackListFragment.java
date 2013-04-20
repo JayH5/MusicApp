@@ -11,31 +11,46 @@ import android.view.View;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-
 public class TrackListFragment extends ListFragment {
 	
 	private MusicLibraryWrapper mCallback;
+	private TrackAdapter mAdapter;
 	
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		
 		mCallback = (MusicLibraryWrapper) activity;
 	}
 	
 	@Override
+	public void onDetach() {
+		super.onDetach();
+		mCallback = null;
+	}
+	
+	@Override
 	public void setListAdapter(ListAdapter adapter) {
-		if (!(adapter instanceof TrackAdapter)) {
-			throw new IllegalArgumentException("TrackListFragments must have TrackAdapters!");
+		if (adapter != null && !(adapter instanceof TrackAdapter)) {
+			throw new IllegalArgumentException("TrackListFragments must have TrackAdapter!");
 		} else {
 			super.setListAdapter(adapter);
+			mAdapter = (TrackAdapter) adapter;
 		}
 	}
 	
 	@Override
 	public void onListItemClick(ListView l, View v, final int position, long id) {
-		List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
-		mCallback.open(trackList, position);
+		if (mCallback != null) {
+			List<Track> trackList = mAdapter.getTrackList();
+			mCallback.open(trackList, position);
+		}
     }
+	
+	public void shuffleAll() {
+		if (mCallback != null) {
+			List<Track> trackList = mAdapter.getTrackList();
+			mCallback.shuffle(trackList);
+		}
+	}
 
 }

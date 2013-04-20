@@ -1,29 +1,19 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ArtistBrowserActivity" >
-
-    <FrameLayout 
+    android:orientation="vertical" >
+        
+    <include 
         android:id="@+id/summaryFrame"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true" />
-    
-    <View 
-        android:id="@+id/summaryBorder"
-        android:layout_width="match_parent"
-        android:layout_height="2.5dp"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@id/summaryFrame"
-        android:background="@drawable/gradient_now_bottom_border" />
+        android:layout_margin="8dp"
+        layout="@layout/fragment_album_summary" />
     
     <FrameLayout 
         android:id="@+id/listFrame"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/summaryBorder"
-        android:layout_alignParentLeft="true" />
+        android:layout_height="wrap_content" />
 
-</RelativeLayout>
+</LinearLayout>

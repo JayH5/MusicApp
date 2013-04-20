@@ -1,6 +1,5 @@
 package za.jamie.soundstage.activities;
 
-//import static za.jamie.soundstage.service.MusicServiceWrapper.mService;
 import java.util.List;
 
 import net.simonvt.menudrawer.MenuDrawer;

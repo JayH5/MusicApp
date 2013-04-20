@@ -3,6 +3,7 @@ package za.jamie.soundstage.adapters;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.AlbumAdapter;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
+import za.jamie.soundstage.utils.ImageUtils;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
@@ -18,10 +19,10 @@ public class AlbumsAdapter extends AlbumAdapter {
     private int mNumColumns = 0;
     private RelativeLayout.LayoutParams mImageViewLayoutParams;    
 	
-	public AlbumsAdapter(Context context, int layout, Cursor cursor, int flags, 
-			ImageFetcher imageWorker) {
+	public AlbumsAdapter(Context context, int layout, Cursor cursor, int flags) {
 		super(context, layout, cursor, flags);
-		mImageWorker = imageWorker;
+		
+		mImageWorker = ImageUtils.getImageFetcher(context);
 	}
 	
 	@Override

@@ -3,6 +3,7 @@
     <!-- Application theme. -->
     <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
         <!-- All customizations to the theme can go here. -->
+        <item name="android:windowBackground">@color/google_now_grey</item>
     </style>
     
     <style name="AlbumGridLayout">
@@ -13,9 +14,8 @@
     <style name="ViewPageIndicator" >
         <item name="android:textColor">?android:textColorSecondaryInverse</item>
         <item name="android:textSize">@dimen/vpi_text_size</item>
-        <item name="android:background">@color/now_background</item>
         <item name="footerIndicatorStyle">none</item>
-        <item name="footerPadding">4dp</item>
+        <item name="footerPadding">8dp</item>
         <item name="footerLineHeight">0dp</item>
         <item name="selectedColor">@color/now_dark_grey_text</item>
         <item name="topPadding">2dp</item>

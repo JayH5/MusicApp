@@ -8,4 +8,7 @@
     <color name="transparent_black">#99000000</color>
     <color name="transparent">#00000000</color>
     <color name="title_page_indicator_background">#707070</color>
+    
+    <color name="google_keep_grey">#DCE1E3</color>
+    <color name="google_now_grey">#E5E5E5</color>
 </resources>

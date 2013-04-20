@@ -7,7 +7,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 
-public class Track implements Parcelable {
+public class Track implements Parcelable, IdItem {
 	private long mId;
 	private String mTitle;
     

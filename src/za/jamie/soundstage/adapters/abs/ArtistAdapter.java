@@ -3,7 +3,7 @@ package za.jamie.soundstage.adapters.abs;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
-import android.widget.ResourceCursorAdapter;
+import android.support.v4.widget.ResourceCursorAdapter;
 
 public abstract class ArtistAdapter extends ResourceCursorAdapter {
 

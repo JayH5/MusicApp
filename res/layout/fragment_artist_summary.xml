@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
   	android:layout_width="match_parent"
    	android:layout_height="@dimen/artist_image_thumb_size"
-   	android:background="@color/now_background" >
+   	android:layout_margin="8dp"
+   	android:background="@drawable/card_background" >
    	    
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,8 +29,8 @@
     
    	<ImageView
       	android:id="@+id/artistThumb"
-       	android:layout_width="@dimen/artist_image_thumb_size"
-       	android:layout_height="@dimen/artist_image_thumb_size"
+       	android:layout_width="94dp"
+       	android:layout_height="94dp"
        	android:layout_alignParentRight="true"
        	android:padding="@dimen/image_thumbnail_spacing"
        	android:scaleType="centerCrop" />

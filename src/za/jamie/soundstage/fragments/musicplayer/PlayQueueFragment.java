@@ -1,13 +1,11 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.IQueueStatusCallback;
 import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
-import za.jamie.soundstage.fragments.dialogs.CreatePlaylistDialog;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,7 +25,7 @@ import com.mobeta.android.dslv.DragSortListView;
 public class PlayQueueFragment extends DialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 		
-	private static final String TAG_CREATE_PLAYLIST_DIALOG = "playlist_dialog";
+	//private static final String TAG_CREATE_PLAYLIST_DIALOG = "playlist_dialog";
 	
 	private static final long VIBE_DURATION = 15;
 	
@@ -45,9 +43,7 @@ public class PlayQueueFragment extends DialogFragment implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
-        		R.layout.list_item_play_queue, R.layout.list_item_play_queue, 
-        		null, -1);
+		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue, null);
 		
 		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
@@ -85,11 +81,11 @@ public class PlayQueueFragment extends DialogFragment implements
 						
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
-							CreatePlaylistDialog frag = 
+							/*CreatePlaylistDialog frag = 
 									CreatePlaylistDialog.newInstance(
 											(ArrayList<Track>) mAdapter.getList());
 							
-							frag.show(getChildFragmentManager(), TAG_CREATE_PLAYLIST_DIALOG);							
+							frag.show(getChildFragmentManager(), TAG_CREATE_PLAYLIST_DIALOG);*/						
 						}
 					});
         
@@ -114,7 +110,8 @@ public class PlayQueueFragment extends DialogFragment implements
 
 				@Override
 				public void run() {
-					mAdapter.setList(queue);
+					//mAdapter.setList(queue);
+					mAdapter.addAll(queue);
 					
 				}
 				
@@ -128,7 +125,7 @@ public class PlayQueueFragment extends DialogFragment implements
 
 				@Override
 				public void run() {
-					mAdapter.setQueuePosition(position);
+					//mAdapter.setQueuePosition(position);
 					
 				}
 				
@@ -143,7 +140,7 @@ public class PlayQueueFragment extends DialogFragment implements
 		mAdapter.remove(which);
 		mService.removeTrack(which);
 		
-		if (mAdapter.getList().isEmpty()) {
+		if (mAdapter.getCount() == 0) {
 			getDialog().dismiss();
 		}
 	}
@@ -151,7 +148,7 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void drop(int from, int to) {
 		if (from != to) {
-			mAdapter.moveQueueItem(from, to);
+			mAdapter.move(from, to);
 			mService.moveQueueItem(from, to);
 		}
 	}
@@ -159,7 +156,6 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
 		mService.setQueuePosition(which);
-		getDialog().dismiss();
 	}
 
 	@Override

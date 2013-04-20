@@ -6,13 +6,23 @@ import za.jamie.soundstage.adapters.abs.TrackAdapter;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
+import android.app.Activity;
+import android.database.Cursor;
+import android.database.DataSetObserver;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
 
 public class ArtistTrackListFragment extends TrackListFragment {
 	
 	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
 	private long mArtistId;
+	
+	private TrackAdapter mAdapter;
+	
+	private ArtistTrackListListener mCallback;
 	
 	public static ArtistTrackListFragment newInstance(long artistId) {
 		final Bundle args = new Bundle();
@@ -29,14 +39,74 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		
 		mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);
 		
-		final TrackAdapter adapter = new ArtistTrackListAdapter(getActivity(), 
+		mAdapter = new ArtistTrackListAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
-		setListAdapter(adapter);
+		mAdapter.registerDataSetObserver(mDataSetObserver);
 		
-		final CursorManager cm = new CursorManager(getActivity(), adapter, 
+		//setListAdapter(mAdapter);
+		
+		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
 				CursorDefinitions.getArtistBrowserCursorParams(mArtistId));
 		
 		getLoaderManager().initLoader(0, null, cm);
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		
+		getListView().addHeaderView(
+				View.inflate(getActivity(), R.layout.listview_header_viewpager, null));
+		Log.d("TrackList", "Number header views: " + getListView().getHeaderViewsCount());
+		setListAdapter(mAdapter);
+	}
+	
+	@Override
+	public void onDestroyView() {
+		super.onDestroyView();
+		
+		setListAdapter(null);
+	}
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		mCallback = (ArtistTrackListListener) activity;
+	}
+	
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		mCallback = null;
+	}
+	
+	private long calculateDuration() {
+		final Cursor cursor = mAdapter.getCursor();
+		if (cursor != null && cursor.moveToFirst()) {
+			long duration = 0;
+			int durationColIdx = cursor.getColumnIndexOrThrow(
+					MediaStore.Audio.Media.DURATION);
+			
+			do {
+				duration += cursor.getLong(durationColIdx);
+			} while (cursor.moveToNext());
+			
+			return duration;
+		}
+		return -1;
+	}
+	
+	private DataSetObserver mDataSetObserver = new DataSetObserver() {
+		@Override
+		public void onChanged() {
+			if (mCallback != null) {
+				mCallback.onDurationCalculated(calculateDuration());
+			}
+		}
+	};
+	
+	public interface ArtistTrackListListener {
+		public void onDurationCalculated(long duration);
 	}
 }

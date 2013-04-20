@@ -1,17 +1,22 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.adapters.abs.SummaryAdapter;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.ImageDialogFragment;
-import za.jamie.soundstage.loaders.ArtistSummaryLoader;
-import za.jamie.soundstage.models.ArtistSummary;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
+import android.app.Activity;
+import android.content.Context;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,13 +25,17 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 public class ArtistSummaryFragment extends Fragment implements 
-		LoaderManager.LoaderCallbacks<ArtistSummary> {
+		LoaderManager.LoaderCallbacks<Cursor> {
 
-	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
+	private static final String EXTRA_ARTIST_URI = "extra_artist_uri";
 	
 	private static final String TAG_IMAGE_DIALOG = "tag_image_dialog";
 	
-	private long mArtistId;
+	private Uri mArtistUri;
+	
+	private OnArtistFoundListener mCallback;
+	
+	private SummaryAdapter mAdapter;
 	
 	private TextView mNumAlbumsText;
 	private TextView mNumTracksText;
@@ -35,9 +44,9 @@ public class ArtistSummaryFragment extends Fragment implements
 	
 	private ImageFetcher mImageWorker;
 	
-	public static ArtistSummaryFragment newInstance(long artistId) {
+	public static ArtistSummaryFragment newInstance(Uri data) {
 		final Bundle args = new Bundle();
-		args.putLong(EXTRA_ARTIST_ID, artistId);
+		args.putParcelable(EXTRA_ARTIST_URI, data);
 		
 		final ArtistSummaryFragment frag = new ArtistSummaryFragment();
 		frag.setArguments(args);
@@ -45,10 +54,24 @@ public class ArtistSummaryFragment extends Fragment implements
 	}
 	
 	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		mCallback = (OnArtistFoundListener) activity;
+	}
+	
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		mCallback = null;
+	}
+	
+	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		mArtistUri = getArguments().getParcelable(EXTRA_ARTIST_URI);
 		
-		mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);
+		mAdapter = new ArtistSummaryAdapter(getActivity(), null);
 		
 		// Get the image worker... can't load artwork until view inflated
 		mImageWorker = ImageUtils.getImageFetcher(getActivity());
@@ -57,20 +80,8 @@ public class ArtistSummaryFragment extends Fragment implements
 	}
 	
 	@Override
-	public void onResume() {
-		super.onResume();
-		mImageWorker.setExitTasksEarly(false);
-	}
-	
-	@Override
-	public void onPause() {
-		super.onPause();
-		mImageWorker.setExitTasksEarly(true);
-	}
-	
-	@Override
-	public View onCreateView(
-			LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) {
 		
 		final View view = inflater.inflate(R.layout.fragment_artist_summary, container,
 				false);
@@ -80,13 +91,14 @@ public class ArtistSummaryFragment extends Fragment implements
 		mDurationText = (TextView) view.findViewById(R.id.artistDuration);
 		mArtistImage = (ImageView) view.findViewById(R.id.artistThumb);
 		
-		mImageWorker.loadArtistImage(mArtistId, mArtistImage);
+		final long artistId = Long.parseLong(mArtistUri.getLastPathSegment());
+		mImageWorker.loadArtistImage(artistId, mArtistImage);
 		mArtistImage.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				final DialogFragment frag = ImageDialogFragment
-						.newInstance(mArtistId + ImageFetcher.ARTIST_SUFFIX);
+						.newInstance(artistId + ImageFetcher.ARTIST_SUFFIX);
 				
 				frag.show(getFragmentManager(), TAG_IMAGE_DIALOG);
 			}
@@ -94,27 +106,66 @@ public class ArtistSummaryFragment extends Fragment implements
 		
 		return view;
 	}
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		return new CursorLoader(getActivity(), 
+				mArtistUri, 
+				new String[] {
+					MediaStore.Audio.Artists._ID,
+					MediaStore.Audio.Artists.ARTIST,
+					MediaStore.Audio.Artists.NUMBER_OF_TRACKS,
+					MediaStore.Audio.Artists.NUMBER_OF_ALBUMS			
+				}, null, null, null);
+	}
 	
-	private void loadSummary(ArtistSummary summary) {
-		final Resources res = getResources();
-		mNumAlbumsText.setText(TextUtils.getNumAlbumsText(res, summary.numAlbums));
-		mNumTracksText.setText(TextUtils.getNumTracksText(res, summary.numTracks));
-		mDurationText.setText(TextUtils.getStatsDurationText(res, summary.duration));
+	@Override
+	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+		mAdapter.swapCursor(data);		
 	}
 
 	@Override
-	public Loader<ArtistSummary> onCreateLoader(int id, Bundle args) {
-		return new ArtistSummaryLoader(getActivity(), mArtistId);
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mAdapter.swapCursor(null);		
 	}
+	
+	private class ArtistSummaryAdapter extends SummaryAdapter {
 
-	@Override
-	public void onLoadFinished(Loader<ArtistSummary> loader, ArtistSummary data) {
-		loadSummary(data);
+		public ArtistSummaryAdapter(Context context, Cursor c) {
+			super(context, c);
+		}
+
+		@Override
+		public void loadSummary(Context context, Cursor cursor) {
+			if (cursor != null && cursor.moveToFirst()) {
+				int numAlbumsColIdx = cursor.getColumnIndexOrThrow(
+						MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);
+				int numTracksColIdx = cursor.getColumnIndexOrThrow(
+						MediaStore.Audio.Artists.NUMBER_OF_TRACKS);
+				int artistColIdx = cursor.getColumnIndexOrThrow(
+						MediaStore.Audio.Artists.ARTIST);
+				
+				final Resources res = context.getResources();
+				mNumAlbumsText.setText(TextUtils.getNumAlbumsText(res, 
+						cursor.getInt(numAlbumsColIdx)));
+				mNumTracksText.setText(TextUtils.getNumTracksText(res, 
+						cursor.getInt(numTracksColIdx)));
+				
+				mCallback.onArtistFound(cursor.getString(artistColIdx));
+			}		
+			
+		}
 	}
-
-	@Override
-	public void onLoaderReset(Loader<ArtistSummary> loader) {
-		return;
+	
+	public void setDuration(long duration) {
+		if (duration > 0) {
+			mDurationText.setText(
+					TextUtils.getStatsDurationText(getResources(), duration));
+		}
+	}
+	
+	public interface OnArtistFoundListener {
+		public void onArtistFound(String artist);
 	}
 
 }

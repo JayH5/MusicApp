@@ -11,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 
 import com.viewpagerindicator.TitlePageIndicator;
 
@@ -43,6 +44,7 @@ public class LibraryActivity extends MusicActivity {
 		final TitlePageIndicator indicator = (TitlePageIndicator) 
 				findViewById(R.id.indicator);
         indicator.setViewPager(mViewPager);
+        Log.d("Lib", "VPI height: " + indicator.getHeight());
         
         if (savedInstanceState != null) {
 			mSelectedPage = savedInstanceState.getInt(STATE_SELECTED_PAGE);

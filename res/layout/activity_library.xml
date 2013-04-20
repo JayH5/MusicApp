@@ -9,14 +9,9 @@
         android:layout_height="wrap_content"
         style="@style/ViewPageIndicator" />
     
-    <View
-        android:background="@drawable/gradient_now_bottom_border"
-        android:layout_width="match_parent"
-        android:layout_height="2.5dp" />
-    
     <android.support.v4.view.ViewPager
         android:id="@+id/pager"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
+        android:layout_height="wrap_content" />
     
 </LinearLayout>

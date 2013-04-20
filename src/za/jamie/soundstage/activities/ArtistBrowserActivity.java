@@ -4,8 +4,8 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
-import android.app.ActionBar;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -15,15 +15,19 @@ import android.view.MenuItem;
 
 import com.viewpagerindicator.TitlePageIndicator;
 
-public class ArtistBrowserActivity extends MusicActivity {
+public class ArtistBrowserActivity extends MusicActivity implements 
+		ArtistSummaryFragment.OnArtistFoundListener, 
+		ArtistTrackListFragment.ArtistTrackListListener {
 	
-	public static final String EXTRA_ARTIST = "extra_artist";
-	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
+	//public static final String EXTRA_ARTIST_ID = "extra_artist_id";
+	private static final String EXTRA_ARTIST_URI = "extra_artist_uri";
 	
 	private static final String TAG_SUMMARY_FRAG = "artist_summary";
 	
 	private long mArtistId;
-	private String mArtist;
+	private Uri mUri;
+	
+	private ArtistSummaryFragment mSummaryFragment;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -39,27 +43,21 @@ public class ArtistBrowserActivity extends MusicActivity {
 		
 		TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
         indicator.setViewPager(viewPager);
-        		
-		// Get the album and artist names from the intent
-		final Intent launchIntent = getIntent();
-		if (launchIntent != null) {
-			mArtist = launchIntent.getStringExtra(EXTRA_ARTIST);
-			mArtistId = launchIntent.getLongExtra(EXTRA_ARTIST_ID, -1);
+
+		if (savedInstanceState != null) {
+			mUri = savedInstanceState.getParcelable(EXTRA_ARTIST_URI);
 		} else {
-			mArtist = savedInstanceState.getString(EXTRA_ARTIST);
-			mArtistId = savedInstanceState.getLong(EXTRA_ARTIST_ID, -1);
+			mUri = getIntent().getData();
 		}
-		
-		// Set the title in the action bar
-		final ActionBar actionBar = getActionBar();
-		actionBar.setTitle(mArtist);
+		mArtistId = Long.parseLong(mUri.getLastPathSegment());
 				
 		// Set up the summary fragment
 		final FragmentManager fm = getSupportFragmentManager();
-		if (fm.findFragmentByTag(TAG_SUMMARY_FRAG) == null) {
+		mSummaryFragment = (ArtistSummaryFragment) fm.findFragmentByTag(TAG_SUMMARY_FRAG);
+		if (mSummaryFragment == null) {
+			mSummaryFragment = ArtistSummaryFragment.newInstance(mUri);
 			fm.beginTransaction()
-				.add(R.id.summaryFrame, ArtistSummaryFragment.newInstance(mArtistId),
-						TAG_SUMMARY_FRAG)
+				.add(R.id.summaryFrame, mSummaryFragment, TAG_SUMMARY_FRAG)
 				.commit();
 		}
 	}
@@ -68,8 +66,8 @@ public class ArtistBrowserActivity extends MusicActivity {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
-		outState.putString(EXTRA_ARTIST, mArtist);
-		outState.putLong(EXTRA_ARTIST_ID, mArtistId);
+		//outState.putLong(EXTRA_ARTIST_ID, mArtistId);
+		outState.putParcelable(EXTRA_ARTIST_URI, mUri);
 	}
 	
 	@Override
@@ -84,7 +82,7 @@ public class ArtistBrowserActivity extends MusicActivity {
                     Intent.FLAG_ACTIVITY_NEW_TASK);
             parentActivityIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
             		LibraryActivity.SECTION_ARTISTS);
-            parentActivityIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mArtistId);
+            //parentActivityIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mArtistId);
             startActivity(parentActivityIntent);
             finish();
 			return true;
@@ -102,7 +100,7 @@ public class ArtistBrowserActivity extends MusicActivity {
 		public Fragment getItem(int position) {
 			switch (position) {
 			case 0:
-				return ArtistAlbumListFragment.newInstance(mArtistId, mArtist);
+				return ArtistAlbumListFragment.newInstance(mArtistId);
 			case 1:
 				return ArtistTrackListFragment.newInstance(mArtistId);
 			}
@@ -128,6 +126,16 @@ public class ArtistBrowserActivity extends MusicActivity {
 			return title;
 		}
 		
+	}
+
+	@Override
+	public void onArtistFound(String artist) {
+		getActionBar().setTitle(artist);		
+	}
+
+	@Override
+	public void onDurationCalculated(long duration) {
+		mSummaryFragment.setDuration(duration);		
 	}
 
 }

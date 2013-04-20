@@ -4,14 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import za.jamie.soundstage.models.Track;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
-import android.widget.ResourceCursorAdapter;
 
-
-public abstract class TrackAdapter extends ResourceCursorAdapter {
+public abstract class TrackAdapter extends BasicCursorAdapter {
 	
 	private int mIdColIdx;
 	private int mTitleColIdx;
@@ -53,23 +50,22 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 		return mDurationColIdx;
 	}
 	
+	@Override
 	protected void getColumnIndices(Cursor cursor) {
-		if (cursor != null) {
-			mIdColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
-			mTitleColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
-			mArtistIdColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID);
-			mArtistColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-			mAlbumIdColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-			mAlbumColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
-			mDurationColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
-		}
+		mIdColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+		mTitleColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
+		mArtistIdColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID);
+		mArtistColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+		mAlbumIdColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+		mAlbumColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
+		mDurationColIdx = cursor
+				.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
 	}
 	
 	public List<Track> getTrackList() {
@@ -79,7 +75,7 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 			trackList = new LinkedList<Track>();
 			do {
 				trackList.add(new Track(
-						cursor.getLong(getIdColIdx()),
+						cursor.getLong(mIdColIdx),
 						cursor.getString(mTitleColIdx),
 						cursor.getLong(mArtistIdColIdx),
 						cursor.getString(mArtistColIdx),
@@ -89,12 +85,6 @@ public abstract class TrackAdapter extends ResourceCursorAdapter {
 			} while (cursor.moveToNext());
 		}
 		return trackList;
-	}
-	
-	@Override
-	public Cursor swapCursor(Cursor newCursor) {
-		getColumnIndices(newCursor);
-		return super.swapCursor(newCursor);
 	}
 	
 }
