@@ -17,16 +17,11 @@ public class PlayQueueAdapter extends ResourceArrayAdapter<Track> {
 	
 	@Override
 	public long getItemId(int position) {
-		Track item = getItem(position);
-		if (item != null) {
-			return item.getId();
-		} else {
-			return -1;
-		}
+		return getItem(position).getId();
 	}
 
 	@Override
-	public void bindView(Track object, View view) {
+	public void bindView(View view, Context context, Track object) {
 		final TextView titleText = (TextView) view.findViewById(R.id.title);
 		final TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
 		

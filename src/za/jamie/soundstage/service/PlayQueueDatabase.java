@@ -1,7 +1,6 @@
 package za.jamie.soundstage.service;
 
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.models.Track;
@@ -21,26 +20,51 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	private static final String TAG = "PlayQueueDatabase";
 	
 	private static final String DATABASE_NAME = "playqueue.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 11;
     
-    private static final String TABLE_NAME_PLAY_QUEUE = "playqueue";
+    private static final String TABLE_NAME_TRACK_SET = "trackset";
+    private static final String TABLE_NAME_TRACK_ORDER = "trackorder";
+    private static final String TABLE_NAME_SHUFFLE_MAP = "shufflemap";
     
     private static final String COLUMN_NAME_TRACK_ID = "track_id";
     private static final String COLUMN_NAME_QUEUE_POSITION = "queue_position";
+    private static final String COLUMN_NAME_SHUFFLE_POSITION = "shuffle_position";
     
-    private static final String CREATE_TABLE_PLAY_QUEUE = "CREATE TABLE " + 
-    			TABLE_NAME_PLAY_QUEUE + " (" + 
-    		"_id" + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-    		COLUMN_NAME_QUEUE_POSITION + " INTEGER, " +
-    		COLUMN_NAME_TRACK_ID + " INTEGER, " +
-    		MediaStore.Audio.Media.TITLE + " STRING, " +
-    		MediaStore.Audio.Media.ARTIST_ID + " INTEGER, " +
-    		MediaStore.Audio.Media.ARTIST + " STRING, " +
-    		MediaStore.Audio.Media.ALBUM_ID + " INTEGER, " +
-    		MediaStore.Audio.Media.ALBUM + " STRING, " +
-    		MediaStore.Audio.Media.DURATION + " INTEGER)";
+    private static final String CREATE_TABLE_TRACK_SET = "CREATE TABLE "
+    		+ TABLE_NAME_TRACK_SET + " ("
+    		+ MediaStore.Audio.Media._ID + " INTEGER PRIMARY KEY, "
+    		+ MediaStore.Audio.Media.TITLE + " STRING, "
+    		+ MediaStore.Audio.Media.ARTIST_ID + " INTEGER, "
+    		+ MediaStore.Audio.Media.ARTIST + " STRING, "
+    		+ MediaStore.Audio.Media.ALBUM_ID + " INTEGER, "
+    		+ MediaStore.Audio.Media.ALBUM + " STRING, "
+    		+ MediaStore.Audio.Media.DURATION + " INTEGER)";
     
-    private int mQueueLength;
+    private static final String CREATE_TABLE_TRACK_ORDER = "CREATE TABLE "
+    		+ TABLE_NAME_TRACK_ORDER + " ("
+    		+ COLUMN_NAME_QUEUE_POSITION + " INTEGER, "
+    		+ COLUMN_NAME_TRACK_ID + " INTEGER, "
+    		+ "FOREIGN KEY(" + COLUMN_NAME_TRACK_ID + ") REFERENCES "
+    		+ TABLE_NAME_TRACK_SET + "(" + MediaStore.Audio.Media._ID + "))";
+    
+    private static final String CREATE_TABLE_SHUFFLE_MAP = "CREATE TABLE "
+    		+ TABLE_NAME_SHUFFLE_MAP + " ("
+    		+ COLUMN_NAME_QUEUE_POSITION + " INTEGER, "
+    		+ COLUMN_NAME_SHUFFLE_POSITION + " INTEGER)";
+    
+    private static final String QUERY_TRACK_LIST = "SELECT "
+    		+ MediaStore.Audio.Media._ID + ", "
+    		+ MediaStore.Audio.Media.TITLE + ", "
+    		+ MediaStore.Audio.Media.ARTIST_ID + ", "
+    		+ MediaStore.Audio.Media.ARTIST + ", "
+    		+ MediaStore.Audio.Media.ALBUM_ID + ", "
+    		+ MediaStore.Audio.Media.ALBUM + ", "
+    		+ MediaStore.Audio.Media.DURATION
+    		+ " FROM " + TABLE_NAME_TRACK_ORDER
+    		+ " JOIN " + TABLE_NAME_TRACK_SET
+    		+ " ON " + TABLE_NAME_TRACK_ORDER + "." + COLUMN_NAME_TRACK_ID
+    		+ "=" + TABLE_NAME_TRACK_SET + "." + MediaStore.Audio.Media._ID
+    		+ " ORDER BY " + COLUMN_NAME_QUEUE_POSITION;
     
 	public PlayQueueDatabase(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -48,7 +72,9 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-		db.execSQL(CREATE_TABLE_PLAY_QUEUE);
+		db.execSQL(CREATE_TABLE_TRACK_SET);
+		db.execSQL(CREATE_TABLE_TRACK_ORDER);
+		db.execSQL(CREATE_TABLE_SHUFFLE_MAP);
 	}
 
 	@Override
@@ -62,7 +88,9 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 
 	private void resetDatabase(SQLiteDatabase db) {
 		// Kills the tables and existing data
-        dropTable(db, TABLE_NAME_PLAY_QUEUE);
+        dropTable(db, TABLE_NAME_TRACK_SET);
+        dropTable(db, TABLE_NAME_TRACK_ORDER);
+        dropTable(db, TABLE_NAME_SHUFFLE_MAP);
 
         // Recreates the database with a new version
         onCreate(db);
@@ -72,278 +100,300 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		db.execSQL("DROP TABLE IF EXISTS " + tableName);
 	}
 	
-	public void open(final Collection<? extends Track> trackList) {
+	public List<Track> getTrackList() {
+		SQLiteDatabase db = getReadableDatabase();
+		
+		Cursor cursor = db.rawQuery(QUERY_TRACK_LIST, null);
+		
+		List<Track> trackList = null;
+		if (cursor != null) {
+			trackList = new ArrayList<Track>(cursor.getCount());
+			if (cursor.moveToFirst()) {
+				do {
+					trackList.add(new Track(
+							cursor.getLong(0), // Id
+							cursor.getString(1), // Title
+							cursor.getLong(2), // Artist id
+							cursor.getString(3), // Artist
+							cursor.getLong(4), // Album id
+							cursor.getString(5), // Album
+							cursor.getLong(6))); // Duration
+				} while (cursor.moveToNext());
+			}
+		}
+		if (trackList != null) {
+			Log.d(TAG, "Track list found with size: " + trackList.size());
+		} else {
+			Log.e(TAG, "Cursor was null retrieving track list!");
+		}
+		return trackList;
+	}
+	
+	public List<Integer> getShuffleMap() {
+		SQLiteDatabase db = getReadableDatabase();
+		
+		Cursor cursor = db.query(TABLE_NAME_SHUFFLE_MAP, 
+				null, // columns
+				null, // selection
+				null, // selectionArgs
+				null, // groupBy
+				null, // having
+				COLUMN_NAME_QUEUE_POSITION); // sortOrder
+		
+		List<Integer> shuffleMap = null;
+		if (cursor != null) {
+			shuffleMap = new ArrayList<Integer>(cursor.getCount());
+			if (cursor.moveToFirst()) {
+				do {
+					shuffleMap.add(cursor.getInt(1));
+				} while (cursor.moveToNext());
+			}
+		}
+		return shuffleMap;
+	}
+	
+	public void open(final List<Track> trackList, final List<Integer> shuffleMap) {
 		new AsyncTask<Void, Void, Void>() {
 
 			@Override
-			protected Void doInBackground(Void... arg0) {
-				open(getWritableDatabase(), trackList);
+			protected Void doInBackground(Void... params) {
+				open(getWritableDatabase(), trackList, shuffleMap);
 				return null;
 			}
 			
 		}.execute();
-		
 	}
-
-	private void open(SQLiteDatabase db, Collection<? extends Track> tracks) {
+	
+	private void open(SQLiteDatabase db, List<Track> trackList, List<Integer> shuffleMap) {
 		resetDatabase(db);
-
-		// For inserting columns
-		ContentValues values = new ContentValues();
-								
-		db.beginTransaction();
-		try {
-			values.clear(); // clear out trackId values
-			mQueueLength = 0;
-			for (Track track : tracks) {
-				long id = track.writeToContentValues(values);
-				values.put(COLUMN_NAME_TRACK_ID, id);
-				values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
-				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
-				mQueueLength++;
-			}
-
-			db.setTransactionSuccessful();
-		} catch (SQLiteException e) {
-			Log.e(TAG, "Error during transaction when updating table: ", e);
-		} finally {
-			db.endTransaction();
-		}
-	}
-	
-	public void add(final Track track) {
-		new AsyncTask<Void, Void, Long>() {
-
-			@Override
-			protected Long doInBackground(Void... params) {
-				return add(getWritableDatabase(), track);
-			}
-			
-		}.execute();
-		
-	}
-	
-	private long add(SQLiteDatabase db, Track track) {
-		ContentValues values = new ContentValues();
-		long id = track.writeToContentValues(values);
-		values.put(COLUMN_NAME_TRACK_ID, id);
-		values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
-		mQueueLength++;
-		return db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
-	}
-
-	public void add(final int position, final Track track) {
-		new AsyncTask<Void, Void, Long>() {
-
-			@Override
-			protected Long doInBackground(Void... params) {
-				return add(getWritableDatabase(), position, track);
-			}
-
-		}.execute();
-	}
-
-	private long add(SQLiteDatabase db, int position, Track track) {
-		// Need to insert new value
-		ContentValues insertValues = new ContentValues();
-		long id = track.writeToContentValues(insertValues);
-		insertValues.put(COLUMN_NAME_TRACK_ID, id);
-		insertValues.put(COLUMN_NAME_QUEUE_POSITION, position);
-
-		// And update items after in list
-		ContentValues updateValues = new ContentValues();
-		String where = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] whereArgs = new String[] { String.valueOf(position) };
-
-		long _id = 0;
-		db.beginTransaction();
-		try {
-			for (int i = position; i < mQueueLength; i++) {
-				updateValues.put(COLUMN_NAME_QUEUE_POSITION, i + 1);
-				db.update(TABLE_NAME_PLAY_QUEUE, updateValues, where, whereArgs);
-			}			
-			
-			_id = db.insert(TABLE_NAME_PLAY_QUEUE, null, insertValues);
-			
-			db.setTransactionSuccessful();
-		} catch (SQLiteException e) {
-			Log.e(TAG, "Error adding track to play queue.", e);
-		} finally {
-			db.endTransaction();
-		}
-
-		return _id;
-	}
-	
-	public void addAll(final Collection<? extends Track> tracks) {
-		new AsyncTask<Void, Void, Void>() {
-
-			@Override
-			protected Void doInBackground(Void... params) {
-				addAll(getWritableDatabase(), tracks);
-				return null;
-			}
-			
-		}.execute();
-	}
-	
-	private void addAll(SQLiteDatabase db, Collection<? extends Track> tracks) {
-		ContentValues values = new ContentValues();
-		
-		db.beginTransaction();
-		try {
-			for (Track track : tracks) {
-				long id = track.writeToContentValues(values);
-				values.put(COLUMN_NAME_TRACK_ID, id);
-				values.put(COLUMN_NAME_QUEUE_POSITION, mQueueLength);
-				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
-				mQueueLength++;
-			}
-			
-			db.setTransactionSuccessful();
-		} catch (SQLiteException e) {
-			Log.e(TAG, "Error adding track list to database.", e);
-		} finally {
-			db.endTransaction();
-		}
-	}
-	
-	public void addAll(final int position, final Collection<? extends Track> tracks) {
-		new AsyncTask<Void, Void, Void>() {
-
-			@Override
-			protected Void doInBackground(Void... params) {
-				addAll(getWritableDatabase(), position, tracks);
-				return null;
-			}
-			
-		}.execute();
-	}
-	
-	private void addAll(SQLiteDatabase db, int position, 
-			Collection<? extends Track> tracks) {
 		
 		ContentValues values = new ContentValues();
-		
-		String where = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] whereArgs;
-		final int len = tracks.size();
-		
 		db.beginTransaction();
 		try {
-			for (int i = position; i < position + len; i++) {
-				whereArgs = new String[] { String.valueOf(i) };
-				values.put(COLUMN_NAME_QUEUE_POSITION, i + len);
-				db.update(TABLE_NAME_PLAY_QUEUE, values, where, whereArgs);
-			}			
+			// Insert into track set
+			for (Track track : trackList) {
+				Log.d(TAG, "Adding track to track set");
+				final long id = track.writeToContentValues(values);
+				values.put(MediaStore.Audio.Media._ID, id);
+				db.insert(TABLE_NAME_TRACK_SET, null, values);
+			}
 			
 			values.clear();
-			int i = 0;
-			for (Track track : tracks) {
-				long id = track.writeToContentValues(values);
-				values.put(COLUMN_NAME_TRACK_ID, id);
-				values.put(COLUMN_NAME_QUEUE_POSITION, position + i);
-				
-				db.insert(TABLE_NAME_PLAY_QUEUE, null, values);
-				i++;
+			for (int i = 0; i < trackList.size(); i++) {
+				values.put(COLUMN_NAME_QUEUE_POSITION, i);
+				values.put(COLUMN_NAME_TRACK_ID, trackList.get(i).getId());
+				db.insert(TABLE_NAME_TRACK_ORDER, null, values);
 			}
 			
-			mQueueLength += len;
+			values.clear();
+			for (int i = 0; i < shuffleMap.size(); i++) {
+				values.put(COLUMN_NAME_QUEUE_POSITION, i);
+				values.put(COLUMN_NAME_SHUFFLE_POSITION, shuffleMap.get(i));
+				db.insert(TABLE_NAME_SHUFFLE_MAP, null, values);
+			}
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
-			Log.e(TAG, "Error adding track list to database.", e);
+			Log.e(TAG, "Error opening play queue database.", e);
 		} finally {
 			db.endTransaction();
 		}
-	}
-
-	public void remove(final int position) {
-		new AsyncTask<Void, Void, Integer>() {
-
-			@Override
-			protected Integer doInBackground(Void... params) {
-				return remove(getWritableDatabase(), position);
-			}
-			
-		}.execute();
-	}
-
-	private int remove(SQLiteDatabase db, int position) {
-		String deleteWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] deleteWhereArgs = new String[] { String.valueOf(position) };
-		
-		String updateWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] updateWhereArgs;
-		ContentValues values = new ContentValues();
-
-		int numRemoved = 0;
-		db.beginTransaction();
-		try {
-			numRemoved = db.delete(TABLE_NAME_PLAY_QUEUE, deleteWhere, deleteWhereArgs);
-			
-			for (int i = position + 1; i < mQueueLength; i++) {
-				updateWhereArgs = new String[] { String.valueOf(i) };
-				values.put(COLUMN_NAME_QUEUE_POSITION, i - 1);
-				
-				db.update(TABLE_NAME_PLAY_QUEUE, values, updateWhere, updateWhereArgs);
-			}
-			
-			mQueueLength--;
-			
-			db.setTransactionSuccessful();
-		} catch (SQLiteException e) {
-			Log.e(TAG, "Error deleting item from queue.", e);
-		} finally {
-			db.endTransaction();
-		}
-		return numRemoved;
 	}
 	
-	public void moveQueueItem(final int from, final int to, final Track track) {
+	public void add(final int position, final Track track) {
 		new AsyncTask<Void, Void, Void>() {
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				moveQueueItem(getWritableDatabase(), from, to, track);
+				add(getWritableDatabase(), position, track);				
+				
 				return null;
 			}
 			
 		}.execute();
 	}
 	
-	private void moveQueueItem(SQLiteDatabase db, int from, int to, Track track) {
-		int change = from < to ? -1 : 1;
+	private void add(SQLiteDatabase db, int position, Track track) {
+		// Curse you Android and your rubbish SQL update method!
+		StringBuilder query = new StringBuilder();
+		query.append("UPDATE ")
+			.append(TABLE_NAME_TRACK_ORDER)
+			.append(" SET ")
+			.append(COLUMN_NAME_QUEUE_POSITION + "=")
+			.append(COLUMN_NAME_QUEUE_POSITION + "+1")
+			.append(" WHERE ")
+			.append(COLUMN_NAME_QUEUE_POSITION)
+			.append(">=")
+			.append(position);
 		
-		// Remove track from old position
-		String deleteWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] deleteWhereArgs = new String[] { String.valueOf(from) };
+		ContentValues values = new ContentValues();
+		db.beginTransaction();
+		try {
+			// Insert into track set
+			final long id = track.writeToContentValues(values);
+			values.put(MediaStore.Audio.Media._ID, id);
+			db.insertWithOnConflict(TABLE_NAME_TRACK_SET, null, values, 
+					SQLiteDatabase.CONFLICT_IGNORE);
+			
+			// Push tracks beyond this one down
+			db.execSQL(query.toString());			
+			
+			// Insert new track at correct position
+			values.clear();
+			values.put(COLUMN_NAME_QUEUE_POSITION, position);
+			values.put(COLUMN_NAME_TRACK_ID, track.getId());
+			db.insert(TABLE_NAME_TRACK_ORDER, null, values);
+			
+			db.setTransactionSuccessful();
+		} catch (SQLiteException e) {
+			Log.e(TAG, "Error adding track.", e);
+		} finally {
+			db.endTransaction();
+		}
+	}
+	
+	public void addAll(final int position, final List<Track> tracks) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				addAll(getWritableDatabase(), position, tracks);				
+				
+				return null;
+			}
+			
+		}.execute();
+	}
+	
+	private void addAll(SQLiteDatabase db, int position, List<Track> tracks) {
+		// Curse you Android and your rubbish SQL update method!
+		StringBuilder query = new StringBuilder();
+		query.append("UPDATE ")
+			.append(TABLE_NAME_TRACK_ORDER)
+			.append(" SET ")
+			.append(COLUMN_NAME_QUEUE_POSITION + "=")
+			.append(COLUMN_NAME_QUEUE_POSITION + "+" + tracks.size())
+			.append(" WHERE ")
+			.append(COLUMN_NAME_QUEUE_POSITION)
+			.append(">=")
+			.append(position);
 		
-		// Shift all the tracks between "from" and "to" up or down
-		String updateWhere = COLUMN_NAME_QUEUE_POSITION + "=?";
-		String[] updateWhereArgs;
-		ContentValues updateValues = new ContentValues();
-		
-		// Insert the track back into the queue in its new position
-		ContentValues insertValues = new ContentValues();
-		long id = track.writeToContentValues(insertValues);
-		insertValues.put(COLUMN_NAME_TRACK_ID, id);
-		insertValues.put(COLUMN_NAME_QUEUE_POSITION, to);
+		ContentValues values = new ContentValues();
+		db.beginTransaction();
+		try {
+			// Insert into track set
+			for (Track track : tracks) {
+				final long id = track.writeToContentValues(values);
+				values.put(MediaStore.Audio.Media._ID, id);
+				db.insertWithOnConflict(TABLE_NAME_TRACK_SET, null, values, 
+						SQLiteDatabase.CONFLICT_IGNORE);
+			}
+			
+			// Push tracks beyond this one down
+			db.execSQL(query.toString());			
+			
+			// Insert new track at correct position
+			// Could squish this into above for loop but that would require many
+			// more calls to values.clear() which is assumed to be more costly than
+			// iterating a list.
+			values.clear();
+			for (Track track : tracks) {
+				values.put(COLUMN_NAME_QUEUE_POSITION, position);
+				values.put(COLUMN_NAME_TRACK_ID, track.getId());
+				db.insert(TABLE_NAME_TRACK_ORDER, null, values);
+			}
+			
+			db.setTransactionSuccessful();
+		} catch (SQLiteException e) {
+			Log.e(TAG, "Error adding track.", e);
+		} finally {
+			db.endTransaction();
+		}
+	}
+	
+	public void remove(final int position) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				remove(getWritableDatabase(), position);
+				return null;
+			}
+			
+		}.execute();
+	}
+	
+	private void remove(SQLiteDatabase db, int position) {
+		// Curse you Android and your rubbish SQL update method!
+		StringBuilder query = new StringBuilder();
+		query.append("UPDATE ")
+			.append(TABLE_NAME_TRACK_ORDER)
+			.append(" SET ")
+			.append(COLUMN_NAME_QUEUE_POSITION + "=")
+			.append(COLUMN_NAME_QUEUE_POSITION + "-1")
+			.append(" WHERE ")
+			.append(COLUMN_NAME_QUEUE_POSITION)
+			.append(">=")
+			.append(position);
 		
 		db.beginTransaction();
 		try {
-			db.delete(TABLE_NAME_PLAY_QUEUE, deleteWhere, deleteWhereArgs);
+			// Delete Track
+			String where = COLUMN_NAME_QUEUE_POSITION + "=?";
+			String[] whereArgs = new String[] { String.valueOf(position) };
+			db.delete(TABLE_NAME_TRACK_ORDER, where, whereArgs);
 			
-			// Unfortunately Android gimps the SQL interface so we can't just increment
-			// a range of values in one go.
+			// Push tracks beyond this one up
+			db.execSQL(query.toString());			
+			
+			db.setTransactionSuccessful();
+		} catch (SQLiteException e) {
+			Log.e(TAG, "Error removing track.", e);
+		} finally {
+			db.endTransaction();
+		}
+	}
+	
+	public void move(final int from, final int to) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				move(getWritableDatabase(), from, to);
+				return null;
+			}
+			
+		}.execute();
+	}
+	
+	private void move(SQLiteDatabase db, int from, int to) {
+		int change = from < to ? -1 : 1;
+		
+		// Shift all the tracks between "from" and "to" up or down
+		String where = COLUMN_NAME_QUEUE_POSITION + "=?";
+		String[] whereArgs = new String[1];
+		
+		ContentValues values = new ContentValues();
+		
+		db.beginTransaction();
+		try {
+			// Move the item to position -1 temporarily
+			whereArgs[0] = String.valueOf(from);
+			values.put(COLUMN_NAME_QUEUE_POSITION, -1);
+			db.update(TABLE_NAME_TRACK_ORDER, values, where, whereArgs);
+			
+			// Shift the intermediary tracks up or down
 			for (int i = from + 1; i <= to; i -= change) {
-				updateValues.put(COLUMN_NAME_QUEUE_POSITION, i + change);
-				updateWhereArgs = new String[] { String.valueOf(i) };
+				whereArgs[0] = String.valueOf(i);
+				values.put(COLUMN_NAME_QUEUE_POSITION, i + change);				
 				
-				db.update(TABLE_NAME_PLAY_QUEUE, updateValues, updateWhere, updateWhereArgs);
+				db.update(TABLE_NAME_TRACK_ORDER, values, where, whereArgs);
 			}	
 			
-			db.insert(TABLE_NAME_PLAY_QUEUE, null, insertValues);
+			// Move item to new position
+			whereArgs[0] = String.valueOf(-1);
+			values.put(COLUMN_NAME_QUEUE_POSITION, to);
+			db.update(TABLE_NAME_TRACK_ORDER, values, where, whereArgs);
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
@@ -351,37 +401,5 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		} finally {
 			db.endTransaction();
 		}
-	}
-	
-	public List<Track> getTrackList() {
-		Cursor cursor = getReadableDatabase().query(
-				TABLE_NAME_PLAY_QUEUE, // table
-				null, // projection
-				null, // selection
-				null, // selection args
-				null, // group by
-				null, // having
-				COLUMN_NAME_QUEUE_POSITION + " ASC"); // sort order
-
-		List<Track> trackList = null;
-		
-		if (cursor != null) {
-			trackList = new LinkedList<Track>();
-			if (cursor.moveToFirst()) {
-				do {
-					trackList.add(new Track(
-						cursor.getLong(2), // Id
-						cursor.getString(3), // Title
-						cursor.getLong(4), // Artist id
-						cursor.getString(5), // Artist
-						cursor.getLong(6), // Album id
-						cursor.getString(7), // Album
-						cursor.getLong(8))); // Duration
-				} while (cursor.moveToNext());
-			}
-			cursor.close();
-			mQueueLength = trackList.size();
-		}
-		return trackList;
 	}
 }

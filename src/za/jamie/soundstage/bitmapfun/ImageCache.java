@@ -242,7 +242,7 @@ public class ImageCache {
     
     public void addBitmapToDiskCache(final String data, final Bitmap bitmap) {
     	if (mDiskCache != null) {
-    		 synchronized(mDiskCache) {
+    		 //synchronized(mDiskCache) {
     			final String key = hashKeyForDisk(data);
     			OutputStream out = null;
     			try {
@@ -254,10 +254,6 @@ public class ImageCache {
     						bitmap.compress(COMPRESS_FORMAT, COMPRESS_QUALITY, out);
     						editor.commit();
     						out.close();
-    						
-    						if (!mDiskCache.isClosed()) {
-    		        			mDiskCache.flush();
-    		        		}
     					}
     				} else {
     					snapshot.getInputStream(DISK_CACHE_INDEX).close();
@@ -273,7 +269,7 @@ public class ImageCache {
         				}
     				} 
     			}
-    		}
+    		//}
     	}
     }
     
@@ -289,17 +285,17 @@ public class ImageCache {
         	mMemoryCache.remove(key);
         }
         if (mDiskCache != null) {
-        	synchronized (mDiskCache) {
+        	//synchronized (mDiskCache) {
         		try {
         			mDiskCache.remove(key);
         			
-        			if (!mDiskCache.isClosed()) {
-            			mDiskCache.flush();
-            		}
+        			//if (!mDiskCache.isClosed()) {
+            			//mDiskCache.flush();
+            		//}
         		} catch (IOException e) {
         			Log.e(TAG, "Failed to remove file from disk cache.", e);
         		}
-        	}
+        	//}
         }
     }
     
@@ -370,7 +366,7 @@ public class ImageCache {
      */
     public final Bitmap getBitmapFromDiskCache(final String data) {
         if (data != null && mDiskCache != null) {
-        	synchronized (mDiskCache) {
+        	//synchronized (mDiskCache) {
         		final String key = hashKeyForDisk(data);
         		InputStream inputStream = null;
         		try {
@@ -392,7 +388,7 @@ public class ImageCache {
             			}
         			} 
         		}
-        	}
+        	//}
         }
         return null;
     }
@@ -436,15 +432,13 @@ public class ImageCache {
     	}
     	
     	if (mDiskCache != null) {
-    		synchronized (mDiskCache) {
-    			try {
-    				mDiskCache.close();
-    			} catch(IOException e) {
-    				Log.e(TAG, "Error closing DiskLruCache -- LEAK", e);
-    			} finally {
-    				mDiskCache = null;
-    			}
-    		}
+			try {
+				mDiskCache.close();
+			} catch(IOException e) {
+				Log.e(TAG, "Error closing DiskLruCache -- LEAK", e);
+			} finally {
+				mDiskCache = null;
+			}
     	}
     }
 }

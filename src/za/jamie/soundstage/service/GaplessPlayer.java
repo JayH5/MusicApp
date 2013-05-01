@@ -17,7 +17,9 @@ import android.util.Log;
 public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	MediaPlayer.OnErrorListener {
     	
-    private final Context mContext;
+    private static final String TAG = "GaplessPlayer";
+	
+	private final Context mContext;
 
     private MediaPlayer mCurrentMediaPlayer = new MediaPlayer();
     private MediaPlayer mNextMediaPlayer;
@@ -36,13 +38,6 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     private boolean setDataSourceImpl(final MediaPlayer player, final Uri uri) {
         try {
             player.reset();
-            Log.d("GaplessPlayer", "Attempting to open uri: " + uri);
-            if (mContext == null) {
-            	Log.e("GaplessPlayer", "Context is null!");
-            }
-            if (uri == null) {
-            	Log.e("GaplessPlayer", "Uri is null!");
-            }
             player.setDataSource(mContext, uri);
             player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.prepare();
@@ -67,6 +62,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	
     	
     public boolean setDataSource(final Uri uri) {
+    	Log.d(TAG, "Setting current data source: " + uri);
         mIsInitialized = setDataSourceImpl(mCurrentMediaPlayer, uri);
         if (mIsInitialized) {
           	setNextDataSource(null);
@@ -75,6 +71,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     }
     	
     public void setNextDataSource(final Uri uri) {
+    	Log.d(TAG, "Setting next data source: " + uri);
         // Clear the next media player attached to the current one
       	mCurrentMediaPlayer.setNextMediaPlayer(null);
         // If the next media player exists, clear that too
@@ -142,6 +139,10 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     public long seek(final long whereto) {
     	mCurrentMediaPlayer.seekTo((int)whereto);
     	return whereto;
+    }
+    
+    public void setLooping(boolean looping) {
+    	mCurrentMediaPlayer.setLooping(looping);
     }
 
     public void setVolume(final float vol) {

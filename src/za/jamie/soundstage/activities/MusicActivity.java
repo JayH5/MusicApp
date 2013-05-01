@@ -228,15 +228,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 
 	@Override
-	public void removeTrackById(long id) {
-		try {
-			mService.removeTrackById(id);
-		} catch (RemoteException e) {
-
-		}		
-	}
-
-	@Override
 	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
 		try {
 			mService.registerMusicStatusCallback(callback);
