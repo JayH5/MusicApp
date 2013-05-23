@@ -5,7 +5,7 @@ import java.util.List;
 import net.simonvt.menudrawer.MenuDrawer;
 import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IQueueStatusCallback;
+import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.MusicLibraryWrapper;
 import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.MusicQueueWrapper;
@@ -38,9 +38,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
-	private ImageButton mPlayQueueButton;
+	public static final String EXTRA_OPEN_DRAWER = "extra_open_drawer";
 	
-	private boolean mIsBackPressed;
+	private ImageButton mPlayQueueButton;
 	
 	private Vibrator mVibrator;
 	private static final long VIBRATION_LENGTH = 15;
@@ -52,7 +52,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	
 	private IMusicService mService = null;
 	private ServiceConnection mConnection = new ServiceConnection() {
-
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			mService = IMusicService.Stub.asInterface(service);
@@ -63,18 +62,12 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			mService = null;
-		}
-		
+		}		
 	};
 	
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		// Bind the service
-		final Intent bindIntent = new Intent(this, MusicService.class)
-				.setAction(IMusicService.class.getName());
-		bindService(bindIntent, mConnection, Context.BIND_AUTO_CREATE);
 		
 		// Set up the menu drawer to display the player
 		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
@@ -106,8 +99,6 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 				}
 			}
 		});
-		
-		//getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
 
 	public void setMainContentView(int layoutResId) {
@@ -115,34 +106,38 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 	
 	@Override
+	protected void onStart() {
+		super.onStart();
+		Intent serviceIntent = new Intent(this, MusicService.class);
+		startService(serviceIntent);
+		bindService(serviceIntent, mConnection, 0);
+	}
+	
+	@Override
     protected void onResume() {
-        super.onResume();
-        
-        final Intent killForgroundIntent = new Intent(this, MusicService.class);
-        killForgroundIntent.setAction(MusicService.KILL_FOREGROUND);
-        startService(killForgroundIntent);
+        super.onResume();        
+        if (mService != null) {
+        	showNotification(false);
+        }
+        // TODO
+        /*if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
+			mDrawer.openMenu();
+		}*/
 	}
 	
 	@Override
     protected void onPause() {
-        super.onPause();
-        
-        // If we're playing and the player is sent to background
-        if ((mPlayer.isPlaying() || mIsBackPressed) && 
-        		AppUtils.isApplicationSentToBackground(this)) {
-
-        	final Intent startBackgroundIntent = new Intent(this, MusicService.class);
-            startBackgroundIntent.setAction(MusicService.START_BACKGROUND);
-            startService(startBackgroundIntent);
+        super.onPause();        
+        if (isPlaying() && AppUtils.isApplicationSentToBackground(this)) {
+        	showNotification(true);
         }
     }
 	
 	@Override
-    protected void onDestroy() {
-        super.onDestroy();
-        
-        unbindService(mConnection);
-    }
+	protected void onStop() {
+		super.onStop();
+		unbindService(mConnection);
+	}
 	
 	@Override
     public void onBackPressed() {
@@ -151,20 +146,8 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
             mDrawer.closeMenu();
             return;
         }
-        mIsBackPressed = true;
 		super.onBackPressed();
     }
-	
-	/*@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			// Set the "home-as-up" button to show the sliding menu
-			mDrawer.openMenu();
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}*/
 	
 	@Override
     protected void onRestoreInstanceState(Bundle inState) {
@@ -194,6 +177,19 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
 			mVibrator.vibrate(VIBRATION_LENGTH);
 		}
+	}
+	
+	@Override
+	public void onDrawerSlide(float openRatio, int offsetPixels) {
+		// Complete interface
+	}
+	
+	public MenuDrawer getDrawer() {
+		return mDrawer;
+	}
+	
+	public boolean isPlaying() {
+		return mPlayer.isPlaying();
 	}
 
 	//////////////////////////
@@ -315,9 +311,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 	
 	@Override
-	public void cycleShuffleMode() {
+	public void toggleShuffle() {
 		try {
-			mService.cycleShuffleMode();
+			mService.toggleShuffle();
 		} catch (RemoteException e) {
 			
 		}
@@ -335,9 +331,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 
 	@Override
-	public void requestMusicStatusRefresh() {
+	public void requestMusicStatus() {
 		try {
-			mService.requestMusicStatusRefresh();
+			mService.requestMusicStatus();
 		} catch (RemoteException e) {
 
 		}
@@ -345,9 +341,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 
 	@Override
-	public void requestQueueStatusRefresh() {
+	public void requestPlayQueue() {
 		try {
-			mService.requestQueueStatusRefresh();
+			mService.requestPlayQueue();
 		} catch (RemoteException e) {
 
 		}
@@ -355,9 +351,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 
 	@Override
-	public void registerQueueStatusCallback(IQueueStatusCallback callback) {
+	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
 		try {
-			mService.registerQueueStatusCallback(callback);
+			mService.registerPlayQueueCallback(callback);
 		} catch (RemoteException e) {
 
 		}
@@ -365,13 +361,21 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	}
 
 	@Override
-	public void unregisterQueueStatusCallback(IQueueStatusCallback callback) {
+	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
 		try {
-			mService.unregisterQueueStatusCallback(callback);
+			mService.unregisterPlayQueueCallback(callback);
 		} catch (RemoteException e) {
 
 		}
 		
+	}
+	
+	public void showNotification(boolean show) {
+		try {
+			mService.showNotification(show);
+		} catch (RemoteException e) {
+			
+		}
 	}
 
 }

@@ -7,7 +7,8 @@
         android:id="@+id/albumThumb"
         android:layout_width="128dp"
         android:layout_height="128dp"
-        android:padding="@dimen/image_thumbnail_spacing" />
+        android:layout_marginLeft="@dimen/list_item_padding_horizontal"
+        android:padding="@dimen/image_thumb_padding" />
     
     <RelativeLayout
     	android:layout_width="match_parent"

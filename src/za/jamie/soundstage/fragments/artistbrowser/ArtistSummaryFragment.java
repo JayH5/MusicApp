@@ -74,7 +74,7 @@ public class ArtistSummaryFragment extends Fragment implements
 		mAdapter = new ArtistSummaryAdapter(getActivity(), null);
 		
 		// Get the image worker... can't load artwork until view inflated
-		mImageWorker = ImageUtils.getImageFetcher(getActivity());
+		mImageWorker = ImageUtils.getThumbImageFetcher(getActivity());
 		
 		getLoaderManager().initLoader(0, null, this);
 	}

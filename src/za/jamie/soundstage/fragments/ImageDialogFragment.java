@@ -37,7 +37,7 @@ public class ImageDialogFragment extends DialogFragment {
 			mKey = savedInstanceState.getString(EXTRA_IMAGE_KEY);
 		}
 		
-		mImageWorker = ImageUtils.getImageFetcher(getActivity());
+		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
 		
 		setStyle(DialogFragment.STYLE_NO_TITLE, 0);
 	}

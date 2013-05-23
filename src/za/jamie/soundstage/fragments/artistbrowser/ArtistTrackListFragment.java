@@ -11,8 +11,6 @@ import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
-import android.view.View;
 
 public class ArtistTrackListFragment extends TrackListFragment {
 	
@@ -44,29 +42,12 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		
 		mAdapter.registerDataSetObserver(mDataSetObserver);
 		
-		//setListAdapter(mAdapter);
+		setListAdapter(mAdapter);
 		
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
 				CursorDefinitions.getArtistBrowserCursorParams(mArtistId));
 		
 		getLoaderManager().initLoader(0, null, cm);
-	}
-	
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		
-		getListView().addHeaderView(
-				View.inflate(getActivity(), R.layout.listview_header_viewpager, null));
-		Log.d("TrackList", "Number header views: " + getListView().getHeaderViewsCount());
-		setListAdapter(mAdapter);
-	}
-	
-	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		
-		setListAdapter(null);
 	}
 	
 	@Override

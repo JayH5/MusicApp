@@ -84,4 +84,56 @@ public class TextUtils {
 					minutes, delimiter, seconds);
 		}
 	}
+	
+	/**
+	 * Grab a bit of functionality out of MediaStore.Audio.keyFor(). This
+	 * is literally all it does to strip out the/an/a and special characters. 
+	 * There doesn't appear to be any internationalization (as of 4.2.2r1).
+	 * @param name
+	 * @return
+	 */
+	public static String headerFor(String name) {
+		name = name.trim().toUpperCase();
+        if (name.startsWith("THE ")) {
+        	name = name.substring(4);
+        }
+        if (name.startsWith("AN ")) {
+        	name = name.substring(3);
+        }
+        if (name.startsWith("A ")) {
+        	name = name.substring(2);
+        }
+        
+        // There are probably more characters
+        name = name.replaceAll("[\\[\\]\\(\\)\"'.,?!]", "").trim();
+        
+        if (name.isEmpty() || !Character.isLetterOrDigit(name.charAt(0))) {
+        	return "A";
+        } else if (Character.isDigit(name.charAt(0))) {
+        	return "A";
+        } else {
+        	return name.substring(0, 1);
+        }
+	}
+	
+	public static char getFirstChar(String title) {
+		String name = title.trim().toUpperCase();
+        if (name.startsWith("THE ")) {
+        	name = name.substring(4);
+        }
+        if (name.startsWith("AN ")) {
+        	name = name.substring(3);
+        }
+        if (name.startsWith("A ")) {
+        	name = name.substring(2);
+        }
+        
+        // There are probably more characters
+        name = name.replaceAll("[\\[\\]\\(\\)\"'.,?!]", "").trim();
+        
+        if (name.isEmpty() || !Character.isLetterOrDigit(name.charAt(0))) {
+        	name = title;
+        } 
+        return name.charAt(0);
+	}
 }

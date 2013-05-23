@@ -377,7 +377,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		
 		db.beginTransaction();
 		try {
-			// Move the item to position -1 temporarily
+			// "Move" the item to position -1 temporarily
 			whereArgs[0] = String.valueOf(from);
 			values.put(COLUMN_NAME_QUEUE_POSITION, -1);
 			db.update(TABLE_NAME_TRACK_ORDER, values, where, whereArgs);

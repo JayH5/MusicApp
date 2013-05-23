@@ -2,27 +2,17 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="48dp"
-    android:background="@drawable/ab_transparent_dark" >
-    
-    <ImageView
-        android:id="@+id/up"
-        android:layout_width="48dp"
-        android:layout_height="match_parent"
-        android:layout_alignParentLeft="true"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:src="@drawable/icn_first_attempt" />
+    style="@style/PlayerTheme.ActionBar"
+    android:gravity="center_vertical" >
 
     <TextView
         android:id="@+id/action_bar_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/up"
+        android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:ellipsize="end"
-        android:singleLine="true"
-        android:textSize="18sp"
-        android:textColor="#FFF"
+        android:paddingLeft="8dp"
+        style="@style/PlayerTheme.TextAppearance.ActionBar.Title"
         android:text="Now Playing" />
     
     <ImageButton

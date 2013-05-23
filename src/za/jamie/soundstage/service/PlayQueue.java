@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import android.util.Log;
-
 import za.jamie.soundstage.models.Track;
 
 public class PlayQueue {
@@ -31,14 +29,20 @@ public class PlayQueue {
 	 *
 	 * @param tracks The Collection of Tracks to add to the queue.
 	 */
-	public PlayQueue(Collection<? extends Track> tracks, 
-			List<Integer> shuffleMap) {
+	public PlayQueue(Collection<? extends Track> tracks) {
 		mTrackList = new ArrayList<Track>(tracks);
-		mShuffleMap = new ArrayList<Integer>(shuffleMap);
-		
-		if (!mShuffleMap.isEmpty()) {
-			mShuffled = true;
+		mShuffleMap = new ArrayList<Integer>();
+	}
+	
+	public void setShuffleMap(Collection<? extends Integer> shuffleMap) {
+		if (shuffleMap.size() != mTrackList.size()) {
+			throw new IllegalArgumentException("Shuffle map not the same size as track list!");
+		} else if (Collections.min(shuffleMap) < 0 || 
+				Collections.max(shuffleMap) >= mTrackList.size()) {
+			throw new IllegalArgumentException("Invalid shuffle map.");
 		}
+		mShuffleMap.clear();
+		mShuffleMap.addAll(shuffleMap);
 	}
 
 	/**
@@ -53,26 +57,21 @@ public class PlayQueue {
 	public boolean open(Collection<? extends Track> tracks, int position, 
 			boolean shuffle) {
 
+		boolean queueChanged = false;
 		if (!tracks.equals(mTrackList)) {
 			clear();
 			mTrackList.addAll(tracks);
-			if (shuffle) {
-				Log.d("PlayQueue", "Opening, shuffle enabled, track collections unequal");
-				shuffle(position);
-			} else {
-				mShuffled = false;
-				moveToPosition(position);
-			}
-			return true;
-		} else {
-			if (shuffle) {
-				shuffle(position);
-			} else {
-				mShuffled = false;
-				moveToPosition(position);
-			}
-			return false;
+			queueChanged = true;
 		}
+		
+		if (shuffle) {
+			shuffle(position);
+		} else {
+			mShuffled = false;
+			moveToPosition(position);
+		}
+		
+		return queueChanged;
 	}
 
 	/**
@@ -117,8 +116,8 @@ public class PlayQueue {
 	 *
 	 */
 	public void unShuffle() {
-		if (isPositionValid(mPosition)) {
-			mPosition = getUnshuffledPosition(mPosition);
+		if (isPositionValid(mPosition) && mShuffled) {
+			mPosition = mShuffleMap.get(mPosition);
 		}
 		mShuffleMap.clear();
 		mShuffled = false;
@@ -180,7 +179,7 @@ public class PlayQueue {
 	 */
 	public Track peekNext() {
 		if (isPositionValid(mPosition + 1)) {
-			return mTrackList.get(getShuffledPosition(mPosition) + 1);
+			return mTrackList.get(getShuffledPosition(mPosition + 1));
 		}
 		return null;
 	}
@@ -226,7 +225,11 @@ public class PlayQueue {
 	 */
 	public boolean moveToPosition(int position) {
 		if (isPositionValid(position)) {
-			mPosition = getUnshuffledPosition(position);
+			if (mShuffled) {
+				mPosition = mShuffleMap.indexOf(position);
+			} else {
+				mPosition = position;
+			}
 			return true;
 		}
 		return false;
@@ -268,6 +271,12 @@ public class PlayQueue {
 		boolean positionMoved = false;
 		if (from != to) {
 			mTrackList.add(to, mTrackList.remove(from));
+			if (mShuffled) {
+				from = mShuffleMap.indexOf(from);
+				to = mShuffleMap.indexOf(to);
+				mShuffleMap.add(to, mShuffleMap.remove(from));
+			}
+			
 			if (from == mPosition) {
 				mPosition = to;
 				positionMoved = true;
@@ -306,6 +315,11 @@ public class PlayQueue {
 		return false;
 	}
 	
+	/**
+	 * Check if a track is in the queue
+	 * @param track
+	 * @return True if the track is in the queue
+	 */
 	public boolean contains(Track track) {
 		return mTrackList.contains(track);
 	}
@@ -340,7 +354,7 @@ public class PlayQueue {
 		if (isPositionValid(position)) {
 			mTrackList.add(position, track);
 			
-			if (position < mPosition) {
+			if (position <= mPosition) {
 				mPosition++;
 			}
 		}
@@ -384,7 +398,7 @@ public class PlayQueue {
 		if (isPositionValid(position)) {
 			mTrackList.addAll(c);
 
-			if (position < mPosition) {
+			if (position <= mPosition) {
 				mPosition += c.size();
 			}
 		}
@@ -398,11 +412,12 @@ public class PlayQueue {
 	 */
 	public Track remove(int position) {
 		if (isPositionValid(position)) {
+			int trackListPosition = position;
+			// If shuffled, get the position in the shuffle map
 			if (mShuffled) {
-				mShuffleMap.remove((Integer) position);
+				trackListPosition = mShuffleMap.indexOf(trackListPosition);
+				mShuffleMap.remove(trackListPosition);
 			}
-
-			int trackListPosition = getUnshuffledPosition(position);
 			if (trackListPosition < mPosition) {
 				mPosition--;
 			}
@@ -425,25 +440,6 @@ public class PlayQueue {
 		return mShuffleMap.get(shuffleMapPosition);
 	}
 	
-	/**
-	 * Gets the position in the shuffle map of a position in the track list if
-	 * shuffling is turned on.
-	 * @param shufflePosition
-	 * @return
-	 */
-	private int getUnshuffledPosition(int shufflePosition) {
-		if (!mShuffled) {
-			return shufflePosition;
-		}
-
-		for (int i = 0; i < size(); i++) {
-			if (mShuffleMap.get(i) == shufflePosition) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
 	/**
 	 * Removes all Tracks from the queue and resets the current position.
 	 *

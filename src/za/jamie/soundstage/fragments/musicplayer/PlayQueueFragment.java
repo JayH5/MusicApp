@@ -2,34 +2,34 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import java.util.List;
 
-import za.jamie.soundstage.IQueueStatusCallback;
+import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.Button;
 
 import com.mobeta.android.dslv.DragSortListView;
 
 public class PlayQueueFragment extends DialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
-		
-	//private static final String TAG_CREATE_PLAYLIST_DIALOG = "playlist_dialog";
 	
 	private static final long VIBE_DURATION = 15;
 	
 	private PlayQueueAdapter mAdapter;
+	private DragSortListView mDslv;
 	
 	private MusicQueueWrapper mService;
 	
@@ -56,63 +56,71 @@ public class PlayQueueFragment extends DialogFragment implements
 	}
 	
 	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		final LayoutInflater inflater = getActivity().getLayoutInflater();
-		final DragSortListView dslv = (DragSortListView) 
-				inflater.inflate(R.layout.fragment_play_queue, null);
-		dslv.setDragSortListener(this);
-		dslv.setOnItemClickListener(this);
-		dslv.setAdapter(mAdapter);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) {
+		
+		View v = inflater.inflate(R.layout.fragment_play_queue, container, false);
+		
+		mDslv = (DragSortListView) v.findViewById(R.id.dslv);
+		mDslv.setDragSortListener(this);
+		mDslv.setOnItemClickListener(this);
+		mDslv.setAdapter(mAdapter);
+		
+		final Button saveButton = (Button) v.findViewById(R.id.play_queue_save_button);
+		saveButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO
+				
+			}
+		});
+		
+		final Button closeButton = (Button) v.findViewById(R.id.play_queue_close_button);
+		closeButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				getDialog().dismiss();				
+			}
+		});
+		
+		return v;
+	}
+	
+	@Override
+	public void onDestroyView() {
+		super.onDestroyView();
+		
+		mDslv = null;
+	}
+	
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {        
+        mService.registerPlayQueueCallback(mCallback);
+        mService.requestPlayQueue();
         
-        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setView(dslv)
-        	.setTitle(R.string.title_play_queue)
-        	.setNegativeButton(R.string.play_queue_close, 
-        			new DialogInterface.OnClickListener() {
-						
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							// TODO Auto-generated method stub
-							
-						}
-					})
-        	.setPositiveButton(R.string.play_queue_save, 
-        			new DialogInterface.OnClickListener() {
-						
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							/*CreatePlaylistDialog frag = 
-									CreatePlaylistDialog.newInstance(
-											(ArrayList<Track>) mAdapter.getList());
-							
-							frag.show(getChildFragmentManager(), TAG_CREATE_PLAYLIST_DIALOG);*/						
-						}
-					});
-        
-        mService.registerQueueStatusCallback(mCallback);
-        mService.requestQueueStatusRefresh();
-        
-	    return builder.create();
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        return dialog;
 	}
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 		
-		mService.unregisterQueueStatusCallback(mCallback);
+		mService.unregisterPlayQueueCallback(mCallback);
 	}
 	
-	private IQueueStatusCallback mCallback = new IQueueStatusCallback.Stub() {
+	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
 
 		@Override
-		public void onQueueChanged(final List<Track> queue) throws RemoteException {
+		public void deliverTrackList(final List<Track> trackList) throws RemoteException {
 			getActivity().runOnUiThread(new Runnable() {
 
 				@Override
 				public void run() {
-					//mAdapter.setList(queue);
-					mAdapter.addAll(queue);
-					
+					mAdapter.addAll(trackList);					
 				}
 				
 			});
@@ -120,11 +128,14 @@ public class PlayQueueFragment extends DialogFragment implements
 		}
 
 		@Override
-		public void onQueuePositionChanged(final int position) throws RemoteException {
+		public void deliverPosition(final int position) throws RemoteException {
 			getActivity().runOnUiThread(new Runnable() {
 
 				@Override
 				public void run() {
+					if (mDslv != null) {
+						mDslv.setSelection(position);
+					}
 					//mAdapter.setQueuePosition(position);
 					
 				}
@@ -156,6 +167,7 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
 		mService.setQueuePosition(which);
+		getDialog().dismiss();
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
+import android.app.ActionBar;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,7 +12,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.MenuItem;
 
 import com.viewpagerindicator.TitlePageIndicator;
 
@@ -34,7 +34,8 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		super.onCreate(savedInstanceState);
 		setMainContentView(R.layout.activity_artist_browser);
 		
-		getActionBar().setDisplayHomeAsUpEnabled(true);
+		getActionBar().setDisplayOptions(0, 
+				ActionBar.DISPLAY_SHOW_HOME);
 		
 		// Set up the view pager and its indicator
 		ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
@@ -71,23 +72,12 @@ public class ArtistBrowserActivity extends MusicActivity implements
 	}
 	
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			// This is called when the Home (Up) button is pressed
-            // in the Action Bar.
-            Intent parentActivityIntent = new Intent(this, LibraryActivity.class);
-            parentActivityIntent.addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                    Intent.FLAG_ACTIVITY_NEW_TASK);
-            parentActivityIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
-            		LibraryActivity.SECTION_ARTISTS);
-            //parentActivityIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mArtistId);
-            startActivity(parentActivityIntent);
-            finish();
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
+	public boolean navigateUpTo(Intent upIntent) {
+		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
+        		LibraryActivity.SECTION_ARTISTS);
+        upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mArtistId);
+		
+		return super.navigateUpTo(upIntent);
 	}
 	
 	public class SectionsPagerAdapter extends FragmentPagerAdapter {

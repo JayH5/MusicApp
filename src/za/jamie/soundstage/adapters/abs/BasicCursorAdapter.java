@@ -4,7 +4,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.widget.ResourceCursorAdapter;
 
-public abstract class BasicCursorAdapter extends ResourceCursorAdapter {
+public abstract class BasicCursorAdapter extends ResourceCursorAdapter implements 
+		SearchableAdapter {
 
 	public BasicCursorAdapter(Context context, int layout, Cursor c, int flags) {
 		super(context, layout, c, flags);
@@ -18,15 +19,11 @@ public abstract class BasicCursorAdapter extends ResourceCursorAdapter {
 		return super.swapCursor(newCursor);
 	}
 	
-	/**
-	 * Returns the position of the item specified by an id in the Cursor.
-	 * @param id The id of the item to retrieve the position of.
-	 * @return The position of the item with the specified id.
-	 */
-	public int getPosition(long id) {
+	@Override
+	public int getPosition(long itemId) {
 		final int len = getCount();
 		for (int i = 0; i < len; i++) {
-			if (getItemId(i) == id) {
+			if (getItemId(i) == itemId) {
 				return i;
 			}
 		}

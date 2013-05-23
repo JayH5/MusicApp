@@ -27,7 +27,7 @@ public class ArtistAlbumListAdapter extends AlbumAdapter {
 		
 		super(context, layout, c, flags);
 		mResources = context.getResources();
-		mImageWorker = ImageUtils.getImageFetcher(context);
+		mImageWorker = ImageUtils.getThumbImageFetcher(context);
 	}
 
 	@Override

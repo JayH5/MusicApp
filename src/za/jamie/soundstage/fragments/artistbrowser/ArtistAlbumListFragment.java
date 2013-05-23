@@ -5,16 +5,16 @@ import za.jamie.soundstage.adapters.ArtistAlbumListAdapter;
 import za.jamie.soundstage.adapters.abs.AlbumAdapter;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
+import za.jamie.soundstage.fragments.DefaultListFragment;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListView;
 
-public class ArtistAlbumListFragment extends ListFragment {
+public class ArtistAlbumListFragment extends DefaultListFragment {
 	
 	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
 

@@ -6,18 +6,23 @@ import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
+import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.ContextThemeWrapper;
@@ -86,7 +91,7 @@ public class MusicPlayerFragment extends Fragment implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mImageWorker = ImageUtils.getImageFetcher(getActivity());
+		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
 		
 		mHandler = new TimeHandler(this);
 	}
@@ -102,6 +107,7 @@ public class MusicPlayerFragment extends Fragment implements
 	public void onDetach() {
 		super.onDetach();
 		
+		mService = null;
 		mHandler.removeCallbacksAndMessages(null);
 	}
 	
@@ -128,7 +134,7 @@ public class MusicPlayerFragment extends Fragment implements
 	
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    		Bundle savedInstanceState) {
 		
 		// create ContextThemeWrapper from the original Activity Context with the custom theme
 		final Context themedContext = new ContextThemeWrapper(getActivity(), 
@@ -160,11 +166,15 @@ public class MusicPlayerFragment extends Fragment implements
         
         mTrackText = (TextView) v.findViewById(R.id.music_player_track_name);
         mAlbumText = (TextView) v.findViewById(R.id.music_player_album_name);
+        mAlbumText.setOnClickListener(mMetaListener);
         mArtistText = (TextView) v.findViewById(R.id.music_player_artist_name);
+        mArtistText.setOnClickListener(mMetaListener);
         mAlbumArt = (ImageView) v.findViewById(R.id.music_player_album_art);
         ensureSquareImageView();
         
         mProgress = (SeekBar) v.findViewById(R.id.seek_bar);
+        mProgress.setOnSeekBarChangeListener(this);
+        
         mElapsedTime = (TextView) v.findViewById(R.id.elapsedTime);
         mTotalTime = (TextView) v.findViewById(R.id.totalTime);
         
@@ -320,9 +330,7 @@ public class MusicPlayerFragment extends Fragment implements
     }
 
 	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress,
-			boolean fromUser) {
-		
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 		if (!fromUser) {
             return;
         }
@@ -331,6 +339,7 @@ public class MusicPlayerFragment extends Fragment implements
             mLastSeekEventTime = now;
             mPosOverride = mDuration * progress / 1000;
             mService.seek(mPosOverride);
+            syncTime(mPosOverride, System.currentTimeMillis());
             if (!mFromTouch) {
                 // refreshCurrentTime();
                 mPosOverride = -1;
@@ -360,10 +369,17 @@ public class MusicPlayerFragment extends Fragment implements
     }
     
     private void updateTrack(Track track) {
-    	if (track != null) {
+    	if (track != null && mService != null) {
 			mTrackText.setText(track.getTitle());
+			
 			mAlbumText.setText(track.getAlbum());
+			mAlbumText.setTag(track.getAlbumId()); // bit sneaky
+			
 			mArtistText.setText(track.getArtist());
+			mArtistText.setTag(track.getArtistId());
+			
+			mImageWorker.setLoadingImage( // also bit sneaky
+					((SingleBitmapCache) mImageWorker.getMemoryCache()).get());
 			mImageWorker.loadAlbumImage(track, mAlbumArt);
 			
 			mDuration = track.getDuration();
@@ -396,18 +412,9 @@ public class MusicPlayerFragment extends Fragment implements
     	queueNextRefresh(next);
     }
     
-    private void updateShuffleMode(int shuffleMode) {
-    	switch (shuffleMode) {
-		case MusicService.SHUFFLE_NONE:
-			mShuffleButton.setImageResource(R.drawable.btn_shuffle);
-			break;
-		case MusicService.SHUFFLE_AUTO:
-			mShuffleButton.setImageResource(R.drawable.btn_playback_shuffle_all);
-			break;
-		case MusicService.SHUFFLE_NORMAL:
-			mShuffleButton.setImageResource(R.drawable.btn_playback_shuffle_all);
-			break;
-		}
+    private void updateShuffleState(boolean shuffleEnabled) {
+    	mShuffleButton.setImageResource(shuffleEnabled ? 
+    			R.drawable.btn_playback_shuffle_all : R.drawable.btn_shuffle);
     }
     
     private void updateRepeatMode(int repeatMode) {
@@ -435,12 +442,33 @@ public class MusicPlayerFragment extends Fragment implements
 			} else if (v == mPreviousButton) {
 				mService.previous();
 			} else if (v == mShuffleButton) {
-				mService.cycleShuffleMode();
+				mService.toggleShuffle();
 			} else if (v == mRepeatButton) {
 				mService.cycleRepeatMode();
 			}
 			
 		}
+	};
+	
+	private View.OnClickListener mMetaListener = new View.OnClickListener() {
+		
+		@Override
+		public void onClick(View v) {
+			if (v == mArtistText) {
+				final Uri data = ContentUris.withAppendedId(
+						MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, 
+						(Long) mArtistText.getTag());
+				startActivity(new Intent(Intent.ACTION_VIEW)
+						.setDataAndType(data, MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE));
+			} else if (v == mAlbumText) {
+				final Uri data = ContentUris.withAppendedId(
+						MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, 
+						(Long) mAlbumText.getTag());
+				startActivity(new Intent(Intent.ACTION_VIEW)
+						.setDataAndType(data, MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE));
+			}			
+		}
+
 	};
 	
 	public boolean isPlaying() {
@@ -473,7 +501,7 @@ public class MusicPlayerFragment extends Fragment implements
     
     public void onServiceConnected() {
     	mService.registerMusicStatusCallback(mCallback);
-    	mService.requestMusicStatusRefresh();
+    	mService.requestMusicStatus();
     }
 	
 	public final IMusicStatusCallback mCallback = new IMusicStatusCallback.Stub() {
@@ -521,14 +549,14 @@ public class MusicPlayerFragment extends Fragment implements
 		}
 
 		@Override
-		public void onShuffleModeChanged(final int shuffleMode)
+		public void onShuffleStateChanged(final boolean shuffleEnabled)
 				throws RemoteException {
 			
 			getActivity().runOnUiThread(new Runnable() {
 
 				@Override
 				public void run() {
-					updateShuffleMode(shuffleMode);
+					updateShuffleState(shuffleEnabled);
 					
 				}
 				

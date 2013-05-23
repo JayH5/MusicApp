@@ -67,7 +67,8 @@
         <service
             android:name=".service.MusicService"
             android:label="@string/app_name"
-            android:process=":musicservice" >
+            android:process=":musicservice"
+            android:exported="false" >
             <intent-filter>
                 <action android:name="za.jamie.soundstage.action.TOGGLE_PLAYBACK" />
                 <action android:name="za.jamie.soundstage.action.PLAY" />
@@ -85,7 +86,8 @@
         <activity
             android:name=".activities.AlbumBrowserActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:parentActivityName=".activities.LibraryActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -96,7 +98,8 @@
         <activity
             android:name=".activities.ArtistBrowserActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:parentActivityName=".activities.LibraryActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

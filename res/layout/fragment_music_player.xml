@@ -70,17 +70,24 @@
         <TextView
             android:id="@+id/music_player_album_name"
             style="@style/MusicPlayerSubtitleText"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:background="@drawable/button_white_highlight" />
 
         <TextView
             android:id="@+id/music_player_artist_name"
             style="@style/MusicPlayerSubtitleText"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:background="@drawable/button_white_highlight" />
     </LinearLayout>
+    
+    <View
+        android:layout_above="@+id/music_player_action_holder"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/hairline" />
     
     <LinearLayout
         android:id="@+id/music_player_action_holder"
-        android:background="@drawable/ab_bottom_solid_dark"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_alignParentBottom="true"
@@ -93,16 +100,19 @@
         <za.jamie.soundstage.widgets.RepeatingImageButton
             android:id="@+id/action_button_previous"
             style="@style/TransparentImageButton"
+            android:background="@drawable/button_white_highlight"
             android:src="@drawable/btn_playback_previous" />
         
         <ImageButton
             android:id="@+id/action_button_play"
             style="@style/TransparentImageButton"
+            android:background="@drawable/button_white_highlight"
             android:src="@drawable/btn_playback_play" />
         
         <za.jamie.soundstage.widgets.RepeatingImageButton
             android:id="@+id/action_button_next"
             style="@style/TransparentImageButton"
+            android:background="@drawable/button_white_highlight"
             android:src="@drawable/btn_playback_next" />
            
     </LinearLayout>

@@ -3,9 +3,8 @@ package za.jamie.soundstage.adapters.abs;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
-import android.support.v4.widget.ResourceCursorAdapter;
 
-public abstract class ArtistAdapter extends ResourceCursorAdapter {
+public abstract class ArtistAdapter extends BasicCursorAdapter {
 
 	private int mIdColIdx;
 	private int mArtistColIdx;
@@ -14,6 +13,7 @@ public abstract class ArtistAdapter extends ResourceCursorAdapter {
 		super(context, layout, c, flags);
 	}
 	
+	@Override
 	protected void getColumnIndices(Cursor cursor) {
 		if (cursor != null) {
 			mIdColIdx = cursor
@@ -29,12 +29,6 @@ public abstract class ArtistAdapter extends ResourceCursorAdapter {
 	
 	public int getArtistColIdx() {
 		return mArtistColIdx;
-	}
-	
-	@Override
-	public Cursor swapCursor(Cursor newCursor) {
-		getColumnIndices(newCursor);
-		return super.swapCursor(newCursor);
 	}
 
 }

@@ -6,6 +6,7 @@ import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,10 +22,9 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
+	private static final String STATE_SCROLL_POSITION = "state_scroll_position";
+	
 	//private static final String TAG = "AlbumGridFragment";
-
-    private int mImageThumbSize;
-    private int mImageThumbSpacing;
     
     private AlbumsAdapter mAdapter;
     
@@ -39,22 +39,13 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     	return frag;
     }
     
-    /**
-     * Empty constructor as per the Fragment documentation
-     */
-    public AlbumsFragment() {}
-    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Get the sizes for the grid items
-        mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size);
-        mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_spacing);
-        
         // Set up the adapter to create the views
         mAdapter = new AlbumsAdapter(getActivity(), 
-        		R.layout.grid_item_two_line, null, 0);        
+        		R.layout.grid_item_two_line, R.layout.grid_item_header, null, 0);
         
         // Load up the cursor
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
@@ -68,18 +59,44 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 
         final View v = inflater.inflate(R.layout.fragment_album_grid, container, false);
         
-        mGridView = (GridView) v.findViewById(R.id.gridView);
+        mGridView = (GridView) v.findViewById(R.id.grid);
         mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(this);
-        mGridView.setFastScrollEnabled(true);
-
-        // This listener is used to get the final width of the GridView and then calculate the
-        // number of columns and the width of each column. The width of each column is variable
-        // as the GridView has stretchMode=columnWidth. The column width is used to set the height
-        // of each view so we get nice square thumbnails.
+        //mGridView.setFastScrollAlwaysVisible(true); // Android bug, can't be done in xml
         mGridView.getViewTreeObserver().addOnGlobalLayoutListener(mGridLayoutListener);
-
+        
+        if (savedInstanceState != null) {
+    		mGridView.setSelection(savedInstanceState.getInt(STATE_SCROLL_POSITION, 0));
+    	} else {
+    		// Scroll to the album specified by the child activity
+            final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
+            if (itemId > 0) {
+    	        mAdapter.registerDataSetObserver(new DataSetObserver() {
+    	        	@Override
+    	        	public void onChanged() {
+    	        		mGridView.setSelection(mAdapter.getPosition(itemId));
+    	        	}
+    	        });
+            }
+    	}
+        
         return v;
+    }
+    
+    @Override
+    public void onDestroyView() {
+    	super.onDestroyView();
+    	
+    	mGridView = null;
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+    	super.onSaveInstanceState(outState);
+    	
+    	if (mGridView != null) {
+    		outState.putInt(STATE_SCROLL_POSITION, mGridView.getFirstVisiblePosition());
+    	}
     }
     
     private ViewTreeObserver.OnGlobalLayoutListener mGridLayoutListener =
@@ -87,17 +104,12 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 				
 		@Override
 		public void onGlobalLayout() {
-			if (mAdapter.getNumColumns() == 0) {
-				final int numColumns = 
-						mGridView.getWidth() / (mImageThumbSize + mImageThumbSpacing);
-                        
-				if (numColumns > 0) {
-					final int columnWidth =
-							(mGridView.getWidth() / numColumns) - mImageThumbSpacing;
-                    
-					mAdapter.setNumColumns(numColumns);
-                    mAdapter.setItemHeight(columnWidth);
-                }
+			if (mGridView == null) {
+				return;
+			}
+			
+			if (mAdapter.getItemHeight() == 0 && mGridView.getNumColumns() > 0) {
+				mAdapter.setItemHeight(mGridView.getColumnWidth());
 			}							
 		}	
     };
@@ -112,18 +124,4 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 		startActivity(intent);
 	}
 
-	/*@Override
-	public void onLoadFinished(Cursor data) {
-		long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
-		if (itemId > 0 && data != null) {
-			// Sequential search through the data for the id
-			final int count = mAdapter.getCount();
-			for (int i = 0; i < count; i++) {
-				if (mAdapter.getItemId(i) == itemId) {
-					mGridView.setSelection(i);
-					break;
-				}
-			}
-		}		
-	}*/
 }

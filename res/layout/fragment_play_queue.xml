@@ -1,15 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.mobeta.android.dslv.DragSortListView
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:dslv="http://schemas.android.com/apk/res/za.jamie.soundstage"
-    android:id="@+id/dslv"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    dslv:drag_enabled="true"
-    dslv:float_alpha="0.6"
-    dslv:drag_start_mode="onDown"
-    dslv:drag_handle_id="@+id/drag_handle"
-    dslv:remove_enabled="true"
-    dslv:remove_mode="clickRemove"
-    dslv:click_remove_id="@+id/remove_button"
-    dslv:float_background_color="#FFF" />
+    android:layout_height="match_parent" >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:id="@+id/play_queue_title"
+        android:text="Play Queue"
+        android:textSize="22sp"
+        android:fontFamily="sans-serif-light" />
+        
+    <com.mobeta.android.dslv.DragSortListView
+	    xmlns:dslv="http://schemas.android.com/apk/res/za.jamie.soundstage"
+	    android:id="@+id/dslv"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_below="@id/play_queue_title"
+	    android:layout_above="@+id/play_queue_button_container"
+	    android:divider="@drawable/list_divider_play_store"
+	    android:dividerHeight="2dp"
+	    dslv:drag_enabled="true"
+	    dslv:float_alpha="0.6"
+	    dslv:drag_start_mode="onDown"
+	    dslv:drag_handle_id="@+id/drag_handle"
+	    dslv:remove_enabled="true"
+	    dslv:remove_mode="clickRemove"
+	    dslv:click_remove_id="@+id/remove_button"
+	    dslv:float_background_color="#FFF" />
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="16dp"
+        android:id="@id/play_queue_button_container" >
+        
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_margin="8dp"
+            android:id="@+id/play_queue_save_button"
+            android:background="@android:color/holo_blue_dark"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="Save as playlist"
+            android:textAllCaps="true"
+            android:textSize="14sp"
+            android:textColor="#FFF"
+            android:textStyle="bold" />
+        
+        <Button
+            android:id="@+id/play_queue_close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="8dp"
+            android:background="@android:color/holo_blue_dark"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="Close"
+            android:textAllCaps="true"
+            android:textColor="#FFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+        
+    </LinearLayout>
+    
+</RelativeLayout>

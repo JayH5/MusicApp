@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:id="@+id/container" >
 
     <ImageView
         android:id="@+id/image"
@@ -13,7 +14,7 @@
         android:id="@+id/grid_info_holder"
         android:layout_width="match_parent"
         android:layout_height="@dimen/grid_info_holder_height"
-        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
         android:background="@drawable/gradient_drop_shadow"
         android:gravity="center_vertical"
         android:orientation="vertical" >
@@ -28,4 +29,4 @@
         
     </LinearLayout>
     
-</RelativeLayout>
+</FrameLayout>

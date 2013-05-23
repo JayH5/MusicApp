@@ -39,9 +39,11 @@ import android.widget.ImageView;
 public abstract class ImageWorker {
     private static final String TAG = "ImageWorker";
     public static final String KEY = "key";
-    private static final int FADE_IN_TIME = 150;
+    private static final int FADE_IN_TIME = 100;
 
-    protected ImageCache mImageCache;
+    protected Cache<String, Bitmap> mMemoryCache;
+    protected Cache<String, Bitmap> mDiskCache;
+    
     private Bitmap mLoadingBitmap;
     private boolean mFadeInBitmap = true;
     private boolean mExitTasksEarly = false;
@@ -66,14 +68,13 @@ public abstract class ImageWorker {
     public void loadImage(String key, Bundle data, ImageView imageView) {
         Bitmap bitmap = null;
 
-        if (mImageCache != null) {
-            bitmap = mImageCache.getBitmapFromMemCache(key);
+        if (mMemoryCache != null) {
+            bitmap = mMemoryCache.get(key);
         }
 
         if (bitmap != null) {
             // Bitmap found in memory cache
             imageView.setImageBitmap(bitmap);
-            Log.d(TAG, "Memory cache hit for key: " + key + "arist: " + data.getString(ImageFetcher.KEY_ARTIST));
         } else if (cancelPotentialWork(key, imageView)) {
             final BitmapWorkerTask task = new BitmapWorkerTask(imageView);
             final AsyncDrawable asyncDrawable =
@@ -111,12 +112,25 @@ public abstract class ImageWorker {
      *
      * @param cacheCallback
      */
-    public void setImageCache(ImageCache cacheCallback) {
-        mImageCache = cacheCallback;
+    public void setMemoryCache(Cache<String, Bitmap> cacheCallback) {
+        mMemoryCache = cacheCallback;
+    }
+    
+    /**
+     * Set the {@link ImageCache} object to use with this ImageWorker.
+     *
+     * @param cacheCallback
+     */
+    public void setDiskCache(Cache<String, Bitmap> cacheCallback) {
+        mDiskCache = cacheCallback;
     }
 
-    public ImageCache getImageCache() {
-        return mImageCache;
+    public Cache<String, Bitmap> getMemoryCache() {
+        return mMemoryCache;
+    }
+    
+    public Cache<String, Bitmap> getDiskCache() {
+        return mDiskCache;
     }
 
     /**
@@ -220,9 +234,9 @@ public abstract class ImageWorker {
             // thread and the ImageView that was originally bound to this task is still bound back
             // to this task and our "exit early" flag is not set then try and fetch the bitmap from
             // the cache
-            if (mImageCache != null && !isCancelled() && getAttachedImageView() != null
+            if (mDiskCache != null && !isCancelled() && getAttachedImageView() != null
                     && !mExitTasksEarly) {
-                bitmap = mImageCache.getBitmapFromDiskCache(key);
+                bitmap = mDiskCache.get(key);
             }
 
             // If the bitmap was not found in the cache and this task has not been cancelled by
@@ -238,8 +252,9 @@ public abstract class ImageWorker {
             // bitmap to the cache for future use. Note we don't check if the task was cancelled
             // here, if it was, and the thread is still running, we may as well add the processed
             // bitmap to our cache as it might be used again in the future
-            if (bitmap != null && mImageCache != null) {
-                mImageCache.addBitmapToCache(key, bitmap);
+            if (bitmap != null) {
+            	if (mMemoryCache != null) mMemoryCache.put(key, bitmap);
+            	if (mDiskCache != null) mDiskCache.put(key, bitmap);
             }
 
             return bitmap;

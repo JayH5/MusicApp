@@ -17,10 +17,12 @@ import za.jamie.soundstage.lastfm.Image;
 import za.jamie.soundstage.lastfm.ImageSize;
 import za.jamie.soundstage.lastfm.PaginatedResult;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.utils.ImageUtils;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -40,8 +42,11 @@ public class ImageDownloadService extends IntentService {
 	// may be waiting in the intent queue for a single image
 	private Set<String> mDownloadedSet = new HashSet<String>();
 	
-	private ImageCache mImageCache;
-	private ImageResizer mImageResizer;
+	private DiskCache mBigImageCache;
+	private DiskCache mThumbImageCache;
+	
+	private ImageResizer mBigImageResizer;
+	private ImageResizer mThumbImageResizer;
 	
 	public ImageDownloadService() {
 		super(TAG);
@@ -51,8 +56,11 @@ public class ImageDownloadService extends IntentService {
 	public void onCreate() {
 		super.onCreate();
 		
-		mImageCache = ImageCache.getInstance(this);
-		mImageResizer = new ImageResizer(this);
+		mBigImageCache = ImageUtils.getBigDiskCacheInstance(this);
+		mThumbImageCache = ImageUtils.getThumbDiskCacheInstance(this);
+		
+		mBigImageResizer = ImageUtils.getBigResizer(this);
+		mThumbImageResizer = ImageUtils.getThumbResizer(this);
 	}
 
 	@Override
@@ -60,7 +68,7 @@ public class ImageDownloadService extends IntentService {
 		Log.d(TAG, "Handling intent to download image...");
 		// Get the bundle with the image info
 		Bundle args = intent.getBundleExtra(KEY_BUNDLE);
-		String key = args.getString(ImageWorker.KEY);
+		final String key = args.getString(ImageWorker.KEY);
 		
 		if (!mDownloadedSet.contains(key)) {
 			// Try get a url for an image
@@ -74,24 +82,13 @@ public class ImageDownloadService extends IntentService {
 			
 			if (url != null) {
 				// Try download the image
-				File imageFile = downloadFile(this, url, key,
+				final File imageFile = downloadFile(this, url, key,
 						AppUtils.getCacheDir(this, CACHE_DIR));
 				
 				if (imageFile != null) {
-					// Resize the image
-					Bitmap bitmap = mImageResizer.getBitmapFromFile(imageFile);
-					if (bitmap != null) {
-						mImageCache.addBitmapToDiskCache(key, bitmap);
-					
-						mDownloadedSet.add(key);
-						Log.d(TAG, "Image successfully downloaded for key: " + key);
-					
-						// Tidy up after ourselves
-						bitmap = null;
-					}
-					imageFile.delete();
-					imageFile = null;
-					System.gc();
+					mDownloadedSet.add(key);
+					new ResizeAndStoreTask(imageFile, key)
+						.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Void[]) null);
 				} else {
 					Log.w(TAG, "Downloaded file was null.");
 				}
@@ -194,6 +191,34 @@ public class ImageDownloadService extends IntentService {
             }
         }
         return null;
+    }
+    
+    private class ResizeAndStoreTask extends AsyncTask<Void, Void, Void> {    	
+		
+    	private final File mFile;
+    	private final String mKey;
+    	
+    	public ResizeAndStoreTask(File file, String key) {
+			mFile = file;
+			mKey = key;
+		}
+    	
+    	@Override
+		protected Void doInBackground(Void... params) {
+    		Bitmap bigImage = mBigImageResizer.getBitmapFromFile(mFile);
+			if (bigImage != null) {
+				mBigImageCache.put(mKey, bigImage);
+			}
+			Bitmap thumbImage = mThumbImageResizer.getBitmapFromFile(mFile);
+			if (thumbImage != null) {
+				mThumbImageCache.put(mKey, thumbImage);
+			}
+			
+			mFile.delete();
+			
+			return null;
+		}
+    	
     }
 
 }

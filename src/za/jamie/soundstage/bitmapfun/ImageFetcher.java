@@ -31,6 +31,11 @@ public class ImageFetcher extends ImageWorker {
 		mResizer = new ImageResizer(context);
 	}
 	
+	public ImageFetcher(Context context, ImageResizer resizer) {
+		super(context);
+		mResizer = resizer;
+	}
+	
 	public static Uri getAlbumArtUri(long albumId) {
 		Uri path = null;
 		if (albumId > 0) {

@@ -2,15 +2,15 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="@dimen/list_item_height"
-    android:orientation="horizontal"
-    android:gravity="center_vertical" >
+    android:paddingRight="16dp"
+    android:orientation="horizontal" >
     
     <ImageView
         android:id="@+id/drag_handle"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:paddingLeft="8dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
         android:src="@drawable/btn_content_reorder"
         android:background="?android:selectableItemBackground" />
     
@@ -24,11 +24,13 @@
 
         <TextView
             android:id="@+id/title"
-            style="@style/ListItemText.Title" />
+            style="@style/ListItemText.Title"
+            android:textColor="#333333" />
 
         <TextView
             android:id="@+id/subtitle"
-            style="@style/ListItemText.Subtitle" />
+            style="@style/ListItemText.Subtitle"
+            android:textColor="#8D8D8D" />
 
 	</LinearLayout>
 	
@@ -36,12 +38,10 @@
         android:id="@+id/remove_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:src="@drawable/btn_content_remove"
+        android:layout_centerVertical="true"
+        android:padding="8dp"
+        android:src="@drawable/ic_menu_remove_field_holo_light"
         android:background="?android:selectableItemBackground" />
 
 </RelativeLayout>

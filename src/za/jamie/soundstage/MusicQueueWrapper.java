@@ -7,7 +7,7 @@ public interface MusicQueueWrapper {
 	public void removeTrack(int position);
 	
 	// Callback
-	public void requestQueueStatusRefresh();
-	public void registerQueueStatusCallback(IQueueStatusCallback callback);
-	public void unregisterQueueStatusCallback(IQueueStatusCallback callback);
+	public void requestPlayQueue();
+	public void registerPlayQueueCallback(IPlayQueueCallback callback);
+	public void unregisterPlayQueueCallback(IPlayQueueCallback callback);
 }

@@ -3,28 +3,21 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.ArtistsAdapter;
 import za.jamie.soundstage.adapters.abs.ArtistAdapter;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.fragments.FastscrollListFragment;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListView;
 
-public class ArtistsFragment extends ListFragment {
+public class ArtistsFragment extends FastscrollListFragment {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
-	
-	//private static final String TAG = "ArtistListFragment";
-	
-	private ArtistAdapter mAdapter;
-	
-	private ImageFetcher mImageWorker;
 	
 	public static ArtistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
@@ -34,35 +27,29 @@ public class ArtistsFragment extends ListFragment {
 		frag.setArguments(args);
 		return frag;
 	}
-	
-	/**
-     * Empty constructor as per the Fragment documentation
-     */
-    public ArtistsFragment() {}
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        mImageWorker = ImageUtils.getImageFetcher(getActivity());
+        final ArtistAdapter adapter = new ArtistsAdapter(getActivity(), 
+        		R.layout.list_item_artist, null, 0);
         
-        mAdapter = new ArtistsAdapter(getActivity(), 
-        		R.layout.list_item_artist, null, 0, mImageWorker);
+        setListAdapter(adapter);
         
-        setListAdapter(mAdapter);
+        final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
+        if (itemId > 0) {
+	        adapter.registerDataSetObserver(new DataSetObserver() {
+	        	@Override
+	        	public void onChanged() {
+	        		setSelection(adapter.getPosition(itemId));
+	        	}
+	        });
+        }
         
-        CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+        CursorManager cm = new CursorManager(getActivity(), adapter, 
         		CursorDefinitions.getArtistsCursorParams());
         getLoaderManager().initLoader(0, null, cm);
-    }
-    
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-    	super.onViewCreated(view, savedInstanceState);
-    	
-    	ListView lv = getListView();
-    	lv.setFastScrollEnabled(true);
-    	lv.setVerticalScrollBarEnabled(false);
     }
     
     @Override
@@ -75,4 +62,5 @@ public class ArtistsFragment extends ListFragment {
 
 		startActivity(intent);
     }
+
 }

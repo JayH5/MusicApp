@@ -1,7 +1,7 @@
 package za.jamie.soundstage;
 
 import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IQueueStatusCallback;
+import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.Track;
 
 oneway interface IMusicService {
@@ -11,20 +11,20 @@ oneway interface IMusicService {
 	void removeTrack(int position);
 	
 	// QueueStatusCallback
-	void requestQueueStatusRefresh();
-	void registerQueueStatusCallback(IQueueStatusCallback callback);
-	void unregisterQueueStatusCallback(IQueueStatusCallback callback);
+	void requestPlayQueue();
+	void registerPlayQueueCallback(IPlayQueueCallback callback);
+	void unregisterPlayQueueCallback(IPlayQueueCallback callback);
 	
 	// Access to play controls for the MusicPlayerFragment
 	void togglePlayback();
 	void next();
 	void previous();
 	void seek(long position);
-	void cycleShuffleMode();
+	void toggleShuffle();
 	void cycleRepeatMode();
 	
 	// MusicStatusCallback
-	void requestMusicStatusRefresh();
+	void requestMusicStatus();
 	void registerMusicStatusCallback(IMusicStatusCallback callback);
 	void unregisterMusicStatusCallback(IMusicStatusCallback callback);	
 	
@@ -32,4 +32,7 @@ oneway interface IMusicService {
 	void open(in List<Track> tracks, int position);
 	void shuffle(in List<Track> tracks);
 	void enqueue(in List<Track> tracks, int action);
+	
+	// Tell the service to show/remove notification
+	void showNotification(boolean show);
 }
