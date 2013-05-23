@@ -1,20 +1,17 @@
-MusicApp
-========
+Soundstage
+==========
 
-A music player that brings your music to centre stage.  
-![Play screen](/screenshots/2013-02-11 22.38.25.png)
+The player that brings your music centre stage.  
+![Play screen](/screenshots/2013-05-23 18.23.43.png)
 
-Name
-----
-Previous working name: "Play". Current working name: "Soundstage".
 
 Dependencies
 ------------
-* DiskLruCache 1.3.1 (https://github.com/JakeWharton/DiskLruCache)
-* MenuDrawer 2.0.1 (https://github.com/SimonVT/android-menudrawer)
+* DiskLruCache 2.0.1 (https://github.com/JakeWharton/DiskLruCache)
+* MenuDrawer 2.0.3 (https://github.com/SimonVT/android-menudrawer)
 * ViewPagerIndicator 2.4.1 (https://github.com/JakeWharton/Android-ViewPagerIndicator)
-* drag-sort-listview 0.6.1 (https://github.com/bauerca/drag-sort-listview)
-* Android Support Library v4 R12
+* ~~drag-sort-listview 0.6.1 (https://github.com/bauerca/drag-sort-listview)~~ NO LONGER MAINTAINED. See my fork of the project: https://github.com/JayH5/drag-sort-listview
+* Android Support Library v4 R13
 
 Requirements
 ------------
@@ -24,53 +21,35 @@ Requirements
 
 "Inspirations"
 --------------
-* A fair portion of the code for this app is based on Apollo Music player by Andrew Neal (https://github.com/adneal/Apollo-CM). A lot of Apollo, in turn is based on the original Android music player from Gingerbread, particularly the music service itself. But a very significant portion of this app is original work.
+* Apollo Music player by Andrew Neal (https://github.com/adneal/Apollo-CM). A lot of Apollo, in turn is based on the original Android music player from Gingerbread, particularly the music service itself. Seeing how a music player is made was extremely useful. While I've rewritten just about 100% of the code I used from Apollo, it was really great to have something to base my work off.
 * The source for the Android Gingerbread music player is here: https://github.com/android/platform_packages_apps_music
 * The image caching/loading is based on the Android dev guide code called "Bitmapfun" (http://developer.android.com/training/displaying-bitmaps/load-bitmap.html)
-* The interface styling takes ques from Google Now for Jelly Bean
+* The interface styling takes ques from Google Now as well as DeskClock in Jellybean 4.2
 
 Assets
 ------
 * The app does not have a proper logo yet. The one at the moment is pretty hideous.
 * Loading images missing for albums/artists.
 * A few other icons and such still need to be made/found. The current assets are mostly from the standard Android package (http://developer.android.com/downloads/design/Android_Design_Icons_20120814.zip).
-* ~~I know a guy who's an industrial designer and also does some graphic design... keep meaning to send him an email.~~ I'm in contact with him.
 
 Lastfm
 ------
 * Lastfm is used to fetch album and artist images. The files in src/com/jamie/play/lastfm/ are based on the lastfm-java code (http://code.google.com/p/lastfm-java/)
-* ~~The API key used was "borrowed" from Apollo. Please for god's sake remember to get own API key before releasing....~~ Got own key
 
 Current issues
 --------------
-* Seek bar doesn't seek when dragged.
-* Notification doesn't display when backing out of app. Does when pressing home button or switching apps.
-* In the album grid view, the adapter constantly reloads the image for the first album.. not sure why.. is limiting performance.
-* ANDROID ISSUE: The MediaStore doesn't attribute albums to the correct artists in the case of compilations. Doesn't read the Album Artist metadata tag from the media file, instead adds the first artist of the album. FIXME: ??? Don't know how.
-* Shuffle/repeat modes are UNIMPLEMENTED, although some of the code is in the MusicService. Repeat mode really a matter of adding a button
-* ~~Now playing drawer doesn't restore the current track on app launch.~~
-* ~~Notification and lockscreen controls show themselves inconsistently.~~
-* ~~Now playing drawer restores itself inconsistently. Sometimes it works, sometimes it doesn't.~~
-* ~~App fails to restore state in all activities other than the Library activity. This causes a fc when resuming the app from the album or artist browser. FIXME: Need to ensure these activities can recover themselves.~~
-* ~~For artists who are only featured on an album by another artist (happens a lot with compilations), browsing the artist will bring up an empty list of albums but say that the artist has some albums.~~
-* ~~When the play queue is brought up it is not set to the current position.~~
-* ~~Rotation crashes the app. FIXME: Need to lock app to portrait only for now. Must design new layouts for horizontal views.~~
-* ~~Track seekbar, time indicators are UNIMPLEMENTED~~
-* ~~The player drawer should show itself when the user selects a song to play.~~
-* ~~Image fetching mechanism not robust enough. Needs optimizing. Doesn't crash but there are a number of issues that will be pointed out in the code. FIXME: Work on making fetches from Content Uris really robust but hopefully without reopening an InputStream from the Content Resolver. Find a way to make the ImageDownloadService let image views know when it's fetched their images. Also improve the efficiency of the service by preventing large queues of incoming intents. ImageFetcher needs to be aware of what the service has already received requests for.~~
+* Image caching framework still has a few issues. Service is only able to access the snapshot of the cache it opens when it is created. This means that when new images are added, the service doesn't see them until it is next started...which could take a while. There are some issues with the ImageDialog (shown when an album/artist image is clicked). The thumbnail cache needs to have its quality settings fine tuned.
+* Playlist creation unimplemented
+* Search bar does nothing (unimplemented)
 
 Minor issues
 ------------
-* ~~Player fragment needs a bit of testing when restoring state... mostly works~~
-* ~~Album artwork and artist images are really low res... not sure why. But this is a pretty minor issue.~~ Last.fm images are just not very big - "extra-large" is 300x300 px. There is a "mega" size option for album covers but those are really huge. Current res for artist images is as big as it gets.
-* ~~Image fetching mechanism may leave a few stray files in the DownloadCache directory.~~
+* ANDROID ISSUE: The MediaStore doesn't attribute albums to the correct artists in the case of compilations. Doesn't read the Album Artist metadata tag from the media file, instead adds the first artist of the album. FIXME: ??? Don't know how.
+* In the album grid view, the adapter constantly reloads the image for the first album.. not sure why.. may be limiting performance.
 
 Next features
 -------------
-* SEARCH
-* Playlist creation
 * Long press song/album/artist/etc for contextual options
-* ~~Play queue interface upgrade: Drag tracks to reorder. Press button to remove track from queue~~
 * Multi-threaded image processing/fetching from cache/downloading. See new Android training sample: http://developer.android.com/shareables/training/ThreadSample.zip
 * Settings of some kind
 * Landscape layout
