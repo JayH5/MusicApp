@@ -64,7 +64,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String SHUFFLESTATE_CHANGED = "za.jamie.soundstage.shufflemodechanged";
 
     // Shuffle modes
-    private boolean mShuffleEnabled = false;
+    //private boolean mShuffleEnabled = false;
 
     // Repeat modes
     public static final int REPEAT_NONE = 0;
@@ -80,10 +80,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     // Shared preference keys
     private static final String PREFERENCES = "Service";
     private static final String PREF_CARD_ID = "cardid";
-    private static final String PREF_QUEUE_POSITION = "queuepos";
     private static final String PREF_SEEK_POSITION = "seekpos";
     private static final String PREF_REPEAT_MODE = "repeatmode";
-    private static final String PREF_SHUFFLE_ENABLED = "shuffleenabled";
 
     // State information
     private boolean mIsBound = false;
@@ -112,7 +110,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     // Queue of tracks to be played
     private PlayQueue mPlayQueue;
-    private PlayQueueDatabase mPlayQueueDatabase;
 
     private MusicNotification mNotification; // Notifications 
     private NotificationManager mNotificationManager;
@@ -148,7 +145,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	if (!isPlaying() && !mPausedByTransientLossOfFocus) {
     		stopSelf(mServiceStartId);
     		return false;
-    	} 
+    	}
+    	showNotification(true);
     	if (mPlayQueue.isEmpty()) {
     		sendDelayedStopMessage(false);
     	}
@@ -194,7 +192,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         // Restore previous state from shared preferences
         mPreferences = getSharedPreferences(PREFERENCES, 0);
         mCardId = getCardId();
-        mPlayQueueDatabase = new PlayQueueDatabase(this);
         restoreState();
 
         // In case of creation without binding
@@ -273,7 +270,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         
         Log.d(TAG, "Destroying service.");
 
-        mPlayQueueDatabase.close();
+        mPlayQueue.closeDb();
         mDiskCache.close();
         
         setAudioEffectsEnabled(false);
@@ -338,13 +335,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         }
         if (id == mCardId) {
         	// Bring back the queue
-        	List<Track> trackList = mPlayQueueDatabase.getTrackList();
-        	mPlayQueue = new PlayQueue(trackList);
+        	mPlayQueue = PlayQueue.restore(this);
         	
-        	final int pos = mPreferences.getInt(PREF_QUEUE_POSITION, 0);
-    		if (!mPlayQueue.moveToPosition(pos)) {
-    			return;
-    		}
+        	//final int pos = mPreferences.getInt(PREF_QUEUE_POSITION, 0);
+    		//if (!mPlayQueue.moveToPosition(pos)) {
+    			//return;
+    		//}
 
     		// Try load the tracks
     		openCurrentAndNext();
@@ -370,15 +366,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             setRepeatMode(repeatMode);
 
             // Get the saved shuffle mode
-            boolean shuffleMode = mPreferences.getBoolean(PREF_SHUFFLE_ENABLED, false);
-            setShuffleEnabled(shuffleMode);
+            //mShuffleEnabled = mPreferences.getBoolean(PREF_SHUFFLE_ENABLED, false);
+            //mShuffleEnabled = mPlayQueue.isShuffled();
             
-            if (isShuffleEnabled()) {
-            	List<Integer> shuffleMap = mPlayQueueDatabase.getShuffleMap();
-            	mPlayQueue.setShuffleMap(shuffleMap);
-            }
         } else {
-        	mPlayQueue = new PlayQueue();
+        	mPlayQueue = new PlayQueue(this);
         }
     }
 
@@ -574,9 +566,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	mPlayQueueCallbackList.finishBroadcast();
     	}
 
-    	mPreferences.edit()
-    			.putInt(PREF_QUEUE_POSITION, queuePosition)
-    			.apply();
+    	//mPreferences.edit()
+    			//.putInt(PREF_QUEUE_POSITION, queuePosition)
+    			//.apply();
     }
     
     private void onPlayStateChanged() {
@@ -626,9 +618,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
 
-    	mPreferences.edit()
-    			.putBoolean(PREF_SHUFFLE_ENABLED, shuffleEnabled)
-    			.apply();
+    	//mPreferences.edit()
+    			//.putBoolean(PREF_SHUFFLE_ENABLED, shuffleEnabled)
+    			//.apply();
     }
     
     private void onRepeatModeChanged() {
@@ -907,7 +899,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      * Cycles through the different shuffle modes
      */
     public synchronized void toggleShuffle() {
-    	if (mShuffleEnabled) {
+    	if (isShuffleEnabled()) {
         	setShuffleEnabled(false);
         } else {
         	setShuffleEnabled(true);
@@ -920,11 +912,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      * @param shufflemode The shuffle mode to use
      */
     private void setShuffleEnabled(boolean shuffleEnabled) {
-        if (mShuffleEnabled == shuffleEnabled) {
+        if (isShuffleEnabled() == shuffleEnabled) {
             return;
         }
-        mShuffleEnabled = shuffleEnabled;
-        if (mShuffleEnabled) {
+        //mShuffleEnabled = shuffleEnabled;
+        if (shuffleEnabled) {
         	mPlayQueue.shuffle();
         	if (mRepeatMode == REPEAT_CURRENT) {
         		setRepeatMode(REPEAT_NONE);
@@ -952,7 +944,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      * @return The current shuffle mode (all, party, none)
      */
     public boolean isShuffleEnabled() {
-        return mShuffleEnabled;
+        return mPlayQueue.isShuffled();
     }
 
     /**
@@ -1005,9 +997,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		oldId = currentTrack.getId();
     	}
     	
-    	if (mPlayQueue.open(list, position, mShuffleEnabled)) { // if queue changed
+    	if (mPlayQueue.open(list, position, isShuffleEnabled())) { // if queue changed
     		onQueueChanged();
-    		mPlayQueueDatabase.open(list, mPlayQueue.getShuffleMap());
     	}
     	
         openCurrentAndNext();
@@ -1037,27 +1028,21 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	switch(action) {
     	case NEXT:
     		final int playPosition = mPlayQueue.getPosition();
-    		if (!mShuffleEnabled && playPosition + 1 < mPlayQueue.size()) {
+    		if (!isShuffleEnabled() && playPosition + 1 < mPlayQueue.size()) {
     			mPlayQueue.addAll(playPosition + 1, list);
-    			mPlayQueueDatabase.addAll(playPosition + 1, list);
     		} else {
-    			int end = mPlayQueue.size() - 1;
     			mPlayQueue.addAll(list);
-    			mPlayQueueDatabase.addAll(end, list);
     		}
     		break;
     	case NOW:
-    		int end = mPlayQueue.size() - 1;
+    		// TODO: This makes no sense
     		mPlayQueue.addAll(list);
-    		mPlayQueueDatabase.addAll(end, list);
     		mPlayQueue.moveToNext();
     		openCurrentAndNext();
     		play();
     		break;
     	case LAST:
-    		end = mPlayQueue.size() - 1;
     		mPlayQueue.addAll(list);
-    		mPlayQueueDatabase.addAll(end, list);
     		break;
     	}
    		
@@ -1086,7 +1071,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public synchronized void removeTrack(int position) {
     	int playPosition = mPlayQueue.getPosition();
     	mPlayQueue.remove(position);
-    	mPlayQueueDatabase.remove(position);
     	
     	if (playPosition == position) {
     		openAndPlay();
@@ -1102,7 +1086,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      */
     public synchronized void moveQueueItem(int from, int to) {
    		if (mPlayQueue.moveItem(from, to)) {
-   			mPlayQueueDatabase.move(from, to);
    			onQueuePositionChanged();
    			setNextTrack();
    		}

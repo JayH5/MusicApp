@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -20,15 +21,24 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	private static final String TAG = "PlayQueueDatabase";
 	
 	private static final String DATABASE_NAME = "playqueue.db";
-    private static final int DATABASE_VERSION = 11;
+    private static final int DATABASE_VERSION = 13;
     
     private static final String TABLE_NAME_TRACK_SET = "trackset";
     private static final String TABLE_NAME_TRACK_ORDER = "trackorder";
     private static final String TABLE_NAME_SHUFFLE_MAP = "shufflemap";
+    private static final String TABLE_NAME_STATE = "state";
     
     private static final String COLUMN_NAME_TRACK_ID = "track_id";
     private static final String COLUMN_NAME_QUEUE_POSITION = "queue_position";
     private static final String COLUMN_NAME_SHUFFLE_POSITION = "shuffle_position";
+    
+    private static final String COLUMN_NAME_STATE_KEY = "state_key";
+    private static final String COLUMN_NAME_STATE_VALUE = "state_value";
+    
+    private static final String STATE_UPDATE_WHERE = COLUMN_NAME_STATE_KEY + "=?";
+    protected static final String STATE_KEY_PLAY_POSITION = "play_position";
+    protected static final String STATE_KEY_SHUFFLE_ENABLED = "shuffle_enabled";
+    protected static final String STATE_KEY_REPEAT_MODE = "repeat_mode";
     
     private static final String CREATE_TABLE_TRACK_SET = "CREATE TABLE "
     		+ TABLE_NAME_TRACK_SET + " ("
@@ -51,6 +61,11 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
     		+ TABLE_NAME_SHUFFLE_MAP + " ("
     		+ COLUMN_NAME_QUEUE_POSITION + " INTEGER, "
     		+ COLUMN_NAME_SHUFFLE_POSITION + " INTEGER)";
+    
+    private static final String CREATE_TABLE_STATE = "CREATE TABLE "
+    		+ TABLE_NAME_STATE + " ("
+    		+ COLUMN_NAME_STATE_KEY + " STRING, "
+    		+ COLUMN_NAME_STATE_VALUE + " INTEGER)";
     
     private static final String QUERY_TRACK_LIST = "SELECT "
     		+ MediaStore.Audio.Media._ID + ", "
@@ -75,6 +90,27 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		db.execSQL(CREATE_TABLE_TRACK_SET);
 		db.execSQL(CREATE_TABLE_TRACK_ORDER);
 		db.execSQL(CREATE_TABLE_SHUFFLE_MAP);
+		db.execSQL(CREATE_TABLE_STATE);
+		initStateTable(db);
+	}
+	
+	private void initStateTable(SQLiteDatabase db) {
+		ContentValues values = new ContentValues();
+		values.put(COLUMN_NAME_STATE_VALUE, 0);
+		try {
+			db.beginTransaction();
+			values.put(COLUMN_NAME_STATE_KEY, STATE_KEY_PLAY_POSITION);
+			db.insert(TABLE_NAME_STATE, null, values);
+			values.put(COLUMN_NAME_STATE_KEY, STATE_KEY_SHUFFLE_ENABLED);
+			db.insert(TABLE_NAME_STATE, null, values);
+			values.put(COLUMN_NAME_STATE_KEY, STATE_KEY_REPEAT_MODE);
+			db.insert(TABLE_NAME_STATE, null, values);
+			db.setTransactionSuccessful();
+		} catch (SQLiteException e) {
+			Log.e(TAG, "Error initializing state table.", e);
+		} finally {
+			db.endTransaction();
+		}
 	}
 
 	@Override
@@ -91,6 +127,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
         dropTable(db, TABLE_NAME_TRACK_SET);
         dropTable(db, TABLE_NAME_TRACK_ORDER);
         dropTable(db, TABLE_NAME_SHUFFLE_MAP);
+        dropTable(db, TABLE_NAME_STATE);
 
         // Recreates the database with a new version
         onCreate(db);
@@ -121,11 +158,6 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 				} while (cursor.moveToNext());
 			}
 		}
-		if (trackList != null) {
-			Log.d(TAG, "Track list found with size: " + trackList.size());
-		} else {
-			Log.e(TAG, "Cursor was null retrieving track list!");
-		}
 		return trackList;
 	}
 	
@@ -133,7 +165,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		SQLiteDatabase db = getReadableDatabase();
 		
 		Cursor cursor = db.query(TABLE_NAME_SHUFFLE_MAP, 
-				null, // columns
+				new String[] { COLUMN_NAME_SHUFFLE_POSITION }, // columns
 				null, // selection
 				null, // selectionArgs
 				null, // groupBy
@@ -145,52 +177,45 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 			shuffleMap = new ArrayList<Integer>(cursor.getCount());
 			if (cursor.moveToFirst()) {
 				do {
-					shuffleMap.add(cursor.getInt(1));
+					shuffleMap.add(cursor.getInt(0));
 				} while (cursor.moveToNext());
 			}
 		}
 		return shuffleMap;
 	}
 	
-	public void open(final List<Track> trackList, final List<Integer> shuffleMap) {
+	public void open(final List<Track> trackList) {
 		new AsyncTask<Void, Void, Void>() {
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				open(getWritableDatabase(), trackList, shuffleMap);
+				open(getWritableDatabase(), trackList);
 				return null;
 			}
 			
 		}.execute();
 	}
 	
-	private void open(SQLiteDatabase db, List<Track> trackList, List<Integer> shuffleMap) {
-		resetDatabase(db);
-		
+	private void open(SQLiteDatabase db, List<Track> trackList) {		
 		ContentValues values = new ContentValues();
 		db.beginTransaction();
 		try {
-			// Insert into track set
+			// Clear the current tables
+			db.delete(TABLE_NAME_TRACK_SET, null, null);			
+			db.delete(TABLE_NAME_TRACK_ORDER, null, null);
+			
+			// Add the new values
 			for (Track track : trackList) {
-				Log.d(TAG, "Adding track to track set");
 				final long id = track.writeToContentValues(values);
 				values.put(MediaStore.Audio.Media._ID, id);
 				db.insert(TABLE_NAME_TRACK_SET, null, values);
 			}
-			
 			values.clear();
 			for (int i = 0; i < trackList.size(); i++) {
 				values.put(COLUMN_NAME_QUEUE_POSITION, i);
 				values.put(COLUMN_NAME_TRACK_ID, trackList.get(i).getId());
 				db.insert(TABLE_NAME_TRACK_ORDER, null, values);
-			}
-			
-			values.clear();
-			for (int i = 0; i < shuffleMap.size(); i++) {
-				values.put(COLUMN_NAME_QUEUE_POSITION, i);
-				values.put(COLUMN_NAME_SHUFFLE_POSITION, shuffleMap.get(i));
-				db.insert(TABLE_NAME_SHUFFLE_MAP, null, values);
-			}
+			}			
 			
 			db.setTransactionSuccessful();
 		} catch (SQLiteException e) {
@@ -401,5 +426,82 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		} finally {
 			db.endTransaction();
 		}
+	}
+	
+	public void saveShuffleMap(final List<Integer> shuffleMap) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				saveShuffleMap(getWritableDatabase(), shuffleMap);
+				return null;
+			}
+			
+		}.execute();
+	}
+	
+	private void saveShuffleMap(SQLiteDatabase db, List<Integer> shuffleMap) {
+		ContentValues values = new ContentValues();
+		db.beginTransaction();
+		try {
+			// Clear the table
+			db.delete(TABLE_NAME_SHUFFLE_MAP, null, null);
+			// Add the new values
+			for (int i = 0; i < shuffleMap.size(); i++) {
+				values.put(COLUMN_NAME_QUEUE_POSITION, i);
+				values.put(COLUMN_NAME_SHUFFLE_POSITION, shuffleMap.get(i));
+				db.insert(TABLE_NAME_SHUFFLE_MAP, null, values);
+			}
+			db.setTransactionSuccessful();
+		} catch (SQLiteException e) {
+			Log.e(TAG, "Error saving shuffle map.", e);
+		} finally {
+			db.endTransaction();
+		}
+	}
+	
+	public void savePlayPosition(int playPosition) {
+		saveState(STATE_KEY_PLAY_POSITION, playPosition);
+	}
+	
+	public void saveShuffleEnabled(boolean shuffleEnabled) {
+		saveState(STATE_KEY_SHUFFLE_ENABLED, shuffleEnabled ? 1 : 0);
+	}
+	
+	public void saveRepeatMode(int repeatMode) {
+		saveState(STATE_KEY_REPEAT_MODE, repeatMode);
+	}
+	
+	public void saveState(final String key, final int value) {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				saveState(getWritableDatabase(), key, value);
+				return null;
+			}
+		}.execute();
+	}
+	
+	private void saveState(SQLiteDatabase db, String key, int value) {
+		ContentValues values = new ContentValues();
+		values.put(COLUMN_NAME_STATE_VALUE, value);
+		db.update(TABLE_NAME_STATE, values, STATE_UPDATE_WHERE, new String[] { key });
+	}
+	
+	public Bundle getState() {
+		Cursor cursor = getReadableDatabase().query(TABLE_NAME_STATE, null, null, 
+				null, null, null, null);
+		Bundle bundle = new Bundle();
+		if (cursor != null && cursor.moveToFirst()) {
+			final int keyColIdx = cursor.getColumnIndexOrThrow(COLUMN_NAME_STATE_KEY);
+			final int valueColIdx = cursor.getColumnIndexOrThrow(COLUMN_NAME_STATE_VALUE);
+			
+			do {
+				bundle.putInt(cursor.getString(keyColIdx), cursor.getInt(valueColIdx));
+			} while (cursor.moveToNext());
+		}
+		
+		return bundle;
 	}
 }

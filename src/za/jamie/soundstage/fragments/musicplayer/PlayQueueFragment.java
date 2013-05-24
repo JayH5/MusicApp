@@ -20,6 +20,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 import com.mobeta.android.dslv.DragSortListView;
 
@@ -27,9 +28,13 @@ public class PlayQueueFragment extends DialogFragment implements
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 	
 	private static final long VIBE_DURATION = 15;
+	private static final int SCROLL_OFFSET = 15;
+	private static final int SCROLL_DURATION = 250; // 250ms
 	
 	private PlayQueueAdapter mAdapter;
 	private DragSortListView mDslv;
+	
+	private boolean mFirstOpen = true;
 	
 	private MusicQueueWrapper mService;
 	
@@ -43,7 +48,8 @@ public class PlayQueueFragment extends DialogFragment implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue, null);
+		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
+				R.layout.list_item_play_queue_selected, null);
 		
 		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
@@ -85,6 +91,15 @@ public class PlayQueueFragment extends DialogFragment implements
 			}
 		});
 		
+		final ImageButton goToPositionButton = (ImageButton) v.findViewById(R.id.scrollToPosition);
+		goToPositionButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				scrollToPosition();				
+			}
+		});
+		
 		return v;
 	}
 	
@@ -112,6 +127,13 @@ public class PlayQueueFragment extends DialogFragment implements
 		mService.unregisterPlayQueueCallback(mCallback);
 	}
 	
+	public void scrollToPosition() {
+		final int queuePosition = mAdapter.getQueuePosition();
+		if (mDslv != null && queuePosition > -1) {
+			mDslv.smoothScrollToPositionFromTop(queuePosition, SCROLL_OFFSET, SCROLL_DURATION);
+		}
+	}
+	
 	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
 
 		@Override
@@ -133,11 +155,11 @@ public class PlayQueueFragment extends DialogFragment implements
 
 				@Override
 				public void run() {
-					if (mDslv != null) {
-						mDslv.setSelection(position);
+					mAdapter.setQueuePosition(position);
+					if (mFirstOpen) {
+						mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+						mFirstOpen = false;
 					}
-					//mAdapter.setQueuePosition(position);
-					
 				}
 				
 			});

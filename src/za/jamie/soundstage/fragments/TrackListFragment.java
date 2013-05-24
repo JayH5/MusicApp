@@ -38,7 +38,7 @@ public class TrackListFragment extends DefaultListFragment {
 	}
 	
 	@Override
-	public void onListItemClick(ListView l, View v, final int position, long id) {
+	public void onListItemClick(ListView l, View v, int position, long id) {
 		if (mCallback != null) {
 			List<Track> trackList = mAdapter.getTrackList();
 			mCallback.open(trackList, position);

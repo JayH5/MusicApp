@@ -25,13 +25,15 @@
         android:id="@+id/elapsedTime"
         style="@style/MusicPlayerDurationText"
         android:layout_below="@id/seek_bar"
-        android:layout_alignParentLeft="true" />
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="8dp" />
     
     <TextView
         android:id="@+id/totalTime"
         style="@style/MusicPlayerDurationText"
         android:layout_below="@id/seek_bar"
-        android:layout_alignParentRight="true" />
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="8dp" />
     
     <ImageButton
         android:id="@+id/action_button_shuffle"

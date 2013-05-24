@@ -14,6 +14,8 @@
         android:id="@+id/grid_info_holder"
         android:layout_width="match_parent"
         android:layout_height="@dimen/grid_info_holder_height"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         android:layout_gravity="bottom"
         android:background="@drawable/gradient_drop_shadow"
         android:gravity="center_vertical"

@@ -38,8 +38,6 @@
     
     <!-- List items -->
     <style name="ListItemText">
-        <item name="android:paddingLeft">@dimen/list_item_padding_horizontal</item>
-        <item name="android:paddingRight">@dimen/list_item_padding_horizontal</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
     </style>

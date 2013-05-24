@@ -33,7 +33,7 @@ public class ArtistsFragment extends FastscrollListFragment {
         super.onCreate(savedInstanceState);
         
         final ArtistAdapter adapter = new ArtistsAdapter(getActivity(), 
-        		R.layout.list_item_artist, null, 0);
+        		R.layout.list_item_artist, R.layout.list_item_header, null, 0);
         
         setListAdapter(adapter);
         

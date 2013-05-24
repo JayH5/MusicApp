@@ -1,11 +1,12 @@
 package za.jamie.soundstage.service;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import za.jamie.soundstage.models.Track;
+import android.content.Context;
+import android.os.Bundle;
 
 public class PlayQueue {
 	private final List<Track> mTrackList;
@@ -13,28 +14,34 @@ public class PlayQueue {
 
 	private final List<Integer> mShuffleMap;
 	private boolean mShuffled = false;
+	
+	private PlayQueueDatabase mDatabase;
 
 	/**
 	 * Constructs an empty play queue. The position is initialized as -1.
 	 *
 	 */
-	public PlayQueue() {
+	public PlayQueue(Context context) {
 		mTrackList = new ArrayList<Track>();
 		mShuffleMap = new ArrayList<Integer>();
-	}
-
-	/**
-	 * Constructs a play queue containing the elements in the specified 
-	 * collection and a shuffle map. The position is initialized as -1.
-	 *
-	 * @param tracks The Collection of Tracks to add to the queue.
-	 */
-	public PlayQueue(Collection<? extends Track> tracks) {
-		mTrackList = new ArrayList<Track>(tracks);
-		mShuffleMap = new ArrayList<Integer>();
+		mDatabase = new PlayQueueDatabase(context);
 	}
 	
-	public void setShuffleMap(Collection<? extends Integer> shuffleMap) {
+	public static PlayQueue restore(Context context) {
+		PlayQueue playQueue = new PlayQueue(context);
+		
+		playQueue.mTrackList.addAll(playQueue.mDatabase.getTrackList());
+		playQueue.mShuffleMap.addAll(playQueue.mDatabase.getShuffleMap());
+		
+		Bundle state = playQueue.mDatabase.getState();
+		playQueue.mPosition = state.getInt(PlayQueueDatabase.STATE_KEY_PLAY_POSITION, -1);
+		playQueue.mShuffled = (state.getInt(PlayQueueDatabase.STATE_KEY_SHUFFLE_ENABLED, 0) > 0);
+		// mRepeatMode...
+		
+		return playQueue;
+	}
+	
+	/*public void setShuffleMap(Collection<? extends Integer> shuffleMap) {
 		if (shuffleMap.size() != mTrackList.size()) {
 			throw new IllegalArgumentException("Shuffle map not the same size as track list!");
 		} else if (Collections.min(shuffleMap) < 0 || 
@@ -43,7 +50,7 @@ public class PlayQueue {
 		}
 		mShuffleMap.clear();
 		mShuffleMap.addAll(shuffleMap);
-	}
+	}*/
 
 	/**
 	 * Clears the current play queue and loads the specified tracks. Sets the
@@ -54,13 +61,14 @@ public class PlayQueue {
 	 * @param shuffle True to shuffle the queue, false to use the ordering 
 	 * 	described by the collection of tracks.
 	 */
-	public boolean open(Collection<? extends Track> tracks, int position, 
+	public boolean open(List<Track> trackList, int position, 
 			boolean shuffle) {
 
 		boolean queueChanged = false;
-		if (!tracks.equals(mTrackList)) {
+		if (!trackList.equals(mTrackList)) {
 			clear();
-			mTrackList.addAll(tracks);
+			mTrackList.addAll(trackList);
+			mDatabase.open(trackList);
 			queueChanged = true;
 		}
 		
@@ -68,6 +76,7 @@ public class PlayQueue {
 			shuffle(position);
 		} else {
 			mShuffled = false;
+			shuffledChanged();
 			moveToPosition(position);
 		}
 		
@@ -107,7 +116,11 @@ public class PlayQueue {
 			mShuffleMap.add(0, shuffleOn);
 		}
 		
+		shuffleMapChanged();
+		
 		mShuffled = true;
+		shuffledChanged();
+		
 		moveToFirst();
 	}
 
@@ -118,9 +131,11 @@ public class PlayQueue {
 	public void unShuffle() {
 		if (isPositionValid(mPosition) && mShuffled) {
 			mPosition = mShuffleMap.get(mPosition);
+			positionChanged();
 		}
 		mShuffleMap.clear();
 		mShuffled = false;
+		shuffledChanged();
 	}
 
 	/**
@@ -199,6 +214,7 @@ public class PlayQueue {
 	public boolean moveToNext() {
 		if (isPositionValid(mPosition + 1)) {
 			mPosition++;
+			positionChanged();
 			return true;
 		}
 		return false;
@@ -212,6 +228,7 @@ public class PlayQueue {
 	public boolean moveToPrevious() {
 		if (isPositionValid(mPosition - 1)) {
 			mPosition--;
+			positionChanged();
 			return true;
 		}
 		return false;
@@ -230,6 +247,7 @@ public class PlayQueue {
 			} else {
 				mPosition = position;
 			}
+			positionChanged();
 			return true;
 		}
 		return false;
@@ -243,6 +261,7 @@ public class PlayQueue {
 	public boolean moveToFirst() {
 		if (!mTrackList.isEmpty()) {
 			mPosition = 0;
+			positionChanged();
 			return true;
 		}
 		return false;
@@ -256,6 +275,7 @@ public class PlayQueue {
 	public boolean moveToLast() {
 		if (!mTrackList.isEmpty()) {
 			mPosition = mTrackList.size() - 1;
+			positionChanged();
 			return true;
 		}
 		return false;
@@ -275,6 +295,7 @@ public class PlayQueue {
 				from = mShuffleMap.indexOf(from);
 				to = mShuffleMap.indexOf(to);
 				mShuffleMap.add(to, mShuffleMap.remove(from));
+				shuffleMapChanged();
 			}
 			
 			if (from == mPosition) {
@@ -287,7 +308,13 @@ public class PlayQueue {
 				mPosition++;
 				positionMoved = true;
 			}
-		}
+			
+			if (positionMoved) {
+				positionChanged();
+			}
+			
+			mDatabase.move(from, to);
+		}		
 		return positionMoved;
 	}
 
@@ -315,6 +342,10 @@ public class PlayQueue {
 		return false;
 	}
 	
+	private int end() {
+		return mTrackList.size() - 1;
+	}
+	
 	/**
 	 * Check if a track is in the queue
 	 * @param track
@@ -334,9 +365,11 @@ public class PlayQueue {
 		if (mShuffled) {
 			int position = (int) (Math.random() * (size() - mPosition) + mPosition);
 			mShuffleMap.add(position, size() - 1);
+			shuffleMapChanged();
 		}
 
-		mTrackList.add(track);
+		mDatabase.add(end(), track);
+		mTrackList.add(track);		
 	}
 
 	/**
@@ -353,9 +386,10 @@ public class PlayQueue {
 
 		if (isPositionValid(position)) {
 			mTrackList.add(position, track);
-			
+			mDatabase.add(position, track);
 			if (position <= mPosition) {
 				mPosition++;
+				positionChanged();
 			}
 		}
 	}
@@ -365,21 +399,23 @@ public class PlayQueue {
 	 *
 	 * @param c The Collection of Tracks to add to the queue.
 	 */
-	public void addAll(Collection<? extends Track> c) {
+	public void addAll(List<Track> tracks) {
 		if (mShuffled) {
 			// TODO: Test this algorithm. Would be super cool if it worked
 			final int len = size();
 			List<Integer> remainingTracks = 
 					mShuffleMap.subList(mPosition, len - 1);
 
-			for (int i = 0; i < c.size(); i++) {
+			for (int i = 0; i < tracks.size(); i++) {
 				remainingTracks.add(i + len);
 			}
 
 			Collections.shuffle(remainingTracks);
+			
+			shuffleMapChanged();
 		}
-
-		mTrackList.addAll(c);
+		mDatabase.addAll(end(), tracks);
+		mTrackList.addAll(tracks);		
 	}
 
 	/**
@@ -389,17 +425,19 @@ public class PlayQueue {
 	 * @param position The position to add the Tracks.
 	 * @param c The Collection of Tracks to add to the queue.
 	 */
-	public void addAll(int position, Collection<? extends Track> c) {
+	public void addAll(int position, List<Track> tracks) {
 		if (mShuffled) {
 			throw new IllegalStateException("Cannot add tracks to a specfic "
 				+ "position with a shuffled queue.");
 		}
 
 		if (isPositionValid(position)) {
-			mTrackList.addAll(c);
+			mDatabase.addAll(position, tracks);
+			mTrackList.addAll(position, tracks);
 
 			if (position <= mPosition) {
-				mPosition += c.size();
+				mPosition += tracks.size();
+				positionChanged();
 			}
 		}
 	}
@@ -417,10 +455,13 @@ public class PlayQueue {
 			if (mShuffled) {
 				trackListPosition = mShuffleMap.indexOf(trackListPosition);
 				mShuffleMap.remove(trackListPosition);
+				shuffleMapChanged();
 			}
 			if (trackListPosition < mPosition) {
 				mPosition--;
+				positionChanged();
 			}
+			mDatabase.remove(position);
 			return mTrackList.remove(position);
 		}
 		return null;
@@ -445,8 +486,10 @@ public class PlayQueue {
 	 *
 	 */
 	public void clear() {
+		// Don't bother clearing db. Be lazy.
 		mTrackList.clear();
 		mPosition = -1;
+		positionChanged();
 
 		if (mShuffled) {
 			mShuffleMap.clear();
@@ -510,5 +553,25 @@ public class PlayQueue {
 
 	private boolean isPositionValid(int position) {
 		return position >= 0 && position < mTrackList.size();
+	}
+	
+	public void closeDb() {
+		mDatabase.close();
+	}
+	
+	private void positionChanged() {
+		mDatabase.savePlayPosition(mPosition);
+	}
+	
+	private void shuffledChanged() {
+		mDatabase.saveShuffleEnabled(mShuffled);
+	}
+	
+	private void shuffleMapChanged() {
+		mDatabase.saveShuffleMap(mShuffleMap);
+	}
+	
+	private void repeatModeChanged() {
+		//mDatabase.saveRepeatMode(repeatMode);
 	}
 }

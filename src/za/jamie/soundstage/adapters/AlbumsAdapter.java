@@ -60,7 +60,6 @@ public class AlbumsAdapter extends AlbumAdapter implements SectionIndexer {
 			} else {
 				v = convertView;
 			}
-			v.setClickable(false);
 			bindView(v, mContext, header);
 		} else if (gridObject instanceof Integer) { // Cursor position
 			final Cursor cursor = getCursor();

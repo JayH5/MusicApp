@@ -24,11 +24,13 @@
 
         <TextView
             android:id="@+id/title"
-            style="@style/ListItemText.Title" />
+            style="@style/ListItemText.Title"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/subtitle"
-            style="@style/ListItemText.Subtitle" />
+            style="@style/ListItemText.Subtitle"
+            android:textStyle="bold" />
 
 	</LinearLayout>
 	

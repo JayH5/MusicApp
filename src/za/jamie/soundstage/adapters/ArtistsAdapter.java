@@ -12,24 +12,32 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
 
 public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {	
 	
-	private Object[] mSectionHeaders;
-	private Object[] mSectionPositions;
+	private String[] mSectionHeaders;
+	private Integer[] mSectionPositions;
+	private Object[] mData;
 	
 	private int mNumAlbumsIdx;
 	private int mNumTracksIdx;
 	
+	private final LayoutInflater mInflater;
+    private int mHeaderLayout;
+	
 	private ImageFetcher mImageWorker;
 	
-	public ArtistsAdapter(Context context, int layout, Cursor c, int flags) {
+	public ArtistsAdapter(Context context, int layout, int headerLayout, Cursor c, int flags) {
 		super(context, layout, c, flags);
 		mImageWorker = ImageUtils.getThumbImageFetcher(context);
+		mInflater = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE));
+		mHeaderLayout = headerLayout;
 	}
 
 	@Override
@@ -71,6 +79,7 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
 		
 		if (cursor.moveToFirst()) {
 			String previousHeader = null;
+			List<Object> data = new ArrayList<Object>();
 			List<String> sections = new ArrayList<String>();
 			List<Integer> positions = new ArrayList<Integer>();
 			final int titleColIdx = getArtistColIdx();
@@ -83,31 +92,77 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
 					positions.add(count);
 					
 					previousHeader = header;
-					// TODO: Add headers
+					
+					data.add(header);
+					count++;
 				}
+				data.add(cursor.getPosition());
 				count++;
 			} while (cursor.moveToNext());
 			
-			mSectionHeaders = sections.toArray();
-			mSectionPositions = positions.toArray();
+			mData = data.toArray();
+			
+			mSectionHeaders = new String[sections.size()];
+			sections.toArray(mSectionHeaders);
+			
+			mSectionPositions = new Integer[positions.size()];
+			positions.toArray(mSectionPositions);
 		}
+	}
+	
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		if (mData == null || position < 0 || position >= mData.length) {
+            return null;
+        }
+		
+		final Object item = getItem(position);
+		View v = null;
+		
+		if (item instanceof String) { // Header
+			final String header = (String) item;
+			if (convertView == null || convertView.findViewById(R.id.header) == null ) {
+				v = newView(mContext, header, parent);
+			} else {
+				v = convertView;
+			}
+			bindView(v, mContext, header);
+		} else if (item instanceof Cursor) { // Cursor position
+			final Cursor cursor = (Cursor) item;
+			if (convertView == null || convertView.findViewById(R.id.title) == null) {
+                v = newView(mContext, cursor, parent);
+            } else {
+            	v = convertView;
+            }            
+            bindView(v, mContext, cursor);
+		}
+		return v;
+	}
+	
+	public View newView(Context context, String header, ViewGroup parent) {
+		return mInflater.inflate(mHeaderLayout, parent, false);
+	}
+	
+	public void bindView(View view, Context context, String headerText) {
+		final TextView headerView = (TextView) view.findViewById(R.id.header);
+		headerView.setText(headerText);
 	}
 
 	@Override
 	public int getPositionForSection(int section) {
-		return (mSectionPositions != null) ? (Integer) mSectionPositions[section] : 0;
+		return (mSectionPositions != null) ? mSectionPositions[section] : 0;
 	}
 
 	@Override
 	public int getSectionForPosition(int position) {
 		if (mSectionPositions != null) {
             for (int i = 0; i < mSectionPositions.length - 1; i++) {
-                if (position >= (Integer) mSectionPositions[i]
-                        && position < (Integer) mSectionPositions[i + 1]) {
+                if (position >= mSectionPositions[i]
+                        && position < mSectionPositions[i + 1]) {
                     return i;
                 }
             }
-            if (position >= (Integer)mSectionPositions[mSectionPositions.length - 1]) {
+            if (position >= mSectionPositions[mSectionPositions.length - 1]) {
                 return mSectionPositions.length - 1;
             }
         }
@@ -118,5 +173,45 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
 	public Object[] getSections() {
 		return mSectionHeaders;
 	}
+	
+	@Override
+    public int getCount() {
+    	return (mData != null) ? mData.length : 0; 
+    }
+    
+    @Override
+    public long getItemId(int position) {
+    	Object object = getItem(position);
+    	if (object instanceof Cursor) {
+    		return ((Cursor) object).getLong(getIdColIdx());
+    	} else {
+    		return 0;
+    	}
+    }
+    
+    @Override
+    public Object getItem(int position) {
+    	if (mData != null) {
+    		Object item = mData[position];
+    		if (item instanceof String) {
+    			return (String) item;
+    		} else if (item instanceof Integer) {
+    			Cursor cursor = getCursor();
+    			cursor.moveToPosition((Integer) item);
+    			return cursor;
+    		}
+    	}
+    	return null;
+    }
+    
+    @Override
+    public boolean areAllItemsEnabled() {
+    	return false;
+    }
+    
+    @Override
+    public boolean isEnabled(int position) {
+    	return (mData != null) ? (mData[position] instanceof Integer) : false;
+    }
 
 }

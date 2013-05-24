@@ -16,6 +16,17 @@
         android:text="Play Queue"
         android:textSize="22sp"
         android:fontFamily="sans-serif-light" />
+    
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="12dp"
+        android:layout_marginRight="12dp"
+        android:id="@+id/scrollToPosition"
+        style="@style/TransparentImageButton"
+        android:src="@drawable/btn_go_to_position" />
         
     <com.mobeta.android.dslv.DragSortListView
 	    xmlns:dslv="http://schemas.android.com/apk/res/za.jamie.soundstage"
@@ -26,6 +37,9 @@
 	    android:layout_above="@+id/play_queue_button_container"
 	    android:divider="@drawable/list_divider_play_store"
 	    android:dividerHeight="2dp"
+	    android:paddingLeft="8dp"
+	    android:paddingRight="8dp"
+	    android:clipToPadding="false"
 	    dslv:drag_enabled="true"
 	    dslv:float_alpha="0.6"
 	    dslv:drag_start_mode="onDown"
