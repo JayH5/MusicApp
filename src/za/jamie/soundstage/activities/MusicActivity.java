@@ -99,18 +99,14 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 				}
 			}
 		});
+		
+		Intent serviceIntent = new Intent(this, MusicService.class);
+		startService(serviceIntent);
+		bindService(serviceIntent, mConnection, 0);
 	}
 
 	public void setMainContentView(int layoutResId) {
 		mDrawer.setContentView(layoutResId);
-	}
-	
-	@Override
-	protected void onStart() {
-		super.onStart();
-		Intent serviceIntent = new Intent(this, MusicService.class);
-		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, 0);
 	}
 	
 	@Override
@@ -134,8 +130,8 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
     }
 	
 	@Override
-	protected void onStop() {
-		super.onStop();
+	protected void onDestroy() {
+		super.onDestroy();
 		unbindService(mConnection);
 	}
 	
