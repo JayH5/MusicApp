@@ -82,12 +82,6 @@
             android:background="@drawable/button_white_highlight" />
     </LinearLayout>
     
-    <View
-        android:layout_above="@+id/music_player_action_holder"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/hairline" />
-    
     <LinearLayout
         android:id="@+id/music_player_action_holder"
         android:layout_width="match_parent"
@@ -95,7 +89,7 @@
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
         android:divider="?android:listDivider"
-        android:dividerPadding="8dp"
+        android:dividerPadding="12dp"
         android:gravity="center_vertical"
         android:showDividers="middle" >
         
