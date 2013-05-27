@@ -54,7 +54,7 @@ Next features
 * Settings of some kind
 * Landscape layout
 * Widgets
-* Play files from file explorer
+* ~~Play files from file explorer~~
 
 Would-be-nice-to-have-one-day features
 --------------------------------------
