@@ -289,7 +289,7 @@ public class MusicPlayerFragment extends Fragment implements
     private long refreshCurrentTime() {
     	final long pos = mPosOverride < 0 ? calculatePosition() : mPosOverride;
     	if (pos >= 0 && mDuration > 0) {
-            mElapsedTime.setText(TextUtils.getTrackDurationText(getResources(), pos));
+            mElapsedTime.setText(TextUtils.getTrackDurationText(pos));
             final int progress = (int)(1000 * pos / mDuration);
             mProgress.setProgress(progress);
             
@@ -383,7 +383,7 @@ public class MusicPlayerFragment extends Fragment implements
 			mImageWorker.loadAlbumImage(track, mAlbumArt);
 			
 			mDuration = track.getDuration();
-			mTotalTime.setText(TextUtils.getTrackDurationText(getResources(), mDuration));
+			mTotalTime.setText(TextUtils.getTrackDurationText(mDuration));
 		}
     }
     

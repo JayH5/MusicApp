@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package za.jamie.soundstage.bitmapfun;
+package za.jamie.soundstage.fragments;
 
 import android.app.Fragment;
 import android.app.FragmentManager;

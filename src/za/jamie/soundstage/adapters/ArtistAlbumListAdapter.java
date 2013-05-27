@@ -42,8 +42,7 @@ public class ArtistAlbumListAdapter extends AlbumAdapter {
 		tracksText.setText(TextUtils.getNumTracksText(mResources, 
 				cursor.getInt(mNumSongsForArtistColIdx)));
 		
-		yearText.setText(TextUtils.getYearText(mResources, 
-				cursor.getInt(mFirstYearColIdx), 
+		yearText.setText(TextUtils.getYearText(cursor.getInt(mFirstYearColIdx), 
 				cursor.getInt(mLastYearColIdx)));
 		
 		mImageWorker.loadAlbumImage(cursor.getLong(getIdColIdx()), thumbImage);

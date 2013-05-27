@@ -5,12 +5,12 @@ import android.content.res.Resources;
 
 public class TextUtils {
 	
-	public static String getYearText(Resources res, int firstYear, int lastYear) {
+	public static String getYearText(int firstYear, int lastYear) {
 		final StringBuilder sb = new StringBuilder();
 		if (firstYear > 0) {
 			sb.append(firstYear);
 			if (lastYear > 0 && firstYear != lastYear) {
-				sb.append(res.getString(R.string.year_delimiter));
+				sb.append(" - ");
 				sb.append(lastYear);
 			}
 		} else if (lastYear > 0) {
@@ -61,27 +61,25 @@ public class TextUtils {
 				.toUpperCase();
 	}
 	
-	public static String getTrackNumText(Resources res, int trackNum) {
+	public static String getTrackNumText(int trackNum) {
 		if (trackNum < 1) {
-			return res.getString(R.string.track_number_missing);
+			return "--";
 		} else {
 			return String.format("%02d", trackNum % 100);
 		}
 	}
 	
-	public static String getTrackDurationText(Resources res, long duration) {
+	public static String getTrackDurationText(long duration) {
 		int seconds = (int) (duration / 1000) % 60 ;
 		int minutes = (int) ((duration / (1000*60)) % 60);
 		int hours   = (int) (duration / (1000*60*60));
 		
-		String delimiter = res.getString(R.string.duration_delimiter);
-		
 		if (hours > 0) {
-			return String.format("%d%s%02d%s%02d", 
-					hours, delimiter, minutes, delimiter, seconds);
+			return String.format("%d%:02d:%02d", 
+					hours, minutes, seconds);
 		} else {
-			return String.format("%02d%s%02d", 
-					minutes, delimiter, seconds);
+			return String.format("%02d:%02d", 
+					minutes, seconds);
 		}
 	}
 	
@@ -108,32 +106,12 @@ public class TextUtils {
         name = name.replaceAll("[\\[\\]\\(\\)\"'.,?!]", "").trim();
         
         if (name.isEmpty() || !Character.isLetterOrDigit(name.charAt(0))) {
-        	return "A";
+        	return "!?$";
         } else if (Character.isDigit(name.charAt(0))) {
-        	return "A";
+        	return "123";
         } else {
         	return name.substring(0, 1);
         }
 	}
-	
-	public static char getFirstChar(String title) {
-		String name = title.trim().toUpperCase();
-        if (name.startsWith("THE ")) {
-        	name = name.substring(4);
-        }
-        if (name.startsWith("AN ")) {
-        	name = name.substring(3);
-        }
-        if (name.startsWith("A ")) {
-        	name = name.substring(2);
-        }
-        
-        // There are probably more characters
-        name = name.replaceAll("[\\[\\]\\(\\)\"'.,?!]", "").trim();
-        
-        if (name.isEmpty() || !Character.isLetterOrDigit(name.charAt(0))) {
-        	name = title;
-        } 
-        return name.charAt(0);
-	}
+
 }

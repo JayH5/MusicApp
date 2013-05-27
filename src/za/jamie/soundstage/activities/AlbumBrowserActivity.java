@@ -3,7 +3,6 @@ package za.jamie.soundstage.activities;
 import java.util.List;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.AlbumTrackListAdapter;
 import za.jamie.soundstage.fragments.ImageDialogFragment;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
@@ -29,7 +28,7 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 public class AlbumBrowserActivity extends MusicActivity implements 
-		AlbumTrackListAdapter.StatsCallback {
+		AlbumTrackListFragment.AlbumStatisticsCallback {
 	
 	//private static final String TAG = "AlbumBrowserActivity";
 	private static final String TAG_LIST_FRAG = "album_track_list";
@@ -127,7 +126,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	}
 
 	@Override
-	public void onStatisticsCalculated(AlbumStatistics album) {
+	public void deliverAlbumStatistics(AlbumStatistics album) {
 		if (album == null) {
 			return;
 		}
@@ -143,7 +142,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		final Resources res = getResources();
 		mNumTracksText.setText(TextUtils.getNumTracksText(res, album.numTracks));
 		mDurationText.setText(TextUtils.getStatsDurationText(res, album.duration));
-		mYearsText.setText(TextUtils.getYearText(res, album.firstYear, album.lastYear));
+		mYearsText.setText(TextUtils.getYearText(album.firstYear, album.lastYear));
 		
 		// Set up the browse artists button
 		initBrowseArtistButton(album.artists);

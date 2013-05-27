@@ -46,6 +46,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         // Set up the adapter to create the views
         mAdapter = new AlbumsAdapter(getActivity(), 
         		R.layout.grid_item_two_line, R.layout.grid_item_header, null, 0);
+        mAdapter.setMinSectionSize(5);
         
         // Load up the cursor
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
@@ -62,7 +63,6 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         mGridView = (GridView) v.findViewById(R.id.grid);
         mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(this);
-        //mGridView.setFastScrollAlwaysVisible(true); // Android bug, can't be done in xml
         mGridView.getViewTreeObserver().addOnGlobalLayoutListener(mGridLayoutListener);
         
         if (savedInstanceState != null) {
@@ -74,7 +74,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     	        mAdapter.registerDataSetObserver(new DataSetObserver() {
     	        	@Override
     	        	public void onChanged() {
-    	        		mGridView.setSelection(mAdapter.getPosition(itemId));
+    	        		//mGridView.setSelection(mAdapter.getPosition(itemId));
     	        	}
     	        });
             }

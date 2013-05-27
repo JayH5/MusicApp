@@ -151,7 +151,9 @@ public class ArtistSummaryFragment extends Fragment implements
 				mNumTracksText.setText(TextUtils.getNumTracksText(res, 
 						cursor.getInt(numTracksColIdx)));
 				
-				mCallback.onArtistFound(cursor.getString(artistColIdx));
+				if (mCallback != null) {
+					mCallback.onArtistFound(cursor.getString(artistColIdx));
+				}
 			}		
 			
 		}
