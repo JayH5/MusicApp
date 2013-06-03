@@ -16,7 +16,7 @@ import android.util.Log;
 
 import com.jakewharton.disklrucache.DiskLruCache;
 
-public class DiskCache implements Cache<String, Bitmap> {
+public class DiskCache implements Cache {
 
 	private static final String TAG = "DiskCache";
 	

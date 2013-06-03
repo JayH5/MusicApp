@@ -1,9 +1,11 @@
 package za.jamie.soundstage.bitmapfun;
 
-public interface Cache<K, V> {
-	V get(K key);
-	void put(K key, V value);
-	void remove(K key);
+import android.graphics.Bitmap;
+
+public interface Cache {
+	Bitmap get(String key);
+	void put(String key, Bitmap value);
+	void remove(String key);
 	
 	void clear();
 	void close();	

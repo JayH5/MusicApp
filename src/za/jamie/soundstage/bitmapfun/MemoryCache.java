@@ -7,7 +7,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.support.v4.util.LruCache;
 
-public class MemoryCache implements Cache<String, Bitmap> {
+public class MemoryCache implements Cache {
 
 	private LruCache<String, Bitmap> mCache;
 	

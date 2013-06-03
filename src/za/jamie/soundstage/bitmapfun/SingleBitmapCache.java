@@ -2,7 +2,7 @@ package za.jamie.soundstage.bitmapfun;
 
 import android.graphics.Bitmap;
 
-public class SingleBitmapCache implements Cache<String, Bitmap> {
+public class SingleBitmapCache implements Cache {
 
 	private String mKey;
 	private Bitmap mValue;

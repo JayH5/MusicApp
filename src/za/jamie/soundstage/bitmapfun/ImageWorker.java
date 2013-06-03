@@ -41,8 +41,8 @@ public abstract class ImageWorker {
     public static final String KEY = "key";
     private static final int FADE_IN_TIME = 100;
 
-    protected Cache<String, Bitmap> mMemoryCache;
-    protected Cache<String, Bitmap> mDiskCache;
+    protected Cache mMemoryCache;
+    protected Cache mDiskCache;
     
     private Bitmap mLoadingBitmap;
     private boolean mFadeInBitmap = true;
@@ -112,7 +112,7 @@ public abstract class ImageWorker {
      *
      * @param cacheCallback
      */
-    public void setMemoryCache(Cache<String, Bitmap> cacheCallback) {
+    public void setMemoryCache(Cache cacheCallback) {
         mMemoryCache = cacheCallback;
     }
     
@@ -121,15 +121,15 @@ public abstract class ImageWorker {
      *
      * @param cacheCallback
      */
-    public void setDiskCache(Cache<String, Bitmap> cacheCallback) {
+    public void setDiskCache(Cache cacheCallback) {
         mDiskCache = cacheCallback;
     }
 
-    public Cache<String, Bitmap> getMemoryCache() {
+    public Cache getMemoryCache() {
         return mMemoryCache;
     }
     
-    public Cache<String, Bitmap> getDiskCache() {
+    public Cache getDiskCache() {
         return mDiskCache;
     }
 
