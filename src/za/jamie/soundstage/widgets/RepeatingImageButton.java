@@ -52,11 +52,11 @@ public class RepeatingImageButton extends ImageButton {
     /**
      * Sets the listener to be called while the button is pressed and
      * the interval in milliseconds with which it will be called.
-     * @param l The listener that will be called
+     * @param listener The listener that will be called
      * @param interval The interval in milliseconds for calls 
      */
-    public void setRepeatListener(RepeatListener l, long interval) {
-        mListener = l;
+    public void setRepeatListener(RepeatListener listener, long interval) {
+        mListener = listener;
         mInterval = interval;
     }
     
@@ -71,12 +71,7 @@ public class RepeatingImageButton extends ImageButton {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
-            // remove the repeater, but call the hook one more time
-            removeCallbacks(mRepeater);
-            if (mStartTime != 0) {
-                doRepeat(true);
-                mStartTime = 0;
-            }
+            stopRepeat();
         }
         return super.onTouchEvent(event);
     }
@@ -99,17 +94,13 @@ public class RepeatingImageButton extends ImageButton {
         switch (keyCode) {
         case KeyEvent.KEYCODE_DPAD_CENTER:
         case KeyEvent.KEYCODE_ENTER:
-            // remove the repeater, but call the hook one more time
-            removeCallbacks(mRepeater);
-            if (mStartTime != 0) {
-                doRepeat(true);
-                mStartTime = 0;
-            }
+            stopRepeat();
         }
         return super.onKeyUp(keyCode, event);
     }
     
-    private Runnable mRepeater = new Runnable() {
+    private final Runnable mRepeater = new Runnable() {
+        @Override
         public void run() {
             doRepeat(false);
             if (isPressed()) {
@@ -118,7 +109,16 @@ public class RepeatingImageButton extends ImageButton {
         }
     };
 
-    private  void doRepeat(boolean last) {
+    // remove the repeater, but call the hook one more time
+    private void stopRepeat() {
+        removeCallbacks(mRepeater);
+        if (mStartTime != 0) {
+            doRepeat(true);
+            mStartTime = 0;
+        }
+    }
+
+    private void doRepeat(boolean last) {
         long now = SystemClock.elapsedRealtime();
         if (mListener != null) {
             mListener.onRepeat(this, now - mStartTime, last ? -1 : mRepeatCount++);
@@ -130,12 +130,12 @@ public class RepeatingImageButton extends ImageButton {
          * This method will be called repeatedly at roughly the interval
          * specified in setRepeatListener(), for as long as the button
          * is pressed.
-         * @param v The button as a View.
+         * @param view The button as a View.
          * @param duration The number of milliseconds the button has been pressed so far.
-         * @param repeatcount The number of previous calls in this sequence.
+         * @param repeatCount The number of previous calls in this sequence.
          * If this is going to be the last call in this sequence (i.e. the user
          * just stopped pressing the button), the value will be -1.  
          */
-        void onRepeat(View v, long duration, int repeatcount);
+        void onRepeat(View view, long duration, int repeatCount);
     }
 }
