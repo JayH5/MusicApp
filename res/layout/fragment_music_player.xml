@@ -10,6 +10,36 @@
         android:layout_alignParentTop="true"
         android:scaleType="fitXY" />
     
+    <LinearLayout
+        android:id="@+id/seek_info_holder"
+        android:layout_width="match_parent"
+        android:layout_height="128dp"
+        android:layout_alignBottom="@id/music_player_album_art"
+        android:background="@drawable/gradient_drop_shadow"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:alpha="0.0" >
+        
+        <za.jamie.soundstage.widgets.DurationTextView
+            android:id="@+id/big_elapsed_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/SeekText" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/SeekText"
+            android:text="/" />
+        
+        <za.jamie.soundstage.widgets.DurationTextView
+            android:id="@+id/big_total_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/SeekText" />
+        
+    </LinearLayout>
+    
     <SeekBar
         android:id="@+id/seek_bar"
         android:layout_width="match_parent"
@@ -21,14 +51,14 @@
         android:paddingLeft="0dp"
         android:paddingRight="0dp" />
     
-    <TextView
+    <za.jamie.soundstage.widgets.DurationTextView
         android:id="@+id/elapsedTime"
         style="@style/MusicPlayerDurationText"
         android:layout_below="@id/seek_bar"
         android:layout_alignParentLeft="true"
         android:layout_marginLeft="8dp" />
     
-    <TextView
+    <za.jamie.soundstage.widgets.DurationTextView
         android:id="@+id/totalTime"
         style="@style/MusicPlayerDurationText"
         android:layout_below="@id/seek_bar"
@@ -62,6 +92,8 @@
         android:layout_above="@+id/music_player_action_holder"
         android:layout_alignParentLeft="true"
         android:layout_marginBottom="20dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
         android:orientation="vertical" >
 
         <TextView

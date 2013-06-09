@@ -7,6 +7,7 @@ import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.MusicLibraryWrapper;
+import za.jamie.soundstage.MusicPlaybackConnection;
 import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
@@ -56,12 +57,14 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			mService = IMusicService.Stub.asInterface(service);
 			
-			mPlayer.onServiceConnected();
+			mPlayer.setServiceConnection(new MusicPlaybackConnection(mService));
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			mService = null;
+			
+			mPlayer.setServiceConnection(null);
 		}		
 	};
 	
