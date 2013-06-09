@@ -471,12 +471,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      */
     private void setNextTrack() {
     	if (mRepeatMode != REPEAT_CURRENT) {
-    		Track nextTrack;
-    		if (mRepeatMode == REPEAT_ALL && mPlayQueue.isLast()) {
-        		nextTrack = mPlayQueue.peekFirst();
-        	} else {
-        		nextTrack = mPlayQueue.peekNext();
-        	}
+    		final Track nextTrack = mPlayQueue.peekNext();
     		
     		if (nextTrack != null) {
         		mPlayer.setNextDataSource(nextTrack.getUri());
@@ -886,12 +881,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         }
 
         mRepeatMode = repeatmode;
-        if (mRepeatMode == REPEAT_CURRENT) {
-        	mPlayer.setLooping(true);
-        } else {
-        	mPlayer.setLooping(false);
-        	setNextTrack();
-        }        
+        mPlayer.setLooping(mRepeatMode == REPEAT_CURRENT);
+        mPlayQueue.setLooping(mRepeatMode == REPEAT_ALL);
+        setNextTrack();       
         onRepeatModeChanged();
     }
 

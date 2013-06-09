@@ -35,7 +35,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	mCurrentMediaPlayer.setWakeMode(mContext, PowerManager.PARTIAL_WAKE_LOCK);
     }
 
-    private boolean setDataSourceImpl(final MediaPlayer player, final Uri uri) {
+    private boolean setDataSourceImpl(MediaPlayer player, Uri uri) {
         try {
             player.reset();
             player.setDataSource(mContext, uri);
@@ -61,8 +61,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     }
     	
     	
-    public boolean setDataSource(final Uri uri) {
-    	Log.d(TAG, "Setting current data source: " + uri);
+    public boolean setDataSource(Uri uri) {
         mIsInitialized = setDataSourceImpl(mCurrentMediaPlayer, uri);
         if (mIsInitialized) {
           	setNextDataSource(null);
@@ -136,7 +135,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	return mCurrentMediaPlayer.getCurrentPosition();
     }
 
-    public long seek(final long whereto) {
+    public long seek(long whereto) {
     	mCurrentMediaPlayer.seekTo((int)whereto);
     	return whereto;
     }
@@ -144,12 +143,16 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     public void setLooping(boolean looping) {
     	mCurrentMediaPlayer.setLooping(looping);
     }
-
-    public void setVolume(final float vol) {
-    	mCurrentMediaPlayer.setVolume(vol, vol);
+    
+    public boolean isLooping() {
+    	return mCurrentMediaPlayer.isLooping();
     }
 
-    public void setAudioSessionId(final int sessionId) {
+    public void setVolume(float volume) {
+    	mCurrentMediaPlayer.setVolume(volume, volume);
+    }
+
+    public void setAudioSessionId(int sessionId) {
     	mCurrentMediaPlayer.setAudioSessionId(sessionId);
     }
 

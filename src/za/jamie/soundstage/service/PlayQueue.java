@@ -14,6 +14,7 @@ public class PlayQueue {
 
 	private final List<Integer> mShuffleMap;
 	private boolean mShuffled = false;
+	private boolean mLooping = false;
 	
 	private PlayQueueDatabase mDatabase;
 
@@ -193,15 +194,11 @@ public class PlayQueue {
 	 * 	exist.
 	 */
 	public Track peekNext() {
+		if (mLooping && isLast() && !mTrackList.isEmpty()) {
+			return mTrackList.get(0);
+		}		
 		if (isPositionValid(mPosition + 1)) {
 			return mTrackList.get(getShuffledPosition(mPosition + 1));
-		}
-		return null;
-	}
-	
-	public Track peekFirst() {
-		if (!isEmpty()) {
-			return mTrackList.get(getShuffledPosition(0));
 		}
 		return null;
 	}
@@ -212,6 +209,10 @@ public class PlayQueue {
 	 * @return True if the position was successfully changed.
 	 */
 	public boolean moveToNext() {
+		if (mLooping && isLast()) {
+			return moveToFirst();
+		}
+		
 		if (isPositionValid(mPosition + 1)) {
 			mPosition++;
 			positionChanged();
@@ -226,6 +227,10 @@ public class PlayQueue {
 	 * @return True if the position was successfully changed.
 	 */
 	public boolean moveToPrevious() {
+		if (mLooping && isFirst()) {
+			return moveToLast();
+		}
+		
 		if (isPositionValid(mPosition - 1)) {
 			mPosition--;
 			positionChanged();
@@ -550,6 +555,14 @@ public class PlayQueue {
 	public List<Integer> getShuffleMap() {
 		return new ArrayList<Integer>(mShuffleMap);
 	}
+	
+	public void setLooping(boolean looping) {
+		mLooping = looping;
+	}
+	
+	public boolean isLooping() {
+		return mLooping;
+	}
 
 	private boolean isPositionValid(int position) {
 		return position >= 0 && position < mTrackList.size();
@@ -569,9 +582,5 @@ public class PlayQueue {
 	
 	private void shuffleMapChanged() {
 		mDatabase.saveShuffleMap(mShuffleMap);
-	}
-	
-	private void repeatModeChanged() {
-		//mDatabase.saveRepeatMode(repeatMode);
 	}
 }
