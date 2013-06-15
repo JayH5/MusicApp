@@ -6,7 +6,6 @@ import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import android.content.ContentUris;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -14,20 +13,17 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
-	
 	private static final String STATE_SCROLL_POSITION = "state_scroll_position";
 	
 	//private static final String TAG = "AlbumGridFragment";
     
     private AlbumsAdapter mAdapter;
-    
     private GridView mGridView;
     
     public static AlbumsFragment newInstance(long albumId) {
@@ -63,22 +59,10 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         mGridView = (GridView) v.findViewById(R.id.grid);
         mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(this);
-        mGridView.getViewTreeObserver().addOnGlobalLayoutListener(mGridLayoutListener);
         
         if (savedInstanceState != null) {
-    		mGridView.setSelection(savedInstanceState.getInt(STATE_SCROLL_POSITION, 0));
-    	} else {
-    		// Scroll to the album specified by the child activity
-            final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
-            if (itemId > 0) {
-    	        mAdapter.registerDataSetObserver(new DataSetObserver() {
-    	        	@Override
-    	        	public void onChanged() {
-    	        		//mGridView.setSelection(mAdapter.getPosition(itemId));
-    	        	}
-    	        });
-            }
-    	}
+        	mGridView.setSelection(savedInstanceState.getInt(STATE_SCROLL_POSITION));
+        }
         
         return v;
     }
@@ -86,7 +70,6 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     @Override
     public void onDestroyView() {
     	super.onDestroyView();
-    	
     	mGridView = null;
     }
     
@@ -98,21 +81,6 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     		outState.putInt(STATE_SCROLL_POSITION, mGridView.getFirstVisiblePosition());
     	}
     }
-    
-    private ViewTreeObserver.OnGlobalLayoutListener mGridLayoutListener =
-    		new ViewTreeObserver.OnGlobalLayoutListener() {
-				
-		@Override
-		public void onGlobalLayout() {
-			if (mGridView == null) {
-				return;
-			}
-			
-			if (mAdapter.getItemHeight() == 0 && mGridView.getNumColumns() > 0) {
-				mAdapter.setItemHeight(mGridView.getColumnWidth());
-			}							
-		}	
-    };
     
 	@Override
 	public void onItemClick(AdapterView<?> parent, View v, int position, long id) {

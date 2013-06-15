@@ -19,7 +19,6 @@ import android.os.Handler;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.util.DisplayMetrics;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -147,7 +146,6 @@ public class MusicPlayerFragment extends Fragment {
         mArtistText = (TextView) v.findViewById(R.id.music_player_artist_name);
         mArtistText.setOnClickListener(mMetaListener);
         mAlbumArt = (ImageView) v.findViewById(R.id.music_player_album_art);
-        ensureSquareImageView();
         
         mSeekBar = (SeekBar) v.findViewById(R.id.seek_bar);
         mSeekBar.setOnSeekBarChangeListener(mSeekListener);
@@ -163,15 +161,6 @@ public class MusicPlayerFragment extends Fragment {
 
         return v;
     }
-	
-	private void ensureSquareImageView() {
-		int slidingMenuOffset = getResources()
-				.getDimensionPixelSize(R.dimen.slidingmenu_offset);
-		DisplayMetrics dm = ImageUtils.getDisplayMetrics(getActivity());
-		int imageWidth = dm.widthPixels - slidingMenuOffset;
-		
-		mAlbumArt.getLayoutParams().height = imageWidth;
-	}
 	
 	/*
 	 * Listener for long presses on ffwd/rewind buttons. Skip ahead/back

@@ -9,8 +9,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
 import android.view.View;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -19,9 +17,6 @@ public class AlbumsAdapter extends HeadersResourceCursorAdapter {
 	private int mAlbumColIdx;
 	private int mAlbumIdColIdx;
 	private int mArtistColIdx;
-	
-	private int mItemHeight = 0;
-    private FrameLayout.LayoutParams mSquareLayoutParams;
 	
 	private ImageFetcher mImageWorker;
 	
@@ -33,12 +28,7 @@ public class AlbumsAdapter extends HeadersResourceCursorAdapter {
 
 	@Override
 	public void bindHeaderView(View view, Context context, String header) {
-		TextView headerView = (TextView) view.findViewById(R.id.header);
-		headerView.setText(header);
-		
-		if (headerView.getLayoutParams().height != mItemHeight) {
-			headerView.setLayoutParams(mSquareLayoutParams);
-		}
+		((TextView) view.findViewById(R.id.header)).setText(header);
 	}
 
 	@Override
@@ -57,26 +47,7 @@ public class AlbumsAdapter extends HeadersResourceCursorAdapter {
 		album.setText(cursor.getString(mAlbumColIdx));
 		artist.setText(cursor.getString(mArtistColIdx));
 		mImageWorker.loadAlbumImage(cursor.getLong(mAlbumIdColIdx), albumArt);
-		
-		// Check the height matches our calculated column width
-        if (albumArt.getLayoutParams().height != mItemHeight) {
-        	albumArt.setLayoutParams(mSquareLayoutParams);
-        }
 	}
-	
-	public void setItemHeight(int height) {
-        if (height == mItemHeight) {
-            return;
-        }
-        mItemHeight = height;
-        mSquareLayoutParams =
-                new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, mItemHeight);
-        notifyDataSetChanged();
-    }
-    
-    public int getItemHeight() {
-    	return mItemHeight;
-    }
 
 	@Override
 	public String getHeader(Context context, Cursor cursor) {

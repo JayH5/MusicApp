@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
     
-    <ImageView
+    <za.jamie.soundstage.widgets.SquaredImageView
         android:id="@+id/music_player_album_art"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
