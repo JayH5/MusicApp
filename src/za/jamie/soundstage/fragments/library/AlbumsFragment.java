@@ -6,6 +6,7 @@ import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -19,12 +20,11 @@ import android.widget.GridView;
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
-	private static final String STATE_SCROLL_POSITION = "state_scroll_position";
+	//private static final String STATE_SCROLL_POSITION = "state_scroll_position";
 	
 	//private static final String TAG = "AlbumGridFragment";
     
     private AlbumsAdapter mAdapter;
-    private GridView mGridView;
     
     public static AlbumsFragment newInstance(long albumId) {
     	final Bundle args = new Bundle();
@@ -56,30 +56,21 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 
         final View v = inflater.inflate(R.layout.fragment_album_grid, container, false);
         
-        mGridView = (GridView) v.findViewById(R.id.grid);
-        mGridView.setAdapter(mAdapter);
-        mGridView.setOnItemClickListener(this);
+        final GridView gridView = (GridView) v.findViewById(R.id.grid);
+        gridView.setAdapter(mAdapter);
+        gridView.setOnItemClickListener(this);
         
-        if (savedInstanceState != null) {
-        	mGridView.setSelection(savedInstanceState.getInt(STATE_SCROLL_POSITION));
+        final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
+        if (itemId > 0) {
+        	mAdapter.registerDataSetObserver(new DataSetObserver() {
+	        	@Override
+	        	public void onChanged() {
+	        		gridView.setSelection(mAdapter.getPosition(itemId));
+	        	}
+	        });
         }
         
         return v;
-    }
-    
-    @Override
-    public void onDestroyView() {
-    	super.onDestroyView();
-    	mGridView = null;
-    }
-    
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-    	super.onSaveInstanceState(outState);
-    	
-    	if (mGridView != null) {
-    		outState.putInt(STATE_SCROLL_POSITION, mGridView.getFirstVisiblePosition());
-    	}
     }
     
 	@Override
