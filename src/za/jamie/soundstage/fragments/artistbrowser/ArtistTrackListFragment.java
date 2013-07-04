@@ -1,13 +1,13 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.ArtistTrackListAdapter;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.adapters.wrappers.TrackHeaderFooterAdapterWrapper;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.DataSetObserver;
@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class ArtistTrackListFragment extends TrackListFragment {
 	
@@ -111,5 +112,22 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	
 	public interface ArtistTrackListListener {
 		public void onDurationCalculated(long duration);
+	}
+	
+	private static class ArtistTrackListAdapter extends BasicTrackAdapter {
+		
+		public ArtistTrackListAdapter(Context context, int layout, Cursor c, int flags) {
+			super(context, layout, c, flags);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+			TextView titleText = (TextView) view.findViewById(R.id.title);
+			TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
+			
+			titleText.setText(cursor.getString(getTitleColIdx()));
+			subtitleText.setText(cursor.getString(getAlbumColIdx()));
+		}
+
 	}
 }

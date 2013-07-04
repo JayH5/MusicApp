@@ -1,17 +1,21 @@
 package za.jamie.soundstage.fragments.albumbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.AlbumTrackListAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.models.Artist;
+import za.jamie.soundstage.utils.TextUtils;
 import android.app.Activity;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
+import android.widget.TextView;
 
 public class AlbumTrackListFragment extends TrackListFragment {
 
@@ -108,4 +112,38 @@ public class AlbumTrackListFragment extends TrackListFragment {
 			}
 		}
 	};
+	
+	private static class AlbumTrackListAdapter extends BasicTrackAdapter {
+
+		private int mTrackNumColIdx;
+		
+		public AlbumTrackListAdapter(Context context, int layout, Cursor c,
+				int flags) {
+			
+			super(context, layout, c, flags);
+		}
+
+		@Override
+		protected void getColumnIndices(Cursor cursor) {
+			super.getColumnIndices(cursor);
+			mTrackNumColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK);
+		}
+		
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+			TextView titleText = (TextView) view.findViewById(R.id.title);
+			TextView durationText = (TextView) view.findViewById(R.id.subtitle);
+			TextView trackNumText = (TextView) view.findViewById(R.id.trackNumber);
+			
+			titleText.setText(cursor.getString(getTitleColIdx()));
+			
+			long duration = cursor.getLong(getDurationColIdx());
+			durationText.setText(TextUtils.getTrackDurationText(duration));
+			
+			int trackNum = cursor.getInt(mTrackNumColIdx);
+			trackNumText.setText(TextUtils.getTrackNumText(trackNum));
+		}
+		
+	}
 }
