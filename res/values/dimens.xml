@@ -48,6 +48,7 @@
     <!-- Sliding menu -->
     <dimen name="slidingmenu_offset">60dp</dimen>
     <dimen name="shadow_width">15dp</dimen>
+    <dimen name="menu_drawer_width">280dp</dimen>
     
     <!-- Button bars -->
     <dimen name="button_bar_height">48dp</dimen>

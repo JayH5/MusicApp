@@ -3,6 +3,8 @@ package za.jamie.soundstage.activities;
 import java.util.List;
 
 import net.simonvt.menudrawer.MenuDrawer;
+import net.simonvt.menudrawer.MenuDrawer.Type;
+import net.simonvt.menudrawer.Position;
 import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.MusicLibraryWrapper;
 import za.jamie.soundstage.MusicPlaybackConnection;
@@ -81,7 +83,8 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		super.onCreate(savedInstanceState);
 		
 		// Set up the menu drawer to display the player
-		mDrawer = MenuDrawer.attach(this, MenuDrawer.MENU_DRAG_WINDOW);
+		mDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
+		mDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menu_drawer_width));
 		mDrawer.setMenuView(R.layout.slidingmenu_frame);
 		mDrawer.setDropShadow(R.drawable.slidingmenu_shadow);
 		mDrawer.setOnDrawerStateChangeListener(this);
