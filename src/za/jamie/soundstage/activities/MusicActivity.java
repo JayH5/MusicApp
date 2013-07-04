@@ -12,6 +12,9 @@ import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.service.connections.MusicLibraryConnection;
+import za.jamie.soundstage.service.connections.MusicNotificationConnection;
+import za.jamie.soundstage.service.proxies.MusicLibraryProxy;
+import za.jamie.soundstage.service.proxies.MusicNotificationProxy;
 import za.jamie.soundstage.service.proxies.MusicPlaybackProxy;
 import za.jamie.soundstage.service.proxies.MusicQueueProxy;
 import za.jamie.soundstage.utils.AppUtils;
@@ -23,7 +26,6 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -32,8 +34,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-public class MusicActivity extends FragmentActivity implements MusicLibraryConnection, 
-		MenuDrawer.OnDrawerStateChangeListener {
+public class MusicActivity extends FragmentActivity implements MenuDrawer.OnDrawerStateChangeListener {
 	
 	private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
@@ -51,19 +52,24 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryConne
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
-	private IMusicService mService = null;
+	private MusicLibraryConnection mLibraryConnection;
+	private MusicNotificationConnection mNotificationConnection;
 	private ServiceConnection mConnection = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			mService = IMusicService.Stub.asInterface(service);
+			IMusicService musicService = IMusicService.Stub.asInterface(service);
 			
-			mPlayer.setServiceConnection(new MusicPlaybackProxy(mService));
-			mPlayQueue.setServiceConnection(new MusicQueueProxy(mService));
+			mLibraryConnection = new MusicLibraryProxy(musicService);
+			mNotificationConnection = new MusicNotificationProxy(musicService);
+			
+			mPlayer.setServiceConnection(new MusicPlaybackProxy(musicService));
+			mPlayQueue.setServiceConnection(new MusicQueueProxy(musicService));
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			mService = null;
+			mLibraryConnection = null;
+			mNotificationConnection = null;
 			
 			mPlayer.setServiceConnection(null);
 			mPlayQueue.setServiceConnection(null);
@@ -80,6 +86,10 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryConne
 		mDrawer.setMenuView(R.layout.slidingmenu_frame);
 		mDrawer.setDropShadow(R.drawable.slidingmenu_shadow);
 		mDrawer.setOnDrawerStateChangeListener(this);
+		
+		if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
+			mDrawer.openMenu();
+		}
 
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
@@ -119,13 +129,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryConne
 	@Override
     protected void onResume() {
         super.onResume();        
-        if (mService != null) {
-        	hideNotification();
-        }
-        
-        if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
-			mDrawer.openMenu();
-		}
+        hideNotification();
 	}
 	
 	@Override
@@ -195,50 +199,37 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryConne
 		return mPlayer.isPlaying();
 	}
 	
-	@Override
 	public void open(List<Track> tracks, int position) {
-		try {
-			mService.open(tracks, position);
-		} catch (RemoteException ignored) {
-			
+		if (mLibraryConnection != null) {
+			mLibraryConnection.open(tracks, position);
+			mDrawer.openMenu();
 		}
-		mDrawer.openMenu();
 	}
 	
-	@Override
 	public void shuffle(List<Track> tracks) {
-		try {
-			mService.shuffle(tracks);
-		} catch (RemoteException ignored) {
-			
+		if (mLibraryConnection != null) {
+			mLibraryConnection.shuffle(tracks);
+			mDrawer.openMenu();
 		}
-		mDrawer.openMenu();
 	}
 
-	@Override
-	public void enqueue(List<Track> tracks, final int action) {
-		try {
-			mService.enqueue(tracks, action);
-		} catch (RemoteException ignored) {
-			
+	public void enqueue(List<Track> tracks, int action) {
+		if (mLibraryConnection != null) {
+			mLibraryConnection.enqueue(tracks, action);
 		}
 	}
 	
 	public void showNotification() {
-		final ComponentName componentName = new ComponentName(this, this.getClass());
-		final Uri uri = getIntent().getData();
-		try {
-			mService.showNotification(componentName, uri);
-		} catch (RemoteException e) {
-			
+		if (mNotificationConnection != null) {
+			final ComponentName component = new ComponentName(this, this.getClass());
+			final Uri uri = getIntent().getData();
+			mNotificationConnection.showNotification(component, uri);
 		}
 	}
 	
 	public void hideNotification() {
-		try {
-			mService.hideNotification();
-		} catch (RemoteException e) {
-			
+		if (mNotificationConnection != null) {
+			mNotificationConnection.hideNotification();
 		}
 	}
 

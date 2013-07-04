@@ -1,25 +1,22 @@
 package za.jamie.soundstage.service.proxies;
 
-import java.lang.ref.WeakReference;
-
 import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.service.connections.MusicQueueConnection;
-
 import android.os.RemoteException;
 
 public class MusicQueueProxy implements MusicQueueConnection {
 
-	private final WeakReference<IMusicService> mService;
+	private final IMusicService mService;
 	
 	public MusicQueueProxy(IMusicService service) {
-		mService = new WeakReference<IMusicService>(service);
+		mService = service;
 	}
 
 	@Override
 	public void setQueuePosition(int position) {
 		try {
-			mService.get().setQueuePosition(position);
+			mService.setQueuePosition(position);
 		} catch (RemoteException e) {
 			
 		}
@@ -28,7 +25,7 @@ public class MusicQueueProxy implements MusicQueueConnection {
 	@Override
 	public void moveQueueItem(int from, int to) {
 		try {
-			mService.get().moveQueueItem(from, to);
+			mService.moveQueueItem(from, to);
 		} catch (RemoteException e) {
 			
 		}
@@ -37,7 +34,7 @@ public class MusicQueueProxy implements MusicQueueConnection {
 	@Override
 	public void removeTrack(int position) {
 		try {
-			mService.get().removeTrack(position);
+			mService.removeTrack(position);
 		} catch (RemoteException e) {
 			
 		}
@@ -46,7 +43,7 @@ public class MusicQueueProxy implements MusicQueueConnection {
 	@Override
 	public void requestPlayQueue() {
 		try {
-			mService.get().requestPlayQueue();
+			mService.requestPlayQueue();
 		} catch (RemoteException e) {
 			
 		}
@@ -55,7 +52,7 @@ public class MusicQueueProxy implements MusicQueueConnection {
 	@Override
 	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
 		try {
-			mService.get().registerPlayQueueCallback(callback);
+			mService.registerPlayQueueCallback(callback);
 		} catch (RemoteException e) {
 			
 		}
@@ -64,7 +61,7 @@ public class MusicQueueProxy implements MusicQueueConnection {
 	@Override
 	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
 		try {
-			mService.get().unregisterPlayQueueCallback(callback);
+			mService.unregisterPlayQueueCallback(callback);
 		} catch (RemoteException e) {
 			
 		}
