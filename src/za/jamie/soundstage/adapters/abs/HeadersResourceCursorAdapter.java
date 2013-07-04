@@ -11,7 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SectionIndexer;
 
-public abstract class HeadersResourceCursorAdapter extends BasicCursorAdapter implements SectionIndexer {
+public abstract class HeadersResourceCursorAdapter extends BasicCursorAdapter 
+		implements SectionIndexer {
 
 	public static final int VIEW_TYPE_REGULAR = 0;
 	public static final int VIEW_TYPE_HEADER = 1;
@@ -86,7 +87,7 @@ public abstract class HeadersResourceCursorAdapter extends BasicCursorAdapter im
 	
 	@Override
 	public int getViewTypeCount() {
-		return 2;
+		return super.getViewTypeCount() + 1;
 	}
 	
 	@Override
@@ -107,9 +108,7 @@ public abstract class HeadersResourceCursorAdapter extends BasicCursorAdapter im
 		
 		switch(mViewTypes[position]) {
 		case VIEW_TYPE_REGULAR:
-			Cursor cursor = getCursor();
-			cursor.moveToPosition(mPositions[position]);
-			return cursor;
+			return super.getItem(mPositions[position]);
 		case VIEW_TYPE_HEADER:
 			return mHeaders[mPositions[position]];
 		default:
@@ -125,9 +124,7 @@ public abstract class HeadersResourceCursorAdapter extends BasicCursorAdapter im
 		
 		switch(mViewTypes[position]) {
 		case VIEW_TYPE_REGULAR:
-			Cursor cursor = getCursor();
-			cursor.moveToPosition(mPositions[position]);
-			return cursor.getLong(super.mRowIDColumn);
+			return super.getItemId(mPositions[position]);
 		case VIEW_TYPE_HEADER:
 			return 0;
 		default:

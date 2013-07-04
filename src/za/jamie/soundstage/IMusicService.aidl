@@ -3,6 +3,8 @@ package za.jamie.soundstage;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.Track;
+import android.content.ComponentName;
+import android.net.Uri;
 
 oneway interface IMusicService {
 	// Access to the queue for the PlayQueueFragment
@@ -34,5 +36,6 @@ oneway interface IMusicService {
 	void enqueue(in List<Track> tracks, int action);
 	
 	// Tell the service to show/remove notification
-	void showNotification(boolean show);
+	void showNotification(in ComponentName component, in Uri uri);
+	void hideNotification();
 }

@@ -61,6 +61,10 @@ public class DiskCache implements Cache {
 
 	@Override
 	public void put(String key, Bitmap value) {
+		if (mCache.isClosed()) {
+			return;
+		}
+		
 		final String diskKey = hashKeyForDisk(key);
 		OutputStream out = null;
 		synchronized(this) {
@@ -105,6 +109,10 @@ public class DiskCache implements Cache {
 
 	@Override
 	public Bitmap get(String key) {
+		if (mCache.isClosed()) {
+			return null;
+		}
+		
 		final String diskKey = hashKeyForDisk(key);
 		InputStream in = null;
 		try {

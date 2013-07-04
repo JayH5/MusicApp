@@ -3,12 +3,12 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.ArtistsAdapter;
 import za.jamie.soundstage.adapters.abs.ArtistAdapter;
+import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.FastscrollListFragment;
 import android.content.ContentUris;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -39,12 +39,12 @@ public class ArtistsFragment extends FastscrollListFragment {
         
         final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
         if (itemId > 0) {
-	        adapter.registerDataSetObserver(new DataSetObserver() {
-	        	@Override
-	        	public void onChanged() {
-	        		setSelection(adapter.getPosition(itemId));
-	        	}
-	        });
+	        new OneTimeDataSetObserver(adapter) {
+				@Override
+				public void onFirstChange() {
+					setSelection(adapter.getPosition(itemId));
+				}
+	        };
         }
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 

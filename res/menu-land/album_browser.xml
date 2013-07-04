@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/menu_browse_artist"
+        android:icon="@drawable/ic_browse_artist"
+        android:title="Browse artist"
+        android:titleCondensed="Artist"
+        android:showAsAction="ifRoom|withText" />
+    
+    <item
+        android:id="@+id/menu_shuffle"
+        android:icon="@drawable/ic_shuffle_dark"
+        android:title="Shuffle album"
+        android:titleCondensed="Shuffle"
+        android:showAsAction="ifRoom|withText" />
+    
+    <item
+        android:id="@+id/menu_search"
+        android:title="@string/menu_search"
+        android:hint="@string/menu_search"
+        android:actionViewClass="android.widget.SearchView"
+        android:icon="@drawable/ic_action_search"
+        android:showAsAction="ifRoom|collapseActionView" />
+
+</menu>

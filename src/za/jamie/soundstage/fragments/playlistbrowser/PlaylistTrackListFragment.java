@@ -2,7 +2,7 @@ package za.jamie.soundstage.fragments.playlistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlaylistTrackAdapter;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
@@ -29,7 +29,7 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 		
 		mPlaylistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
 		
-		TrackAdapter adapter = new PlaylistTrackAdapter(getActivity(), 
+		BasicTrackAdapter adapter = new PlaylistTrackAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
 		setListAdapter(adapter);

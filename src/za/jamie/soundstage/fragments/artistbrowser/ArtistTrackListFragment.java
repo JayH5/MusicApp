@@ -2,11 +2,13 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.ArtistTrackListAdapter;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
+import za.jamie.soundstage.adapters.wrappers.TrackHeaderFooterAdapterWrapper;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
@@ -18,7 +20,7 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	
 	private long mArtistId;
 	
-	private TrackAdapter mAdapter;
+	private BasicTrackAdapter mAdapter;
 	
 	private ArtistTrackListListener mCallback;
 	
@@ -40,9 +42,22 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		mAdapter = new ArtistTrackListAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
+		TrackHeaderFooterAdapterWrapper wrapper = 
+				new TrackHeaderFooterAdapterWrapper(getActivity(), mAdapter);
+		
+		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
+        	wrapper.setFooterViewResource(R.layout.list_item_spacer);
+        	wrapper.setNumHeaders(1);
+        	wrapper.setNumFooters(1);
+        } else {
+        	wrapper.setHeaderViewResource(R.layout.list_item_spacer_vpi);
+        	wrapper.setNumHeaders(1);
+        }
+		
 		mAdapter.registerDataSetObserver(mDataSetObserver);
 		
-		setListAdapter(mAdapter);
+		setListAdapter(wrapper);
 		
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
 				CursorDefinitions.getArtistBrowserCursorParams(mArtistId));

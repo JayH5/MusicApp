@@ -39,14 +39,14 @@ import android.widget.ImageView;
 public abstract class ImageWorker {
     private static final String TAG = "ImageWorker";
     public static final String KEY = "key";
-    private static final int FADE_IN_TIME = 100;
 
     protected Cache mMemoryCache;
     protected Cache mDiskCache;
     
     private Bitmap mLoadingBitmap;
-    private boolean mFadeInBitmap = true;
     private boolean mExitTasksEarly = false;
+    
+    private ImageAdapter mAdapter = null;
 
     private final Context mContext;
 
@@ -133,21 +133,24 @@ public abstract class ImageWorker {
         return mDiskCache;
     }
 
-    /**
-     * If set to true, the image will fade-in once it has been loaded by the background thread.
-     *
-     * @param fadeIn
-     */
-    public void setImageFadeIn(boolean fadeIn) {
-        mFadeInBitmap = fadeIn;
-    }
-
     public void setExitTasksEarly(boolean exitTasksEarly) {
         mExitTasksEarly = exitTasksEarly;
     }
     
     public Context getContext() {
     	return mContext;
+    }
+    
+    public void setImageAdapter(ImageAdapter adapter) {
+    	mAdapter = adapter;
+    }
+    
+    public ImageAdapter getImageTransition() {
+    	return mAdapter;
+    }
+    
+    public void setTransitionDuration(int milliseconds) {
+    	
     }
 
     /**
@@ -320,7 +323,7 @@ public abstract class ImageWorker {
      * @param bitmap
      */
     private void setImageBitmap(ImageView imageView, Bitmap bitmap) {
-        if (mFadeInBitmap) {
+        /*if (mFadeInBitmap) {
             // Transition drawable with a transparent drawable and the final bitmap
             final TransitionDrawable td =
                     new TransitionDrawable(new Drawable[] {
@@ -332,10 +335,16 @@ public abstract class ImageWorker {
                     new BitmapDrawable(mContext.getResources(), mLoadingBitmap));
 
             imageView.setImageDrawable(td);
-            td.startTransition(FADE_IN_TIME);
+            td.startTransition(FADE_IN_TIME);*/
+    	if (mAdapter != null) {
+    		mAdapter.bindView(mContext, imageView, bitmap);
         } else {
             imageView.setImageBitmap(bitmap);
         }
+    }
+    
+    public interface ImageAdapter {
+    	void bindView(Context context, ImageView imageView, Bitmap bitmap);
     }
 
 }

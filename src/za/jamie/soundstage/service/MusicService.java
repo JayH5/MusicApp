@@ -146,7 +146,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		stopSelf(mServiceStartId);
     		return false;
     	}
-    	showNotification(true);
     	if (mPlayQueue.isEmpty()) {
     		sendDelayedStopMessage(false);
     	}
@@ -390,7 +389,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
             @Override
             public void run() {
-                showNotification(false);
+                hideNotification();
             }
         }, IDLE_DELAY);
         
@@ -553,7 +552,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    		i--;
 	    		try {
 	    			mPlayQueueCallbackList.getBroadcastItem(i)
-	    					.deliverPosition(queuePosition);
+	    					.onPositionChanged(queuePosition);
 				} catch (RemoteException e) {
 					Log.w(TAG, "Remote error while performing queue position changed callback.", e);
 				}
@@ -678,6 +677,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	
 	public void deliverPlayQueue() {
     	final List<Track> trackList = mPlayQueue.getTrackList();
+    	final boolean isShuffled = mPlayQueue.isShuffled();
     	final int position = mPlayQueue.getPosition();
     	
     	synchronized(mPlayQueueCallbackList) {
@@ -687,9 +687,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     			try {
 	    			final IPlayQueueCallback callback = 
 	    					mPlayQueueCallbackList.getBroadcastItem(i);
-	    			callback.deliverTrackList(trackList);
-	    			callback.deliverPosition(position);
-	    			
+	    			callback.deliverTrackList(trackList, position, isShuffled);
 				} catch (RemoteException e) {
 					Log.w(TAG, "notifyQueueChanged()", e);
 				}
@@ -775,7 +773,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public synchronized void stop() {
     	pause();
         seek(0);
-        showNotification(false);
+        hideNotification();
     }
 
     /**
@@ -1086,18 +1084,19 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update notification/lock screen controls
-
-    public synchronized void showNotification(boolean show) {
-    	if (show) {
-    		mShowNotification = true;
-    		final Track currentTrack = getCurrentTrack();
-    		mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
-    		startForeground(NOTIFICATION_ID, mNotification.getNotification());
-    	} else {
-    		Log.d(TAG, "Stopping notification.");
-    		mShowNotification = false;
-    		stopForeground(true);
-    	}
+    
+    public synchronized void showNotification(ComponentName componentName, Uri uri) {
+    	mShowNotification = true;
+    	mNotification.newNotification(this, componentName, uri);
+    	final Track currentTrack = getCurrentTrack();
+    	mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
+    	mNotification.updatePlayState(isPlaying());
+    	startForeground(NOTIFICATION_ID, mNotification.getNotification());
+    }
+    
+    public synchronized void hideNotification() {
+    	mShowNotification = false;
+    	stopForeground(true);
     }
 
     private void updateRCCPlayState(boolean isPlaying) {

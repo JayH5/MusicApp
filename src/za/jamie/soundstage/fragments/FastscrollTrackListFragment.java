@@ -3,7 +3,7 @@ package za.jamie.soundstage.fragments;
 import java.util.List;
 
 import za.jamie.soundstage.MusicLibraryWrapper;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
 import android.view.View;
@@ -13,7 +13,7 @@ import android.widget.ListView;
 public class FastscrollTrackListFragment extends FastscrollListFragment {
 
 	private MusicLibraryWrapper mCallback;
-	private TrackAdapter mAdapter;
+	private BasicTrackAdapter mAdapter;
 	
 	@Override
 	public void onAttach(Activity activity) {
@@ -29,11 +29,11 @@ public class FastscrollTrackListFragment extends FastscrollListFragment {
 	
 	@Override
 	public void setListAdapter(ListAdapter adapter) {
-		if (adapter != null && !(adapter instanceof TrackAdapter)) {
+		if (adapter != null && !(adapter instanceof BasicTrackAdapter)) {
 			throw new IllegalArgumentException("TrackListFragments must have TrackAdapter!");
 		} else {
 			super.setListAdapter(adapter);
-			mAdapter = (TrackAdapter) adapter;
+			mAdapter = (BasicTrackAdapter) adapter;
 		}
 	}
 	

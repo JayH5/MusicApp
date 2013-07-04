@@ -4,8 +4,10 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.DiskCache;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.bitmapfun.ImageResizer;
-import za.jamie.soundstage.bitmapfun.MemoryCache;
+import za.jamie.soundstage.bitmapfun.MemoryLruCache;
 import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
+import za.jamie.soundstage.bitmapfun.transitions.CrossFade;
+import za.jamie.soundstage.bitmapfun.transitions.FadeIn;
 import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -21,7 +23,7 @@ public class ImageUtils {
 	private static final String DISK_CACHE_DIR_BIG = "ImageCache";
 	private static final int DISK_CACHE_QUALITY_THUMB = 75;
 	
-	private static MemoryCache sThumbMemoryCache = null;
+	private static MemoryLruCache sThumbMemoryCache = null;
 	private static DiskCache sThumbDiskCache = null;
 	
 	private static SingleBitmapCache sBigMemoryCache = null;
@@ -37,6 +39,7 @@ public class ImageUtils {
 		final ImageFetcher fetcher = new ImageFetcher(context, getThumbResizer(context));
 		fetcher.setMemoryCache(getThumbMemoryCacheInstance(context));
 		fetcher.setDiskCache(getThumbDiskCacheInstance(context));
+		fetcher.setImageAdapter(new FadeIn());
 		return fetcher;
 	}
 	
@@ -44,12 +47,13 @@ public class ImageUtils {
 		final ImageFetcher fetcher = new ImageFetcher(context, getBigResizer(context));
 		fetcher.setMemoryCache(getBigMemoryCacheInstance());
 		fetcher.setDiskCache(getBigDiskCacheInstance(context));
+		fetcher.setImageAdapter(new CrossFade());
 		return fetcher;
 	}
 	
-	public static MemoryCache getThumbMemoryCacheInstance(Context context) {
+	public static MemoryLruCache getThumbMemoryCacheInstance(Context context) {
 		if (sThumbMemoryCache == null) {
-			sThumbMemoryCache = new MemoryCache(context, MEM_CACHE_DIVIDER_THUMB);
+			sThumbMemoryCache = new MemoryLruCache(context, MEM_CACHE_DIVIDER_THUMB);
 		}
 		return sThumbMemoryCache;
 	}

@@ -295,12 +295,18 @@ public class PlayQueue {
 	public boolean moveItem(int from, int to) {
 		boolean positionMoved = false;
 		if (from != to) {
-			mTrackList.add(to, mTrackList.remove(from));
+			//mTrackList.add(to, mTrackList.remove(from));
 			if (mShuffled) {
-				from = mShuffleMap.indexOf(from);
+				/*from = mShuffleMap.indexOf(from);
 				to = mShuffleMap.indexOf(to);
 				mShuffleMap.add(to, mShuffleMap.remove(from));
+				shuffleMapChanged();*/
+				
+				mShuffleMap.add(to, mShuffleMap.remove(from));
 				shuffleMapChanged();
+			} else {
+				mTrackList.add(to, mTrackList.remove(from));
+				mDatabase.move(from, to);
 			}
 			
 			if (from == mPosition) {
@@ -318,7 +324,7 @@ public class PlayQueue {
 				positionChanged();
 			}
 			
-			mDatabase.move(from, to);
+			//mDatabase.move(from, to);
 		}		
 		return positionMoved;
 	}
@@ -458,16 +464,22 @@ public class PlayQueue {
 			int trackListPosition = position;
 			// If shuffled, get the position in the shuffle map
 			if (mShuffled) {
-				trackListPosition = mShuffleMap.indexOf(trackListPosition);
+				/*trackListPosition = mShuffleMap.indexOf(trackListPosition);
 				mShuffleMap.remove(trackListPosition);
+				shuffleMapChanged();*/
+				
+				trackListPosition = mShuffleMap.remove(position);
 				shuffleMapChanged();
 			}
-			if (trackListPosition < mPosition) {
+			//if (trackListPosition < mPosition) {
+			if (position < mPosition) {
 				mPosition--;
 				positionChanged();
 			}
-			mDatabase.remove(position);
-			return mTrackList.remove(position);
+			//mDatabase.remove(position);
+			//return mTrackList.remove(position);
+			mDatabase.remove(trackListPosition);
+			return mTrackList.remove(trackListPosition);
 		}
 		return null;
 	}
@@ -508,14 +520,6 @@ public class PlayQueue {
 	public int size() {
 		return mTrackList.size();
 	}
-
-	/**
-	 *
-	 * @return The current position of the queue.
-	 */
-	public int getPosition() {
-		return mPosition;
-	}
 	
 	/**
 	 * 
@@ -527,6 +531,22 @@ public class PlayQueue {
 
 	/**
 	 *
+	 * @return The track list with any effects of shuffling.
+	 */
+	public List<Track> getPlayQueue() {
+		List<Track> trackList = new ArrayList<Track>(size());
+		if (mShuffled) {
+			for (int position : mShuffleMap) {
+				trackList.add(mTrackList.get(position));
+			}
+		} else {
+			trackList.addAll(mTrackList);
+		}
+		return trackList;
+	}
+	
+	/**
+	 *
 	 * @return A shallow copy of the list of Tracks that backs the queue.
 	 */
 	public List<Track> getTrackList() {
@@ -535,25 +555,22 @@ public class PlayQueue {
 
 	/**
 	 *
-	 * @return The track list with any effects of shuffling.
-	 */
-	public List<Track> getShuffledTrackList() {
-		if (mShuffled) {
-			List<Track> trackList = new ArrayList<Track>(size());
-			for (int position : mShuffleMap) {
-				trackList.add(mTrackList.get(position));
-			}
-			return trackList;
-		}
-		return getTrackList();
-	}
-
-	/**
-	 *
 	 * @return A shallow copy of the shuffle map.
 	 */
 	public List<Integer> getShuffleMap() {
 		return new ArrayList<Integer>(mShuffleMap);
+	}
+	
+	/**
+	 *
+	 * @return The current position of the queue.
+	 */
+	public int getPosition() {
+		return mPosition;
+	}
+	
+	public int getTrackListPosition() {
+		return getShuffledPosition(mPosition);
 	}
 	
 	public void setLooping(boolean looping) {

@@ -6,7 +6,10 @@ import za.jamie.soundstage.fragments.library.AlbumsFragment;
 import za.jamie.soundstage.fragments.library.ArtistsFragment;
 import za.jamie.soundstage.fragments.library.PlaylistsFragment;
 import za.jamie.soundstage.fragments.library.SongsFragment;
+import za.jamie.soundstage.utils.AppUtils;
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -48,11 +51,17 @@ public class LibraryActivity extends MusicActivity {
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(new SectionsPagerAdapter(getSupportFragmentManager()));
 		
-		// Get the indicator for the view pager
-		final TitlePageIndicator indicator = (TitlePageIndicator) 
-				findViewById(R.id.indicator);
-        indicator.setViewPager(mViewPager);
-        Log.d("Lib", "VPI height: " + indicator.getHeight());
+		int orientation = getResources().getConfiguration().orientation;
+		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			ActionBar actionBar = getActionBar();
+			actionBar.setDisplayShowTitleEnabled(false);
+			AppUtils.loadActionBarTabs(getActionBar(), mViewPager);
+		} else {
+			// Get the indicator for the view pager
+			final TitlePageIndicator indicator = (TitlePageIndicator) 
+					findViewById(R.id.indicator);
+	        indicator.setViewPager(mViewPager);
+		}		
         
         if (savedInstanceState != null) {
 			mSelectedPage = savedInstanceState.getInt(STATE_SELECTED_PAGE);
@@ -76,7 +85,6 @@ public class LibraryActivity extends MusicActivity {
 	@Override
 	public void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
-		
 		mViewPager.setCurrentItem(mSelectedPage);
 	}
 
@@ -91,7 +99,7 @@ public class LibraryActivity extends MusicActivity {
 		final int drawerState = mDrawer.getDrawerState();
 		if (isPlaying() && drawerState != MenuDrawer.STATE_OPEN && 
 				drawerState != MenuDrawer.STATE_OPENING) {
-			showNotification(true);
+			showNotification();
 		}
 		super.onBackPressed();
 	}

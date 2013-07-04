@@ -12,14 +12,19 @@ import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActionBar;
 import android.app.AlertDialog;
+import android.app.TaskStackBuilder;
 import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
@@ -41,9 +46,10 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	private TextView mNumTracksText;
 	private TextView mDurationText;
 	private TextView mYearsText;
-	private ImageButton mBrowseArtistButton;
 	
 	private TrackListFragment mTrackListFragment;
+	
+	private List<Artist> mArtists;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -69,19 +75,25 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		mDurationText = (TextView) findViewById(R.id.albumDuration);
 		mYearsText = (TextView) findViewById(R.id.albumYear);
 		
-		mBrowseArtistButton = 
-				(ImageButton) findViewById(R.id.browse_artist_button);
-		
-		final ImageButton shuffleButton = 
-				(ImageButton) findViewById(R.id.shuffle_button);
-		shuffleButton.setOnClickListener(new View.OnClickListener() {
+		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			final ImageButton browseArtistButton = 
+					(ImageButton) findViewById(R.id.browse_artist_button);
+			browseArtistButton.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					browseArtist();					
+				}
+			});
 			
-			@Override
-			public void onClick(View v) {
-				mTrackListFragment.shuffleAll();
-				
-			}
-		});
+			final ImageButton shuffleButton = 
+					(ImageButton) findViewById(R.id.shuffle_button);
+			shuffleButton.setOnClickListener(new View.OnClickListener() {				
+				@Override
+				public void onClick(View v) {
+					shuffleAlbum();
+				}
+			});
+		}
 		
 		// Load up the album artwork
 		ImageView albumArt = (ImageView) findViewById(R.id.albumThumb);
@@ -110,12 +122,51 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	}
 	
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			getMenuInflater().inflate(R.menu.album_browser, menu);
+			return true;
+		} else {
+			return super.onCreateOptionsMenu(menu);
+		}
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()) {
+		case R.id.menu_browse_artist:
+			browseArtist();
+			return true;
+		case R.id.menu_shuffle:
+			shuffleAlbum();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	@Override
 	public boolean navigateUpTo(Intent upIntent) {
 		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
             		LibraryActivity.SECTION_ALBUMS);
 		upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mAlbumId);
 		
 		return super.navigateUpTo(upIntent);
+	}
+	
+	@Override
+	public Intent getParentActivityIntent() {
+		Log.d("AlbumBrowser", "Getting parent intent.");
+		Intent intent = super.getParentActivityIntent();
+		intent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mAlbumId);
+		return intent;
+	}
+	
+	@Override
+	public void onCreateNavigateUpTaskStack(TaskStackBuilder builder) {
+		super.onCreateNavigateUpTaskStack(builder);
+		
+		Log.d("AlbumBrowser", "Creating task stack");
 	}
 		
 	@Override
@@ -144,34 +195,22 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		mDurationText.setText(TextUtils.getStatsDurationText(res, album.duration));
 		mYearsText.setText(TextUtils.getYearText(album.firstYear, album.lastYear));
 		
-		// Set up the browse artists button
-		initBrowseArtistButton(album.artists);
+		mArtists = album.artists;
 	}
 	
-	/**
-	 * Set the browse artists button to either go to the album's artist (if there
-	 * is only one artist) or display a list of all the artists on the album.
-	 * @param artists The list of artists featured on the album
-	 */
-	private void initBrowseArtistButton(final List<Artist> artists) {
-		if (artists.size() == 1) {
-			mBrowseArtistButton.setOnClickListener(new View.OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					launchArtistBrowser(artists.get(0).getId());
-					
-				}
-			});
-		} else {
-			mBrowseArtistButton.setOnClickListener(new View.OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					buildArtistListDialog(artists).show();
-					
-				}
-			});
+	private void browseArtist() {
+		if (mArtists != null) {
+			if (mArtists.size() == 1) {
+				launchArtistBrowser(mArtists.get(0).getId());
+			} else {
+				buildArtistListDialog(mArtists).show();
+			}
+		}
+	}
+	
+	private void shuffleAlbum() {
+		if (mTrackListFragment != null) {
+			mTrackListFragment.shuffleAll();
 		}
 	}
 	

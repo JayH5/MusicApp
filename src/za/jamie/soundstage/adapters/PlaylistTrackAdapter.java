@@ -1,14 +1,14 @@
 package za.jamie.soundstage.adapters;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.TextView;
 
-public class PlaylistTrackAdapter extends TrackAdapter {
+public class PlaylistTrackAdapter extends BasicTrackAdapter {
 
 	private int mIdColIdx;
 	

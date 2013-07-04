@@ -1,6 +1,7 @@
 package za.jamie.soundstage.utils;
 
 import za.jamie.soundstage.R;
+import android.annotation.SuppressLint;
 import android.content.res.Resources;
 
 public class TextUtils {
@@ -69,13 +70,14 @@ public class TextUtils {
 		}
 	}
 	
+	@SuppressLint("DefaultLocale")
 	public static String getTrackDurationText(long duration) {
 		int seconds = (int) (duration / 1000) % 60 ;
 		int minutes = (int) ((duration / (1000*60)) % 60);
 		int hours   = (int) (duration / (1000*60*60));
 		
 		if (hours > 0) {
-			return String.format("%d%:02d:%02d", 
+			return String.format("%d:%02d:%02d", 
 					hours, minutes, seconds);
 		} else {
 			return String.format("%02d:%02d", 

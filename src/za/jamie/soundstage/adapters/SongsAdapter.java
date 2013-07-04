@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.Context;
 import android.database.Cursor;
@@ -15,7 +15,7 @@ import android.widget.SectionIndexer;
 import android.widget.TextView;
 
 
-public class SongsAdapter extends TrackAdapter implements SectionIndexer {
+public class SongsAdapter extends BasicTrackAdapter implements SectionIndexer {
 
 	private String[] mSectionHeaders;
 	private Integer[] mSectionPositions;

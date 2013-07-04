@@ -181,12 +181,13 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
     
     @Override
     public long getItemId(int position) {
-    	Object object = getItem(position);
-    	if (object instanceof Cursor) {
-    		return ((Cursor) object).getLong(getIdColIdx());
-    	} else {
-    		return 0;
+    	if (mData != null) {
+	    	Object item = mData[position];
+	    	if (item instanceof Integer) {
+	    		return super.getItemId((Integer) item);
+	    	}
     	}
+    	return 0;
     }
     
     @Override
@@ -196,9 +197,7 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
     		if (item instanceof String) {
     			return (String) item;
     		} else if (item instanceof Integer) {
-    			Cursor cursor = getCursor();
-    			cursor.moveToPosition((Integer) item);
-    			return cursor;
+    			return super.getItem((Integer) item);
     		}
     	}
     	return null;

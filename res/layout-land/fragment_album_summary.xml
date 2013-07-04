@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/card_background" >
+    
+    <za.jamie.soundstage.widgets.SquaredImageView
+      	android:id="@+id/albumThumb"
+       	android:layout_width="match_parent"
+       	android:layout_height="wrap_content"
+       	android:padding="@dimen/image_thumb_padding"
+       	android:scaleType="centerCrop" />
+    
+    <TextView
+   		android:id="@+id/albumTracks"
+   		style="@style/NowText" />
+
+	<TextView
+   		android:id="@+id/albumDuration"
+   		style="@style/NowText" />
+	
+	<TextView
+   		android:id="@+id/albumYear"
+   		style="@style/NowText" />
+    
+</LinearLayout>

@@ -2,7 +2,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="@dimen/list_item_height"
-    android:paddingRight="8dp"
     android:orientation="horizontal" >
     
     <ImageView
@@ -11,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:src="@drawable/btn_content_reorder"
+        android:src="@drawable/dslv_grip"
         android:background="?android:selectableItemBackground" />
     
     <LinearLayout
@@ -19,6 +18,7 @@
         android:layout_height="match_parent"
         android:layout_toLeftOf="@+id/remove_button"
         android:layout_toRightOf="@id/drag_handle"
+        android:paddingLeft="8dp"
         android:orientation="vertical"
         android:gravity="center_vertical" >
 

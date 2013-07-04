@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/list_item_height"
+    android:orientation="vertical" >
+    
+    <LinearLayout
+	   	android:id="@+id/list_item"
+	   	android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:paddingLeft="8dip"
+	  	android:paddingRight="8dip"
+	    android:orientation="vertical"
+	    android:gravity="center_vertical" >
+
+	    <TextView
+	        android:id="@+id/title"
+	        style="@style/ListItemText.Title" />
+	
+	    <TextView
+	        android:id="@+id/subtitle"
+	        style="@style/ListItemText.Subtitle" />
+
+	</LinearLayout>
+	
+    <LinearLayout
+        android:id="@+id/flipped_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+	  	android:background="@drawable/list_divider_play_store"
+	  	android:visibility="gone"
+	  	android:divider="@android:drawable/divider_horizontal_bright"
+	  	android:dividerPadding="8dp"
+	  	android:showDividers="middle"
+	  	android:orientation="horizontal" >
+	    
+        <LinearLayout
+            android:id="@+id/btn_play_next"
+            android:orientation="vertical"
+            style="@style/TransparentImageButton"
+            android:gravity="center" >
+            
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/btn_playback_play" />
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:textColor="@android:color/white"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:text="Play next" />
+            
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/btn_browse_artist"
+            android:orientation="vertical"
+            style="@style/TransparentImageButton"
+            android:gravity="center" >
+            
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_browse_artist_dark" />
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:textColor="@android:color/white"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:text="Artist" />
+            
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/btn_browse_album"
+            android:orientation="vertical"
+            style="@style/TransparentImageButton"
+            android:gravity="center" >
+            
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_num_albums" />
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:textColor="@android:color/white"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:text="Album" />
+            
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/btn_more"
+            android:orientation="vertical"
+            style="@style/TransparentImageButton"
+            android:gravity="center" >
+            
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_more" />
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:textColor="@android:color/white"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:text="More" />
+            
+        </LinearLayout>
+	    
+    </LinearLayout>
+
+</LinearLayout>

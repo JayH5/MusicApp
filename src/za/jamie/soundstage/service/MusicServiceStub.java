@@ -7,6 +7,8 @@ import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.Track;
+import android.content.ComponentName;
+import android.net.Uri;
 import android.os.RemoteException;
 
 public class MusicServiceStub extends IMusicService.Stub {
@@ -120,8 +122,14 @@ public class MusicServiceStub extends IMusicService.Stub {
 	}
 	
 	@Override
-	public void showNotification(boolean show) throws RemoteException {
-		mService.get().showNotification(show);
+	public void showNotification(ComponentName componentName, Uri uri) 
+			throws RemoteException {
+		mService.get().showNotification(componentName, uri);
+	}
+	
+	@Override
+	public void hideNotification() throws RemoteException {
+		mService.get().hideNotification();
 	}
 
 }

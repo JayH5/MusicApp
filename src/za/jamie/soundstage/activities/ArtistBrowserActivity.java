@@ -4,8 +4,12 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
+import za.jamie.soundstage.utils.AppUtils;
 import android.app.ActionBar;
+import android.app.ActionBar.Tab;
+import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -27,6 +31,8 @@ public class ArtistBrowserActivity extends MusicActivity implements
 	private long mArtistId;
 	private Uri mUri;
 	
+	private ViewPager mViewPager;
+	
 	private ArtistSummaryFragment mSummaryFragment;
 	
 	@Override
@@ -34,16 +40,21 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		super.onCreate(savedInstanceState);
 		setMainContentView(R.layout.activity_artist_browser);
 		
-		getActionBar().setDisplayOptions(0, 
-				ActionBar.DISPLAY_SHOW_HOME);
+		ActionBar actionBar = getActionBar();
+		actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 		
 		// Set up the view pager and its indicator
-		ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
-		viewPager.setAdapter(new SectionsPagerAdapter(
+		mViewPager = (ViewPager) findViewById(R.id.pager);
+		mViewPager.setAdapter(new SectionsPagerAdapter(
 				getSupportFragmentManager()));
 		
-		TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
-        indicator.setViewPager(viewPager);
+		int orientation = getResources().getConfiguration().orientation;
+		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			AppUtils.loadActionBarTabs(actionBar, mViewPager);
+		} else {
+			TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
+	        indicator.setViewPager(mViewPager);
+		}		
 
 		if (savedInstanceState != null) {
 			mUri = savedInstanceState.getParcelable(EXTRA_ARTIST_URI);
@@ -115,7 +126,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 			}
 			return title;
 		}
-		
+
 	}
 
 	@Override

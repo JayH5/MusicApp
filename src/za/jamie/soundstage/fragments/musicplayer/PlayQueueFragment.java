@@ -7,7 +7,6 @@ import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.models.Track;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -28,13 +27,13 @@ public class PlayQueueFragment extends DialogFragment implements
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 	
 	private static final long VIBE_DURATION = 15;
-	private static final int SCROLL_OFFSET = 15;
+	private static final int SCROLL_OFFSET = 35;
 	private static final int SCROLL_DURATION = 250; // 250ms
 	
 	private PlayQueueAdapter mAdapter;
 	private DragSortListView mDslv;
 	
-	private boolean mFirstOpen = true;
+	private View mIsShuffledView;
 	
 	private MusicQueueWrapper mService;
 	
@@ -54,66 +53,65 @@ public class PlayQueueFragment extends DialogFragment implements
 		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
 	
-	@Override
-	public void onAttach(Activity activity) {
-		super.onAttach(activity);
-		
-		mService = (MusicQueueWrapper) activity;
+	public void setConnection(MusicQueueWrapper service) {
+		if (mService != null) {
+			mService.unregisterPlayQueueCallback(mCallback);
+		}
+		mService = service;
+		if (mService != null) {
+			mService.registerPlayQueueCallback(mCallback);
+			mService.requestPlayQueue();
+		}
 	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
 			Bundle savedInstanceState) {
 		
-		View v = inflater.inflate(R.layout.fragment_play_queue, container, false);
+		final View v = inflater.inflate(R.layout.fragment_play_queue, container, false);
 		
 		mDslv = (DragSortListView) v.findViewById(R.id.dslv);
 		mDslv.setDragSortListener(this);
 		mDslv.setOnItemClickListener(this);
 		mDslv.setAdapter(mAdapter);
 		
-		final Button saveButton = (Button) v.findViewById(R.id.play_queue_save_button);
+		Button saveButton = (Button) v.findViewById(R.id.play_queue_save_button);
 		saveButton.setOnClickListener(new View.OnClickListener() {
-			
 			@Override
 			public void onClick(View v) {
-				// TODO
-				
+				// TODO				
 			}
 		});
 		
-		final Button closeButton = (Button) v.findViewById(R.id.play_queue_close_button);
+		Button closeButton = (Button) v.findViewById(R.id.play_queue_close_button);
 		closeButton.setOnClickListener(new View.OnClickListener() {
-			
 			@Override
 			public void onClick(View v) {
 				getDialog().dismiss();				
 			}
 		});
 		
-		final ImageButton goToPositionButton = (ImageButton) v.findViewById(R.id.scrollToPosition);
+		ImageButton goToPositionButton = (ImageButton) v.findViewById(R.id.scrollToPosition);
 		goToPositionButton.setOnClickListener(new View.OnClickListener() {
-			
 			@Override
 			public void onClick(View v) {
 				scrollToPosition();				
 			}
 		});
 		
+		mIsShuffledView = v.findViewById(R.id.play_queue_is_shuffled);
+		
 		return v;
 	}
 	
 	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		
-		mDslv = null;
-	}
-	
-	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {        
-        mService.registerPlayQueueCallback(mCallback);
-        mService.requestPlayQueue();
+        //mService.registerPlayQueueCallback(mCallback);
+        //mService.requestPlayQueue();
+		if (mService != null) {
+			mService.registerPlayQueueCallback(mCallback);
+			mService.requestPlayQueue();
+		}
         
         Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -124,50 +122,18 @@ public class PlayQueueFragment extends DialogFragment implements
 	public void onDestroy() {
 		super.onDestroy();
 		
-		mService.unregisterPlayQueueCallback(mCallback);
+		if (mService != null) {
+			mService.unregisterPlayQueueCallback(mCallback);
+		}
 	}
 	
 	public void scrollToPosition() {
 		final int queuePosition = mAdapter.getQueuePosition();
-		if (mDslv != null && queuePosition > -1) {
+		if (queuePosition > -1) {
 			mDslv.smoothScrollToPositionFromTop(queuePosition, SCROLL_OFFSET, SCROLL_DURATION);
 		}
 	}
 	
-	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
-
-		@Override
-		public void deliverTrackList(final List<Track> trackList) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					mAdapter.addAll(trackList);					
-				}
-				
-			});
-			
-		}
-
-		@Override
-		public void deliverPosition(final int position) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					mAdapter.setQueuePosition(position);
-					if (mFirstOpen) {
-						mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
-						mFirstOpen = false;
-					}
-				}
-				
-			});
-			
-		}
-		
-	};
-
 	@Override
 	public void remove(int which) {
 		mAdapter.remove(which);
@@ -197,4 +163,35 @@ public class PlayQueueFragment extends DialogFragment implements
 		mVibrator.vibrate(VIBE_DURATION);		
 	}
 	
+	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
+
+		@Override
+		public void deliverTrackList(final List<Track> trackList, final int position, 
+				final boolean isShuffled) throws RemoteException {
+			
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					mAdapter.addAll(trackList);
+					mAdapter.setQueuePosition(position);
+					mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+					if (isShuffled) {
+						mIsShuffledView.setVisibility(View.VISIBLE);
+					}
+				}
+			});
+			
+		}
+
+		@Override
+		public void onPositionChanged(final int position) throws RemoteException {
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					mAdapter.setQueuePosition(position);
+				}
+			});
+		}
+		
+	};
 }

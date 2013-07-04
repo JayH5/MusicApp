@@ -2,11 +2,11 @@ package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.AlbumsAdapter;
+import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
 import android.content.ContentUris;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,7 +20,6 @@ import android.widget.GridView;
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
-	//private static final String STATE_SCROLL_POSITION = "state_scroll_position";
 	
 	//private static final String TAG = "AlbumGridFragment";
     
@@ -55,19 +54,19 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     		Bundle savedInstanceState) {
 
         final View v = inflater.inflate(R.layout.fragment_album_grid, container, false);
-        
         final GridView gridView = (GridView) v.findViewById(R.id.grid);
-        gridView.setAdapter(mAdapter);
+        
+        gridView.setAdapter(mAdapter);        
         gridView.setOnItemClickListener(this);
         
         final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
         if (itemId > 0) {
-        	mAdapter.registerDataSetObserver(new DataSetObserver() {
-	        	@Override
-	        	public void onChanged() {
-	        		gridView.setSelection(mAdapter.getPosition(itemId));
-	        	}
-	        });
+        	new OneTimeDataSetObserver(mAdapter) {
+				@Override
+				public void onFirstChange() {
+					gridView.setSelection(mAdapter.getPosition(itemId));
+				}
+        	};
         }
         
         return v;

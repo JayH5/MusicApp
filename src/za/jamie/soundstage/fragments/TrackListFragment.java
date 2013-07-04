@@ -3,7 +3,7 @@ package za.jamie.soundstage.fragments;
 import java.util.List;
 
 import za.jamie.soundstage.MusicLibraryWrapper;
-import za.jamie.soundstage.adapters.abs.TrackAdapter;
+import za.jamie.soundstage.adapters.interfaces.TrackAdapter;
 import za.jamie.soundstage.models.Track;
 import android.app.Activity;
 import android.view.View;

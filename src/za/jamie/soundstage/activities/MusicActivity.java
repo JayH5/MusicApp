@@ -4,12 +4,9 @@ import java.util.List;
 
 import net.simonvt.menudrawer.MenuDrawer;
 import za.jamie.soundstage.IMusicService;
-import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.MusicLibraryWrapper;
 import za.jamie.soundstage.MusicPlaybackConnection;
-import za.jamie.soundstage.MusicPlaybackWrapper;
-import za.jamie.soundstage.MusicQueueWrapper;
+import za.jamie.soundstage.PlayQueueConnection;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
@@ -21,6 +18,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -32,8 +30,8 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-public class MusicActivity extends FragmentActivity implements MusicLibraryWrapper,
-		MusicQueueWrapper, MusicPlaybackWrapper, MenuDrawer.OnDrawerStateChangeListener {
+public class MusicActivity extends FragmentActivity implements MusicLibraryWrapper, 
+		MenuDrawer.OnDrawerStateChangeListener {
 	
 	private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
@@ -51,6 +49,8 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
+	private PlayQueueConnection mPlayQueueConnection;
+	
 	private IMusicService mService = null;
 	private ServiceConnection mConnection = new ServiceConnection() {
 		@Override
@@ -58,6 +58,11 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			mService = IMusicService.Stub.asInterface(service);
 			
 			mPlayer.setServiceConnection(new MusicPlaybackConnection(mService));
+			
+			mPlayQueueConnection = new PlayQueueConnection(mService);
+			if (mPlayQueue != null) {
+				mPlayQueue.setConnection(mPlayQueueConnection);
+			}
 		}
 
 		@Override
@@ -65,6 +70,9 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			mService = null;
 			
 			mPlayer.setServiceConnection(null);
+			if (mPlayQueue != null) {
+				mPlayQueue.setConnection(null);
+			}
 		}		
 	};
 	
@@ -91,13 +99,12 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 		}
 		
 		mPlayQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
-		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {
-			
+		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {			
 			@Override
 			public void onClick(View v) {
-				final FragmentManager fm = getSupportFragmentManager();
 				if (fm.findFragmentByTag(TAG_PLAY_QUEUE) == null) {
 					mPlayQueue = PlayQueueFragment.newInstance();
+					mPlayQueue.setConnection(mPlayQueueConnection);
 					mPlayQueue.show(fm, TAG_PLAY_QUEUE);
 				}
 			}
@@ -116,19 +123,19 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
     protected void onResume() {
         super.onResume();        
         if (mService != null) {
-        	showNotification(false);
+        	hideNotification();
         }
-        // TODO
-        /*if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
+        
+        if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
 			mDrawer.openMenu();
-		}*/
+		}
 	}
 	
 	@Override
     protected void onPause() {
         super.onPause();        
         if (isPlaying() && AppUtils.isApplicationSentToBackground(this)) {
-        	showNotification(true);
+        	showNotification();
         }
     }
 	
@@ -190,56 +197,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	public boolean isPlaying() {
 		return mPlayer.isPlaying();
 	}
-
-	//////////////////////////
-	// AIDL interface
 	
-	@Override
-	public void setQueuePosition(int position) {
-		try {
-			mService.setQueuePosition(position);
-		} catch (RemoteException ignored) {
-
-		}
-		
-	}
-
-	@Override
-	public void moveQueueItem(int from, int to) {
-		try {
-			mService.moveQueueItem(from, to);
-		} catch (RemoteException ignored) {
-			
-		}		
-	}
-
-	@Override
-	public void removeTrack(int position) {
-		try {
-			mService.removeTrack(position);
-		} catch (RemoteException ignored) {
-			
-		}		
-	}
-
-	@Override
-	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
-		try {
-			mService.registerMusicStatusCallback(callback);
-		} catch (RemoteException ignored) {
-			
-		}		
-	}
-
-	@Override
-	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
-		try {
-			mService.unregisterMusicStatusCallback(callback);
-		} catch (RemoteException ignored) {
-			
-		}		
-	}
-
 	@Override
 	public void open(List<Track> tracks, int position) {
 		try {
@@ -268,110 +226,20 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			
 		}
 	}
-
-	@Override
-	public void togglePlayback() {
+	
+	public void showNotification() {
+		final ComponentName componentName = new ComponentName(this, this.getClass());
+		final Uri uri = getIntent().getData();
 		try {
-			mService.togglePlayback();
+			mService.showNotification(componentName, uri);
 		} catch (RemoteException e) {
 			
 		}
-		
-	}
-
-	@Override
-	public void next() {
-		try {
-			mService.next();
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-
-	@Override
-	public void previous() {
-		try {
-			mService.previous();
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-
-	@Override
-	public void seek(long position) {
-		try {
-			mService.seek(position);
-		} catch (RemoteException e) {
-
-		}
-		
 	}
 	
-	@Override
-	public void toggleShuffle() {
+	public void hideNotification() {
 		try {
-			mService.toggleShuffle();
-		} catch (RemoteException e) {
-			
-		}
-		
-	}
-
-	@Override
-	public void cycleRepeatMode() {
-		try {
-			mService.cycleRepeatMode();
-		} catch (RemoteException e) {
-			
-		}
-		
-	}
-
-	@Override
-	public void requestMusicStatus() {
-		try {
-			mService.requestMusicStatus();
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-
-	@Override
-	public void requestPlayQueue() {
-		try {
-			mService.requestPlayQueue();
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-
-	@Override
-	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
-		try {
-			mService.registerPlayQueueCallback(callback);
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-
-	@Override
-	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
-		try {
-			mService.unregisterPlayQueueCallback(callback);
-		} catch (RemoteException e) {
-
-		}
-		
-	}
-	
-	public void showNotification(boolean show) {
-		try {
-			mService.showNotification(show);
+			mService.hideNotification();
 		} catch (RemoteException e) {
 			
 		}

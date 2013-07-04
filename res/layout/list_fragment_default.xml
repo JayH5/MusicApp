@@ -11,6 +11,7 @@
 		android:paddingLeft="8dip"
     	android:paddingRight="8dip"
     	android:clipToPadding="false"
+    	android:scrollbarStyle="outsideOverlay"
 		android:drawSelectorOnTop="false" />
 
 	<TextView android:id="@id/android:empty"

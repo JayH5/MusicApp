@@ -34,7 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class AudioPreviewActivity extends Activity implements OnPreparedListener, 
-OnErrorListener, OnCompletionListener, LoaderManager.LoaderCallbacks<Cursor> {
+		OnErrorListener, OnCompletionListener, LoaderManager.LoaderCallbacks<Cursor> {
 	
 	private static final String TAG = "AudioPreviewActivity";
 	
@@ -52,7 +52,7 @@ OnErrorListener, OnCompletionListener, LoaderManager.LoaderCallbacks<Cursor> {
 	private SeekBar mSeekBar;
 	private ImageButton mPlayPauseButton;
 	
-	private long mMediaId;
+	//private long mMediaId;
 	private Uri mUri;
 	private int mDuration;
 	private boolean mSeeking;
@@ -261,7 +261,7 @@ OnErrorListener, OnCompletionListener, LoaderManager.LoaderCallbacks<Cursor> {
             int displaynameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
 
             if (idIdx >=0) {
-                mMediaId = cursor.getLong(idIdx);
+                //mMediaId = cursor.getLong(idIdx);
             }
             
             if (titleIdx >= 0) {

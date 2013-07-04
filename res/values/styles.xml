@@ -62,6 +62,8 @@
         <item name="android:fontFamily">sans-serif-light</item>
         <item name="android:textSize">@dimen/track_number_text_size</item>
         <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:maxLength">2</item>
     </style>
     
     <!-- Google Now styled summary fragments -->
@@ -82,7 +84,6 @@
         <item name="android:textColor">?android:textColorPrimary</item>
         <item name="android:maxLines">2</item>
         <item name="android:ellipsize">end</item>
-        <item name="android:gravity">center_horizontal</item>
     </style>
     
     <style name="MusicPlayerSubtitleText" parent="ListItemText">
@@ -121,6 +122,14 @@
         <item name="android:shadowDy">2</item>
         <item name="android:shadowRadius">1.5</item>
         <item name="android:textColor">?android:textColorSecondaryInverse</item>
+    </style>
+    
+    <style name="SeekText">
+        <item name="android:shadowColor">@android:color/black</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">2.0</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">36sp</item>
     </style>
     
     <!-- Notification bar event text -->
