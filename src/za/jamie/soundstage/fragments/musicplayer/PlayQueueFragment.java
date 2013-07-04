@@ -172,6 +172,7 @@ public class PlayQueueFragment extends DialogFragment implements
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					mAdapter.clear();
 					mAdapter.addAll(trackList);
 					mAdapter.setQueuePosition(position);
 					mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
