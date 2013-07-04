@@ -6,14 +6,14 @@ import net.simonvt.menudrawer.MenuDrawer;
 import net.simonvt.menudrawer.MenuDrawer.Type;
 import net.simonvt.menudrawer.Position;
 import za.jamie.soundstage.IMusicService;
-import za.jamie.soundstage.MusicLibraryWrapper;
-import za.jamie.soundstage.MusicPlaybackConnection;
-import za.jamie.soundstage.PlayQueueConnection;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.service.connections.MusicLibraryConnection;
+import za.jamie.soundstage.service.proxies.MusicPlaybackProxy;
+import za.jamie.soundstage.service.proxies.MusicQueueProxy;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.SearchManager;
 import android.content.ComponentName;
@@ -32,7 +32,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-public class MusicActivity extends FragmentActivity implements MusicLibraryWrapper, 
+public class MusicActivity extends FragmentActivity implements MusicLibraryConnection, 
 		MenuDrawer.OnDrawerStateChangeListener {
 	
 	private static final String TAG_PLAYER = "player";
@@ -51,20 +51,14 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
-	private PlayQueueConnection mPlayQueueConnection;
-	
 	private IMusicService mService = null;
 	private ServiceConnection mConnection = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			mService = IMusicService.Stub.asInterface(service);
 			
-			mPlayer.setServiceConnection(new MusicPlaybackConnection(mService));
-			
-			mPlayQueueConnection = new PlayQueueConnection(mService);
-			if (mPlayQueue != null) {
-				mPlayQueue.setConnection(mPlayQueueConnection);
-			}
+			mPlayer.setServiceConnection(new MusicPlaybackProxy(mService));
+			mPlayQueue.setServiceConnection(new MusicQueueProxy(mService));
 		}
 
 		@Override
@@ -72,9 +66,7 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 			mService = null;
 			
 			mPlayer.setServiceConnection(null);
-			if (mPlayQueue != null) {
-				mPlayQueue.setConnection(null);
-			}
+			mPlayQueue.setServiceConnection(null);
 		}		
 	};
 	
@@ -101,15 +93,17 @@ public class MusicActivity extends FragmentActivity implements MusicLibraryWrapp
 				.commit();
 		}
 		
+		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
+		if (mPlayQueue == null) {
+			mPlayQueue = PlayQueueFragment.newInstance();
+		}
+		
+		
 		mPlayQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
 		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {			
 			@Override
 			public void onClick(View v) {
-				if (fm.findFragmentByTag(TAG_PLAY_QUEUE) == null) {
-					mPlayQueue = PlayQueueFragment.newInstance();
-					mPlayQueue.setConnection(mPlayQueueConnection);
-					mPlayQueue.show(fm, TAG_PLAY_QUEUE);
-				}
+				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
 			}
 		});
 		

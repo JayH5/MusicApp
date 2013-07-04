@@ -1,11 +1,11 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
 import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.MusicPlaybackWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.service.connections.MusicPlaybackConnection;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
@@ -75,7 +75,7 @@ public class MusicPlayerFragment extends Fragment {
 	private long mTimeSync;
 	private long mTimeSyncStamp;
 	
-	private MusicPlaybackWrapper mService;
+	private MusicPlaybackConnection mService;
 	
 	public MusicPlayerFragment() {}
 	
@@ -421,7 +421,7 @@ public class MusicPlayerFragment extends Fragment {
 		return mIsPlaying;
 	}
     
-    public void setServiceConnection(MusicPlaybackWrapper service) {
+    public void setServiceConnection(MusicPlaybackConnection service) {
     	mService = service;
     	if (mService != null) {    		
     		mService.registerMusicStatusCallback(mCallback);

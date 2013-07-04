@@ -3,10 +3,10 @@ package za.jamie.soundstage.fragments.musicplayer;
 import java.util.List;
 
 import za.jamie.soundstage.IPlayQueueCallback;
-import za.jamie.soundstage.MusicQueueWrapper;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.connections.MusicQueueConnection;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -26,6 +26,9 @@ import com.mobeta.android.dslv.DragSortListView;
 public class PlayQueueFragment extends DialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 	
+	private static final String STATE_LIST_POSITION = "state_list_position";
+	private static final String STATE_LIST_OFFSET = "state_list_offset";
+	
 	private static final long VIBE_DURATION = 15;
 	private static final int SCROLL_OFFSET = 35;
 	private static final int SCROLL_DURATION = 250; // 250ms
@@ -35,9 +38,12 @@ public class PlayQueueFragment extends DialogFragment implements
 	
 	private View mIsShuffledView;
 	
-	private MusicQueueWrapper mService;
+	private MusicQueueConnection mService;
 	
 	private Vibrator mVibrator;
+	
+	private int mSavedPosition = -1;
+	private int mSavedOffset = -1;
 	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
@@ -50,18 +56,40 @@ public class PlayQueueFragment extends DialogFragment implements
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
 		
-		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-	}
-	
-	public void setConnection(MusicQueueWrapper service) {
-		if (mService != null) {
-			mService.unregisterPlayQueueCallback(mCallback);
-		}
-		mService = service;
-		if (mService != null) {
+		if (mService != null && mAdapter.isEmpty()) {
 			mService.registerPlayQueueCallback(mCallback);
 			mService.requestPlayQueue();
 		}
+		
+		if (savedInstanceState != null) {
+			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
+			mSavedOffset = savedInstanceState.getInt(STATE_LIST_OFFSET, -1);
+		}
+		
+		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		if (!mAdapter.isEmpty()) {
+			outState.putInt(STATE_LIST_POSITION, mDslv.getFirstVisiblePosition());
+			final View v = mDslv.getChildAt(0);
+			outState.putInt(STATE_LIST_OFFSET, v != null ? v.getTop() : 0);
+		}
+	}
+	
+	public void setServiceConnection(MusicQueueConnection service) {
+		if (mService != null) {
+			mService.unregisterPlayQueueCallback(mCallback);
+		}
+		if (service != null) {
+			service.registerPlayQueueCallback(mCallback);
+			if (isVisible() && mAdapter.isEmpty()) {
+				service.requestPlayQueue();
+			}
+		}
+		mService = service;
 	}
 	
 	@Override
@@ -105,15 +133,8 @@ public class PlayQueueFragment extends DialogFragment implements
 	}
 	
 	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {        
-        //mService.registerPlayQueueCallback(mCallback);
-        //mService.requestPlayQueue();
-		if (mService != null) {
-			mService.registerPlayQueueCallback(mCallback);
-			mService.requestPlayQueue();
-		}
-        
-        Dialog dialog = super.onCreateDialog(savedInstanceState);
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+		Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         return dialog;
 	}
@@ -121,7 +142,6 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		
 		if (mService != null) {
 			mService.unregisterPlayQueueCallback(mCallback);
 		}
@@ -172,10 +192,13 @@ public class PlayQueueFragment extends DialogFragment implements
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					mAdapter.clear();
 					mAdapter.addAll(trackList);
 					mAdapter.setQueuePosition(position);
-					mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+					if (mSavedPosition != -1 && mSavedOffset != -1) {
+						mDslv.setSelectionFromTop(mSavedPosition, mSavedOffset);
+					} else {
+						mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+					}
 					if (isShuffled) {
 						mIsShuffledView.setVisibility(View.VISIBLE);
 					}
