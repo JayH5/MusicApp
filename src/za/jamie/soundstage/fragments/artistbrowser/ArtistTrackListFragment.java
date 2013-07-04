@@ -13,6 +13,8 @@ import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
+import android.widget.ListView;
 
 public class ArtistTrackListFragment extends TrackListFragment {
 	
@@ -64,6 +66,11 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		
 		getLoaderManager().initLoader(0, null, cm);
 	}
+	
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		super.onListItemClick(l, v, position + 1, id);
+    }
 	
 	@Override
 	public void onAttach(Activity activity) {
