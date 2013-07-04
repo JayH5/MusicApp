@@ -5,11 +5,11 @@ import za.jamie.soundstage.activities.PlaylistBrowserActivity;
 import za.jamie.soundstage.adapters.PlaylistsAdapter;
 import za.jamie.soundstage.cursormanager.CursorDefinitions;
 import za.jamie.soundstage.cursormanager.CursorManager;
+import android.app.ListFragment;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListView;
 

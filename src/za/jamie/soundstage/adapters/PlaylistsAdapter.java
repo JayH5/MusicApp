@@ -4,8 +4,8 @@ import za.jamie.soundstage.R;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
-import android.support.v4.widget.ResourceCursorAdapter;
 import android.view.View;
+import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 
 public class PlaylistsAdapter extends ResourceCursorAdapter {

@@ -18,6 +18,8 @@ import za.jamie.soundstage.service.proxies.MusicNotificationProxy;
 import za.jamie.soundstage.service.proxies.MusicPlaybackProxy;
 import za.jamie.soundstage.service.proxies.MusicQueueProxy;
 import za.jamie.soundstage.utils.AppUtils;
+import android.app.Activity;
+import android.app.FragmentManager;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,14 +29,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Vibrator;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-public class MusicActivity extends FragmentActivity implements MenuDrawer.OnDrawerStateChangeListener {
+public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 	
 	private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
@@ -77,7 +77,7 @@ public class MusicActivity extends FragmentActivity implements MenuDrawer.OnDraw
 	};
 	
 	@Override
-	public void onCreate(final Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		// Set up the menu drawer to display the player
@@ -94,7 +94,7 @@ public class MusicActivity extends FragmentActivity implements MenuDrawer.OnDraw
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Initialize the music player fragment
-		final FragmentManager fm = getSupportFragmentManager();
+		final FragmentManager fm = getFragmentManager();
 		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
 		if (mPlayer == null) {
 			mPlayer = new MusicPlayerFragment();
@@ -119,7 +119,7 @@ public class MusicActivity extends FragmentActivity implements MenuDrawer.OnDraw
 		
 		Intent serviceIntent = new Intent(this, MusicService.class);
 		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, 0);
+		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
 	}
 
 	public void setMainContentView(int layoutResId) {

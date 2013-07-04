@@ -32,9 +32,11 @@ public class ArtistsAdapter extends ArtistAdapter implements SectionIndexer {
     private int mHeaderLayout;
 	
 	private ImageFetcher mImageWorker;
+	private Context mContext;
 	
 	public ArtistsAdapter(Context context, int layout, int headerLayout, Cursor c, int flags) {
 		super(context, layout, c, flags);
+		mContext = context;
 		mImageWorker = ImageUtils.getThumbImageFetcher(context);
 		mInflater = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE));
 		mHeaderLayout = headerLayout;

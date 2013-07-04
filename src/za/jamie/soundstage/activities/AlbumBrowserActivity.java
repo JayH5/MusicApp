@@ -12,6 +12,7 @@ import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActionBar;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.app.TaskStackBuilder;
 import android.content.ContentUris;
 import android.content.DialogInterface;
@@ -21,7 +22,6 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -103,14 +103,14 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			@Override
 			public void onClick(View v) {
 				ImageDialogFragment.newInstance(String.valueOf(mAlbumId))
-						.show(getSupportFragmentManager(), TAG_IMAGE_DIALOG);
+						.show(getFragmentManager(), TAG_IMAGE_DIALOG);
 				
 			}
 		});
 	}
 	
 	private void initTrackList() {
-		final FragmentManager fm = getSupportFragmentManager();
+		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
 		if (mTrackListFragment == null) {
 			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);

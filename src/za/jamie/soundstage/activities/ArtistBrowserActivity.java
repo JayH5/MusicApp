@@ -5,15 +5,15 @@ import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jay.IcsViewPager.FragmentPagerAdapter;
+import za.jay.IcsViewPager.ViewPager;
 import android.app.ActionBar;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
 
 import com.viewpagerindicator.TitlePageIndicator;
 
@@ -44,14 +44,14 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		// Set up the view pager and its indicator
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(new SectionsPagerAdapter(
-				getSupportFragmentManager()));
+				getFragmentManager()));
 		
 		int orientation = getResources().getConfiguration().orientation;
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			AppUtils.loadActionBarTabs(actionBar, mViewPager);
 		} else {
 			TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
-	        indicator.setViewPager(mViewPager);
+	        //indicator.setViewPager(mViewPager);
 		}		
 
 		if (savedInstanceState != null) {
@@ -62,7 +62,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		mArtistId = Long.parseLong(mUri.getLastPathSegment());
 				
 		// Set up the summary fragment
-		final FragmentManager fm = getSupportFragmentManager();
+		final FragmentManager fm = getFragmentManager();
 		mSummaryFragment = (ArtistSummaryFragment) fm.findFragmentByTag(TAG_SUMMARY_FRAG);
 		if (mSummaryFragment == null) {
 			mSummaryFragment = ArtistSummaryFragment.newInstance(mUri);

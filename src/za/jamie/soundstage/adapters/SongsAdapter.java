@@ -14,7 +14,6 @@ import android.view.ViewGroup;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
 
-
 public class SongsAdapter extends BasicTrackAdapter implements SectionIndexer {
 
 	private String[] mSectionHeaders;
@@ -23,9 +22,12 @@ public class SongsAdapter extends BasicTrackAdapter implements SectionIndexer {
 	
 	private final LayoutInflater mInflater;
     private int mHeaderLayout;
+    
+    private Context mContext;
 	
 	public SongsAdapter(Context context, int layout, int headerLayout, Cursor c, int flags) {
 		super(context, layout, c, flags);
+		mContext = context;
 		mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		mHeaderLayout = headerLayout;
 	}

@@ -2,9 +2,9 @@ package za.jamie.soundstage.activities;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.playlistbrowser.PlaylistTrackListFragment;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.view.MenuItem;
 
 public class PlaylistBrowserActivity extends MusicActivity {
@@ -29,7 +29,7 @@ public class PlaylistBrowserActivity extends MusicActivity {
 		
 		getActionBar().setTitle(mName);
 		
-		final FragmentManager fm = getSupportFragmentManager();
+		final FragmentManager fm = getFragmentManager();
 		if (fm.findFragmentByTag(TAG_LIST_FRAGMENT) == null) {
 			fm.beginTransaction()
 				.add(R.id.listFrame, PlaylistTrackListFragment.newInstance(mPlaylistId), 

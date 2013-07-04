@@ -3,7 +3,7 @@ package za.jamie.soundstage.adapters.abs;
 import za.jamie.soundstage.adapters.interfaces.SearchableAdapter;
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.widget.ResourceCursorAdapter;
+import android.widget.ResourceCursorAdapter;
 
 public abstract class BasicCursorAdapter extends ResourceCursorAdapter implements 
 		SearchableAdapter {

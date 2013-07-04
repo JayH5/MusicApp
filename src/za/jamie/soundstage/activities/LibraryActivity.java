@@ -7,14 +7,14 @@ import za.jamie.soundstage.fragments.library.ArtistsFragment;
 import za.jamie.soundstage.fragments.library.PlaylistsFragment;
 import za.jamie.soundstage.fragments.library.SongsFragment;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jay.IcsViewPager.FragmentPagerAdapter;
+import za.jay.IcsViewPager.ViewPager;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.MenuItem;
 
@@ -49,7 +49,7 @@ public class LibraryActivity extends MusicActivity {
 		mDrawer.setDrawerIndicatorEnabled(true);
 		
 		mViewPager = (ViewPager) findViewById(R.id.pager);
-		mViewPager.setAdapter(new SectionsPagerAdapter(getSupportFragmentManager()));
+		mViewPager.setAdapter(new SectionsPagerAdapter(getFragmentManager()));
 		
 		int orientation = getResources().getConfiguration().orientation;
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -60,7 +60,7 @@ public class LibraryActivity extends MusicActivity {
 			// Get the indicator for the view pager
 			final TitlePageIndicator indicator = (TitlePageIndicator) 
 					findViewById(R.id.indicator);
-	        indicator.setViewPager(mViewPager);
+	        //indicator.setViewPager(mViewPager);
 		}		
         
         if (savedInstanceState != null) {
