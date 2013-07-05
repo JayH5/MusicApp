@@ -25,4 +25,7 @@
     <color name="button_border_outer">#D0D0D0</color>
     <color name="button_border_inner">#D9D9D9</color>
     <color name="button_border_text">#737373</color>
+    
+    <!-- From PagerSlidingTabStrip -->
+    <color name="background_tab_pressed">#6633B5E5</color>
 </resources>

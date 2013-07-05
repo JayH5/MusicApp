@@ -7,6 +7,7 @@ import za.jamie.soundstage.fragments.library.ArtistsFragment;
 import za.jamie.soundstage.fragments.library.PlaylistsFragment;
 import za.jamie.soundstage.fragments.library.SongsFragment;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 import za.jay.IcsViewPager.FragmentPagerAdapter;
 import za.jay.IcsViewPager.ViewPager;
 import android.annotation.SuppressLint;
@@ -17,8 +18,6 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-
-import com.viewpagerindicator.TitlePageIndicator;
 
 public class LibraryActivity extends MusicActivity {
 
@@ -58,9 +57,9 @@ public class LibraryActivity extends MusicActivity {
 			AppUtils.loadActionBarTabs(getActionBar(), mViewPager);
 		} else {
 			// Get the indicator for the view pager
-			final TitlePageIndicator indicator = (TitlePageIndicator) 
+			final PagerSlidingTabStrip tabStrip = (PagerSlidingTabStrip)
 					findViewById(R.id.indicator);
-	        //indicator.setViewPager(mViewPager);
+			tabStrip.setViewPager(mViewPager);
 		}		
         
         if (savedInstanceState != null) {

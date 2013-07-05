@@ -3,11 +3,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
     
-    <com.viewpagerindicator.TitlePageIndicator
+    <za.jamie.soundstage.widgets.PagerSlidingTabStrip
         android:id="@+id/indicator"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/ViewPageIndicator" />
+        android:layout_height="48dp" />
     
     <za.jay.IcsViewPager.ViewPager
         android:id="@+id/pager"
