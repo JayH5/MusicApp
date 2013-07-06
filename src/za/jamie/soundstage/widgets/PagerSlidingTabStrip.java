@@ -70,14 +70,11 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 	private int currentPosition = 0;
 	private float currentPositionOffset = 0f;
 
-	private Paint rectPaint;
+	private Paint indicatorPaint;
+	private Paint underlinePaint;
 	private Paint dividerPaint;
 
 	private boolean checkedTabWidths = false;
-
-	private int indicatorColor = 0xFF666666;
-	private int underlineColor = 0x1A000000;
-	private int dividerColor = 0x1A000000;
 
 	private boolean shouldExpand = false;
 	private boolean textAllCaps = true;
@@ -145,6 +142,10 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		// get custom attrs
 
+		int indicatorColor = 0xFF666666;
+		int underlineColor = 0x1A000000;
+		int dividerColor = 0x1A000000;
+		
 		a = context.obtainStyledAttributes(attrs, R.styleable.PagerSlidingTabStrip);
 
 		indicatorColor = a.getColor(R.styleable.PagerSlidingTabStrip_indicatorColor, indicatorColor);
@@ -161,13 +162,17 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		a.recycle();
 
-		rectPaint = new Paint();
-		rectPaint.setAntiAlias(true);
-		rectPaint.setStyle(Style.FILL);
-
-		dividerPaint = new Paint();
-		dividerPaint.setAntiAlias(true);
+		indicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		indicatorPaint.setStyle(Style.FILL);
+		indicatorPaint.setColor(indicatorColor);
+		
+		underlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		underlinePaint.setStyle(Style.FILL);
+		underlinePaint.setColor(underlineColor);
+		
+		dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		dividerPaint.setStrokeWidth(dividerWidth);
+		dividerPaint.setColor(dividerColor);
 
 		defaultTabLayoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 		expandedTabLayoutParams = new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
@@ -354,10 +359,6 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		final int height = getHeight();
 
-		// draw indicator line
-
-		rectPaint.setColor(indicatorColor);
-
 		// default: line below current tab
 		View currentTab = tabsContainer.getChildAt(currentPosition);
 		float lineLeft = currentTab.getLeft();
@@ -365,7 +366,6 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		// if there is an offset, start interpolating left and right coordinates between current and next tab
 		if (currentPositionOffset > 0f && currentPosition < tabCount - 1) {
-
 			View nextTab = tabsContainer.getChildAt(currentPosition + 1);
 			final float nextTabLeft = nextTab.getLeft();
 			final float nextTabRight = nextTab.getRight();
@@ -374,19 +374,15 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			lineRight = (currentPositionOffset * nextTabRight + (1f - currentPositionOffset) * lineRight);
 		}
 
-		canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, rectPaint);
+		canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, indicatorPaint);
 
 		// draw underline
-
-		rectPaint.setColor(underlineColor);
-		canvas.drawRect(0, height - underlineHeight, tabsContainer.getWidth(), height, rectPaint);
+		canvas.drawRect(0, height - underlineHeight, tabsContainer.getWidth(), height, underlinePaint);
 
 		// draw divider
-
-		dividerPaint.setColor(dividerColor);
 		for (int i = 0; i < tabCount - 1; i++) {
-			View tab = tabsContainer.getChildAt(i);
-			canvas.drawLine(tab.getRight(), dividerPadding, tab.getRight(), height - dividerPadding, dividerPaint);
+			final int tabRight = tabsContainer.getChildAt(i).getRight();
+			canvas.drawLine(tabRight, dividerPadding, tabRight, height - dividerPadding, dividerPaint);
 		}
 	}
 
@@ -425,17 +421,16 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 	}
 
 	public void setIndicatorColor(int indicatorColor) {
-		this.indicatorColor = indicatorColor;
+		indicatorPaint.setColor(indicatorColor);
 		invalidate();
 	}
 
 	public void setIndicatorColorResource(int resId) {
-		this.indicatorColor = getResources().getColor(resId);
-		invalidate();
+		setIndicatorColor(getResources().getColor(resId));
 	}
 
 	public int getIndicatorColor() {
-		return this.indicatorColor;
+		return indicatorPaint.getColor();
 	}
 
 	public void setIndicatorHeight(int indicatorLineHeightPx) {
@@ -448,31 +443,29 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 	}
 
 	public void setUnderlineColor(int underlineColor) {
-		this.underlineColor = underlineColor;
+		underlinePaint.setColor(underlineColor);
 		invalidate();
 	}
 
 	public void setUnderlineColorResource(int resId) {
-		this.underlineColor = getResources().getColor(resId);
-		invalidate();
+		setUnderlineColor(getResources().getColor(resId));
 	}
 
 	public int getUnderlineColor() {
-		return underlineColor;
+		return underlinePaint.getColor();
 	}
 
 	public void setDividerColor(int dividerColor) {
-		this.dividerColor = dividerColor;
+		dividerPaint.setColor(dividerColor);
 		invalidate();
 	}
 
 	public void setDividerColorResource(int resId) {
-		this.dividerColor = getResources().getColor(resId);
-		invalidate();
+		setDividerColor(getResources().getColor(resId));
 	}
 
 	public int getDividerColor() {
-		return dividerColor;
+		return dividerPaint.getColor();
 	}
 
 	public void setUnderlineHeight(int underlineHeightPx) {
