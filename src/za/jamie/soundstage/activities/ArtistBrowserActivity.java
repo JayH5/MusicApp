@@ -15,8 +15,6 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 
-import com.viewpagerindicator.TitlePageIndicator;
-
 public class ArtistBrowserActivity extends MusicActivity implements 
 		ArtistSummaryFragment.OnArtistFoundListener, 
 		ArtistTrackListFragment.ArtistTrackListListener {
@@ -50,7 +48,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			AppUtils.loadActionBarTabs(actionBar, mViewPager);
 		} else {
-			TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
+			//TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
 	        //indicator.setViewPager(mViewPager);
 		}		
 
@@ -113,16 +111,13 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		
 		@Override
 		public CharSequence getPageTitle(int position) {
-			String title = null;
 			switch(position) {
 			case 0:
-				title = getResources().getString(R.string.title_albums).toUpperCase();
-				break;
+				return getResources().getString(R.string.title_albums);
 			case 1:
-				title = getResources().getString(R.string.title_songs).toUpperCase();
-				break;
+				return getResources().getString(R.string.title_songs);
 			}
-			return title;
+			return null;
 		}
 
 	}

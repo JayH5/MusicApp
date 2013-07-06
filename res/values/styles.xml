@@ -22,7 +22,7 @@
   	</style>
     
     <!-- Theme the view pager indicator -->
-    <style name="ViewPageIndicator" >
+    <!-- <style name="ViewPageIndicator" >
         <item name="android:textColor">?android:textColorSecondaryInverse</item>
         <item name="android:textSize">@dimen/vpi_text_size</item>
         <item name="footerIndicatorStyle">none</item>
@@ -32,7 +32,7 @@
         <item name="selectedColor">@color/now_dark_grey_text</item>
         <item name="topPadding">2dp</item>
         <item name="selectedBold">true</item>
-    </style>
+    </style> -->
     
     
     

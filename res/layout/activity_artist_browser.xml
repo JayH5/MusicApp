@@ -13,17 +13,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 	    
-	    <za.jay.IcsViewPager.ViewPager
+	    <android.support.v4.view.ViewPager
 	        android:id="@+id/pager"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent" />
 	    
-	    <com.viewpagerindicator.TitlePageIndicator
+	    <!-- <com.viewpagerindicator.TitlePageIndicator
 	        android:id="@+id/indicator"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:background="@drawable/gradient_background_fade_vpi"
-	        style="@style/ViewPageIndicator" />
+	        style="@style/ViewPageIndicator" /> -->
         
     </FrameLayout>        
     
