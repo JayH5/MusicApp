@@ -176,7 +176,6 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		defaultTabLayoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
 		expandedTabLayoutParams = new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
-
 	}
 	
 	private void setTypefaceFromAttrs(String familyName, int typefaceIndex, int styleIndex) {
@@ -357,8 +356,6 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			int nextTabColor = (Integer) tabTextColorEvaluator.evaluate(currentPositionOffset, tabTextColor, 
 					tabSelectedTextColor);
 			nextTab.setTextColor(nextTabColor);
-		} else {
-			currentTab.setTextColor(tabSelectedTextColor);
 		}
 
 		canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, indicatorPaint);
@@ -401,10 +398,19 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		@Override
 		public void onPageSelected(int position) {
+			updateSelectedPage(position);
 			if (delegatePageListener != null) {
 				delegatePageListener.onPageSelected(position);
 			}
 		}
+	}
+	
+	private void updateSelectedPage(int position) {
+		TextView currentTab = (TextView) tabsContainer.getChildAt(currentPosition);
+		currentTab.setTextColor(tabTextColor);
+
+		TextView nextTab = (TextView) tabsContainer.getChildAt(position);
+		nextTab.setTextColor(tabSelectedTextColor);
 	}
 
 	public void setIndicatorColor(int indicatorColor) {
