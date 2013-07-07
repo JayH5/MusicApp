@@ -1,23 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/za.jamie.soundstage"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
     
-    <FrameLayout 
-        android:id="@+id/summaryFrame"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-    
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-	    
-	    <za.jay.IcsViewPager.ViewPager
-	        android:id="@+id/pager"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:background="@drawable/card_background"
+        android:divider="?android:attr/dividerHorizontal"
+        android:showDividers="middle"
+        android:dividerPadding="8dp"
+        android:orientation="vertical" >
+        
+        <FrameLayout
+	        android:id="@+id/summaryFrame"
 	        android:layout_width="match_parent"
-	        android:layout_height="match_parent" />
-
-    </FrameLayout>        
+	        android:layout_height="wrap_content" />
+        
+        <za.jamie.soundstage.widgets.PagerSlidingTabStrip
+            android:id="@+id/tabStrip"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:textColor="?android:attr/textColorSecondary"
+            app:shouldExpand="true"
+            app:underlineHeight="0dp"
+            app:indicatorHeight="0dp"
+            app:dividerPadding="8dp" />
+          
+    </LinearLayout>
+    
+	<za.jay.IcsViewPager.ViewPager
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />        
     
 </LinearLayout>

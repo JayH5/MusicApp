@@ -14,6 +14,7 @@ import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -45,22 +46,22 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		mAdapter = new ArtistTrackListAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
-		TrackHeaderFooterAdapterWrapper wrapper = 
-				new TrackHeaderFooterAdapterWrapper(getActivity(), mAdapter);
-		
+		ListAdapter listAdapter;
 		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			TrackHeaderFooterAdapterWrapper wrapper = 
+					new TrackHeaderFooterAdapterWrapper(getActivity(), mAdapter);
         	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
         	wrapper.setFooterViewResource(R.layout.list_item_spacer);
         	wrapper.setNumHeaders(1);
         	wrapper.setNumFooters(1);
+        	listAdapter = wrapper;
         } else {
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer_vpi);
-        	wrapper.setNumHeaders(1);
+        	listAdapter = mAdapter;
         }
 		
 		mAdapter.registerDataSetObserver(mDataSetObserver);
 		
-		setListAdapter(wrapper);
+		setListAdapter(listAdapter);
 		
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
 				CursorDefinitions.getArtistBrowserCursorParams(mArtistId));

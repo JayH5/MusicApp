@@ -21,6 +21,7 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.CursorAdapter;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -46,19 +47,19 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
         CursorAdapter adapter = new ArtistAlbumListAdapter(getActivity(), 
         		R.layout.list_item_artist_album, null, 0);
         
-        HeaderFooterAdapterWrapper wrapper = new HeaderFooterAdapterWrapper(getActivity(), adapter);
-        
+        ListAdapter listAdapter;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        	HeaderFooterAdapterWrapper wrapper = new HeaderFooterAdapterWrapper(getActivity(), adapter);
         	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
         	wrapper.setFooterViewResource(R.layout.list_item_spacer);
         	wrapper.setNumHeaders(1);
         	wrapper.setNumFooters(1);
+        	listAdapter = wrapper;
         } else {
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer_vpi);
-        	wrapper.setNumHeaders(1);
+        	listAdapter = adapter;
         }
         
-        setListAdapter(wrapper);
+        setListAdapter(listAdapter);
         
         long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
         CursorManager cm = new CursorManager(getActivity(), adapter, 

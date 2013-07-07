@@ -5,6 +5,7 @@ import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 import za.jay.IcsViewPager.FragmentPagerAdapter;
 import za.jay.IcsViewPager.ViewPager;
 import android.app.ActionBar;
@@ -48,8 +49,8 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			AppUtils.loadActionBarTabs(actionBar, mViewPager);
 		} else {
-			//TitlePageIndicator indicator = (TitlePageIndicator)findViewById(R.id.indicator);
-	        //indicator.setViewPager(mViewPager);
+			PagerSlidingTabStrip indicator = (PagerSlidingTabStrip) findViewById(R.id.tabStrip);
+			indicator.setViewPager(mViewPager);
 		}		
 
 		if (savedInstanceState != null) {
