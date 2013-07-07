@@ -1,4 +1,4 @@
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <!-- Application theme. -->
     <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
@@ -20,22 +20,17 @@
     	
     	<item name="android:textStyle">bold</item>
   	</style>
-    
-    <!-- Theme the view pager indicator -->
-    <!-- <style name="ViewPageIndicator" >
-        <item name="android:textColor">?android:textColorSecondaryInverse</item>
-        <item name="android:textSize">@dimen/vpi_text_size</item>
-        <item name="footerIndicatorStyle">none</item>
-        <item name="footerPadding">8dp</item>
-        <item name="footerLineHeight">1dp</item>
-        <item name="footerColor">@color/now_grey_border_lower</item>
-        <item name="selectedColor">@color/now_dark_grey_text</item>
-        <item name="topPadding">2dp</item>
-        <item name="selectedBold">true</item>
-    </style> -->
-    
-    
-    
+  	
+  	<style name="PagerSlidingTabStrip" >
+  	    <item name="android:layout_height">@dimen/button_bar_height</item>
+  	    <item name="android:fontFamily">sans-serif-condensed</item>
+  	    <item name="android:textSize">14sp</item>
+  	    <item name="android:textColor">?android:attr/textColorSecondary</item>
+  	    <item name="selectedTextColor">?android:attr/textColorPrimary</item>
+  	    <item name="android:textStyle">bold</item>
+  	    <item name="underlineHeight">1dp</item>
+  	</style>
+
     <!-- List items -->
     <style name="ListItemText">
         <item name="android:layout_width">wrap_content</item>

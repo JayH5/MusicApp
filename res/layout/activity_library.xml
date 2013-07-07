@@ -6,11 +6,7 @@
     <za.jamie.soundstage.widgets.PagerSlidingTabStrip
         android:id="@+id/indicator"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:fontFamily="sans-serif-condensed"
-        android:textStyle="bold"
-        android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary" />
+        style="@style/PagerSlidingTabStrip" />
     
     <za.jay.IcsViewPager.ViewPager
         android:id="@+id/pager"
