@@ -1,11 +1,9 @@
 package za.jamie.soundstage.bitmapfun;
 
 import za.jamie.soundstage.utils.AppUtils;
-import android.content.ComponentCallbacks2;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.support.v4.util.LruCache;
+import android.util.LruCache;
 
 public class MemoryLruCache implements Cache {
 
@@ -27,29 +25,8 @@ public class MemoryLruCache implements Cache {
 				return value.getByteCount();
 			}
 		};
-		registerComponentCallbacks2(context);
 	}
-	
-	private void registerComponentCallbacks2(Context context) {
-    	context.registerComponentCallbacks(new ComponentCallbacks2() {
-            
-			@Override
-            public void onTrimMemory(final int level) {
-                if (level >= TRIM_MEMORY_MODERATE) {
-                    mCache.evictAll();
-                } else if (level >= TRIM_MEMORY_BACKGROUND) {
-                    mCache.trimToSize(mCache.size() / 2);
-                }
-            }
 
-			@Override
-			public void onConfigurationChanged(Configuration newConfig) {}
-
-			@Override
-			public void onLowMemory() {}
-    	});
-    }
-	
 	@Override
 	public synchronized void put(String key,Bitmap value) {
 		if (mCache.get(key) == null) {
