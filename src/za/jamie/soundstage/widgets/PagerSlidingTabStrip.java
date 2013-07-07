@@ -35,15 +35,10 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class PagerSlidingTabStrip extends HorizontalScrollView {
-
-	public interface IconTabProvider {
-		public int getPageIconResId(int position);
-	}
 
 	private static final int[] ATTRS = new int[] {
 		android.R.attr.textSize,
@@ -231,12 +226,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		tabCount = pager.getAdapter().getCount();
 
 		for (int i = 0; i < tabCount; i++) {
-			if (pager.getAdapter() instanceof IconTabProvider) {
-				addIconTab(i, ((IconTabProvider) pager.getAdapter()).getPageIconResId(i));
-			} else {
-				addTextTab(i, pager.getAdapter().getPageTitle(i).toString());
-			}
-
+			addTab(i, pager.getAdapter().getPageTitle(i).toString());
 		}
 
 		updateTabStyles();
@@ -254,7 +244,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		});
 	}
 
-	private void addTextTab(final int position, String title) {
+	private void addTab(final int position, String title) {
 		TextView tab = new TextView(getContext());
 		tab.setText(title);
 		tab.setFocusable(true);
@@ -271,42 +261,24 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		tabsContainer.addView(tab);
 	}
 
-	private void addIconTab(final int position, int resId) {
-		ImageButton tab = new ImageButton(getContext());
-		tab.setFocusable(true);
-		tab.setImageResource(resId);
-
-		tab.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				pager.setCurrentItem(position);
-			}
-		});
-
-		tabsContainer.addView(tab);
-	}
-
 	private void updateTabStyles() {
 		for (int i = 0; i < tabCount; i++) {
-			View v = tabsContainer.getChildAt(i);
+			TextView tab = (TextView) tabsContainer.getChildAt(i);
 
-			v.setLayoutParams(defaultTabLayoutParams);
-			v.setBackgroundResource(tabBackgroundResId);
+			tab.setLayoutParams(defaultTabLayoutParams);
+			tab.setBackgroundResource(tabBackgroundResId);
 			if (shouldExpand) {
-				v.setPadding(0, 0, 0, 0);
+				tab.setPadding(0, 0, 0, 0);
 			} else {
-				v.setPadding(tabPadding, 0, tabPadding, 0);
+				tab.setPadding(tabPadding, 0, tabPadding, 0);
 			}
 
-			if (v instanceof TextView) {
-				TextView tab = (TextView) v;
-				tab.setTextSize(TypedValue.COMPLEX_UNIT_PX, tabTextSize);
-				tab.setTypeface(tabTypeface, tabStyleIndex);
-				tab.setTextColor(tabTextColor);
+			tab.setTextSize(TypedValue.COMPLEX_UNIT_PX, tabTextSize);
+			tab.setTypeface(tabTypeface, tabStyleIndex);
+			tab.setTextColor(tabTextColor);
 
-				if (textAllCaps) {
-					tab.setAllCaps(true);
-				}
+			if (textAllCaps) {
+				tab.setAllCaps(true);
 			}
 		}
 	}
