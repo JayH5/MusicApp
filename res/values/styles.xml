@@ -29,6 +29,7 @@
   	    <item name="selectedTextColor">?android:attr/textColorPrimary</item>
   	    <item name="android:textStyle">bold</item>
   	    <item name="underlineHeight">1dp</item>
+  	    <item name="tabBackground">?android:selectableItemBackground</item>
   	</style>
 
     <!-- List items -->
