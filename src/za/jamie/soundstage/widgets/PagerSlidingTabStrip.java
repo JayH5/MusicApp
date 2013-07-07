@@ -237,9 +237,10 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			public void onGlobalLayout() {
 				getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
-				currentPosition = pager.getCurrentItem();
+				int newPosition = pager.getCurrentItem();
+				updateTabTextColor(newPosition);
+				currentPosition = newPosition;
 				scrollToChild(currentPosition, 0);
-				updateSelectedPage(currentPosition);
 			}
 		});
 	}
@@ -399,14 +400,14 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		@Override
 		public void onPageSelected(int position) {
-			updateSelectedPage(position);
+			updateTabTextColor(position);
 			if (delegatePageListener != null) {
 				delegatePageListener.onPageSelected(position);
 			}
 		}
 	}
 	
-	private void updateSelectedPage(int position) {
+	private void updateTabTextColor(int position) {
 		TextView currentTab = (TextView) tabsContainer.getChildAt(currentPosition);
 		currentTab.setTextColor(tabTextColor);
 
