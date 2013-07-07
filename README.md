@@ -11,7 +11,6 @@ Dependencies
 * MenuDrawer 2.0.3 (https://github.com/SimonVT/android-menudrawer)
 * ViewPagerIndicator 2.4.1 (https://github.com/JakeWharton/Android-ViewPagerIndicator)
 * ~~drag-sort-listview 0.6.1 (https://github.com/bauerca/drag-sort-listview)~~ NO LONGER MAINTAINED. See my fork of the project: https://github.com/JayH5/drag-sort-listview
-* Android Support Library v4 R13
 
 Requirements
 ------------
