@@ -13,6 +13,7 @@
         <attr name="tabBackground" format="reference" />
         <attr name="shouldExpand" format="boolean" />
         <attr name="textAllCaps" format="boolean" />
+        <attr name="selectedTextColor" format="color" />
     </declare-styleable>
 
 </resources>

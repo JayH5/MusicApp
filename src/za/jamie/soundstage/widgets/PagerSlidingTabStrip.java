@@ -19,6 +19,7 @@ package za.jamie.soundstage.widgets;
 import za.jamie.soundstage.R;
 import za.jay.IcsViewPager.ViewPager;
 import za.jay.IcsViewPager.ViewPager.OnPageChangeListener;
+import android.animation.ArgbEvaluator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -88,10 +89,13 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 	private int tabTextSize = 12;
 	private int tabTextColor = 0xFF666666;
+	private int tabSelectedTextColor = 0xFF333333;
 	private Typeface tabTypeface = null;
 	private int tabStyleIndex = Typeface.NORMAL;
 
 	private int lastScrollX = 0;
+	
+	private final ArgbEvaluator tabTextColorEvaluator = new ArgbEvaluator();
 
 	private int tabBackgroundResId = R.drawable.background_tab;
 
@@ -159,6 +163,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		shouldExpand = a.getBoolean(R.styleable.PagerSlidingTabStrip_shouldExpand, shouldExpand);
 		scrollOffset = a.getDimensionPixelSize(R.styleable.PagerSlidingTabStrip_scrollOffset, scrollOffset);
 		textAllCaps = a.getBoolean(R.styleable.PagerSlidingTabStrip_textAllCaps, textAllCaps);
+		tabSelectedTextColor = a.getColor(R.styleable.PagerSlidingTabStrip_selectedTextColor, tabSelectedTextColor);
 
 		a.recycle();
 
@@ -360,18 +365,28 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		final int height = getHeight();
 
 		// default: line below current tab
-		View currentTab = tabsContainer.getChildAt(currentPosition);
+		TextView currentTab = (TextView) tabsContainer.getChildAt(currentPosition);
 		float lineLeft = currentTab.getLeft();
 		float lineRight = currentTab.getRight();
 
 		// if there is an offset, start interpolating left and right coordinates between current and next tab
 		if (currentPositionOffset > 0f && currentPosition < tabCount - 1) {
-			View nextTab = tabsContainer.getChildAt(currentPosition + 1);
+			TextView nextTab = (TextView) tabsContainer.getChildAt(currentPosition + 1);
 			final float nextTabLeft = nextTab.getLeft();
 			final float nextTabRight = nextTab.getRight();
 
 			lineLeft = (currentPositionOffset * nextTabLeft + (1f - currentPositionOffset) * lineLeft);
 			lineRight = (currentPositionOffset * nextTabRight + (1f - currentPositionOffset) * lineRight);
+
+			int currentTabColor = (Integer) tabTextColorEvaluator.evaluate(currentPositionOffset, 
+					tabSelectedTextColor, tabTextColor);
+			currentTab.setTextColor(currentTabColor);
+
+			int nextTabColor = (Integer) tabTextColorEvaluator.evaluate(currentPositionOffset, tabTextColor, 
+					tabSelectedTextColor);
+			nextTab.setTextColor(nextTabColor);
+		} else {
+			currentTab.setTextColor(tabSelectedTextColor);
 		}
 
 		canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, indicatorPaint);
