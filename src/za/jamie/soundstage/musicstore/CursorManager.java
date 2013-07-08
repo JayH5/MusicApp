@@ -14,18 +14,18 @@ public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
 	
 	private final Context mContext;
 	private final CursorAdapter mAdapter;
-	private final CursorRequest mCursorParams;
+	private final CursorRequest mRequest;
 	
 	public CursorManager(Context context, CursorAdapter adapter, 
-			CursorRequest params) {
+			CursorRequest request) {
 		mContext = context;
 		mAdapter = adapter;
-		mCursorParams = params;
+		mRequest = request;
 	}
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return mCursorParams.load(mContext);
+		return mRequest.load(mContext);
 	}
 
 	@Override
