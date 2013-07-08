@@ -108,20 +108,5 @@ public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
 			mSortOrder = sortOrder;
 			return this;
 		}
-		
-		public static class ProjectionBuilder {
-			private final List<String> mColumns = new LinkedList<String>();
-			
-			public ProjectionBuilder() { }
-			
-			public ProjectionBuilder add(String... columns) {
-				Collections.addAll(mColumns, columns);
-				return this;
-			}
-			
-			public String[] get() {
-				return mColumns.toArray(new String[mColumns.size()]);
-			}
-		}
 	}
 }
