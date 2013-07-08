@@ -1,9 +1,5 @@
 package za.jamie.soundstage.musicstore;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
