@@ -2,11 +2,11 @@ package za.jamie.soundstage.fragments.albumbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.models.Artist;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.Activity;
 import android.content.Context;
@@ -50,7 +50,7 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		setListAdapter(mAdapter);
 		
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				CursorDefinitions.getAlbumBrowserCursorParams(mAlbumId));
+				MusicStore.Tracks.getAlbumTracks(mAlbumId));
 		
 		getLoaderManager().initLoader(0, null, cm);
 	}
