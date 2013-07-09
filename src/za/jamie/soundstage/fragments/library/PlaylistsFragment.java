@@ -3,8 +3,8 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.PlaylistBrowserActivity;
 import za.jamie.soundstage.adapters.PlaylistsAdapter;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import android.app.ListFragment;
 import android.content.Intent;
 import android.database.Cursor;
@@ -36,7 +36,7 @@ public class PlaylistsFragment extends ListFragment {
         setListAdapter(adapter);
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		CursorDefinitions.getPlaylistsCursorParams());
+        		MusicStore.Playlists.CURSOR);
         getLoaderManager().initLoader(0, null, cm);
     }
     

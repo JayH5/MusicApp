@@ -4,9 +4,9 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.ArtistsAdapter;
 import za.jamie.soundstage.adapters.abs.ArtistAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.FastscrollListFragment;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.net.Uri;
@@ -48,7 +48,7 @@ public class ArtistsFragment extends FastscrollListFragment {
         }
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		CursorDefinitions.getArtistsCursorParams());
+        		MusicStore.Artists.CURSOR);
         getLoaderManager().initLoader(0, null, cm);
     }
     

@@ -2,9 +2,9 @@ package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.SongsAdapter;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.FastscrollTrackListFragment;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -32,7 +32,7 @@ public class SongsFragment extends FastscrollTrackListFragment {
         setListAdapter(mAdapter);
         
         CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		CursorDefinitions.getSongsCursorParams());
+        		MusicStore.Tracks.CURSOR);
         getLoaderManager().initLoader(0, null, cm);
     }
     

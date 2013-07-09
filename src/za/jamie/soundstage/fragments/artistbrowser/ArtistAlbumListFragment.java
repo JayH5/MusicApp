@@ -4,9 +4,9 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.AlbumAdapter;
 import za.jamie.soundstage.adapters.wrappers.HeaderFooterAdapterWrapper;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
 import za.jamie.soundstage.fragments.DefaultListFragment;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.ContentUris;
@@ -63,7 +63,7 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
         
         long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		CursorDefinitions.getArtistAlbumsCursorParams(artistId));
+        		MusicStore.Albums.getArtistAlbums(artistId));
         
         getLoaderManager().initLoader(1, null, cm);
 	}

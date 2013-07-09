@@ -3,8 +3,8 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.AlbumsAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
-import za.jamie.soundstage.cursormanager.CursorDefinitions;
-import za.jamie.soundstage.cursormanager.CursorManager;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 import android.app.Fragment;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -45,7 +45,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         
         // Load up the cursor
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		CursorDefinitions.getAlbumsCursorParams());
+        		MusicStore.Albums.CURSOR);
         getLoaderManager().initLoader(0, null, cm);
     }
     
