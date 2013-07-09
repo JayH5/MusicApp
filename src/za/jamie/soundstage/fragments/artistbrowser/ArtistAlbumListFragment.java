@@ -62,7 +62,7 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
         
         long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		MusicStore.Artists.Albums.getItem(artistId));
+        		MusicStore.Albums.getArtistAlbums(artistId));
         
         getLoaderManager().initLoader(1, null, cm);
 	}

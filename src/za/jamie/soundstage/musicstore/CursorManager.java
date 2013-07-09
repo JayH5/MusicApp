@@ -10,8 +10,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 
 public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
-	//private static final String TAG = "CursorManager";
-	
+
 	private final Context mContext;
 	private final CursorAdapter mAdapter;
 	private final CursorRequest mRequest;
@@ -67,15 +66,10 @@ public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
 					mSortOrder);
 		}
 		
-		public CursorRequest setProjection(String[] projection) {
-			mProjection = projection;
-			return this;
-		}
-		
 		public CursorRequest addProjection(String... projection) {
 			if (mProjection != null) {
 				final int oldLength = mProjection.length;
-				final int extraLength = mProjection.length;
+				final int extraLength = projection.length;
 				String[] newProjection = new String[oldLength + extraLength];
 				for (int i = 0; i < oldLength; i++) {
 					newProjection[i] = mProjection[i];

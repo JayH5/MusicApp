@@ -33,7 +33,7 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 		
 		long playlistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
 		
-		CursorRequest cr = MusicStore.Playlists.Members.getItem(playlistId);
+		CursorRequest cr = MusicStore.Tracks.getPlaylistTracks(playlistId);
 		CursorManager cm = new CursorManager(getActivity(), adapter, cr);
 		
 		getLoaderManager().initLoader(0, null, cm);
