@@ -6,8 +6,6 @@ import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
 import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
-import za.jay.IcsViewPager.FragmentPagerAdapter;
-import za.jay.IcsViewPager.ViewPager;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -15,6 +13,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 
 public class ArtistBrowserActivity extends MusicActivity implements 
 		ArtistSummaryFragment.OnArtistFoundListener, 

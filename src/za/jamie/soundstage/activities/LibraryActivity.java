@@ -8,14 +8,14 @@ import za.jamie.soundstage.fragments.library.PlaylistsFragment;
 import za.jamie.soundstage.fragments.library.SongsFragment;
 import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
-import za.jay.IcsViewPager.FragmentPagerAdapter;
-import za.jay.IcsViewPager.ViewPager;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.MenuItem;
 

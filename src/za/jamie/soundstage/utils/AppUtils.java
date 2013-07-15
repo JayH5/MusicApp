@@ -3,8 +3,6 @@ package za.jamie.soundstage.utils;
 import java.io.File;
 import java.util.List;
 
-import za.jay.IcsViewPager.PagerAdapter;
-import za.jay.IcsViewPager.ViewPager;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActivityManager;
@@ -13,6 +11,8 @@ import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Environment;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 
 public class AppUtils {
 	

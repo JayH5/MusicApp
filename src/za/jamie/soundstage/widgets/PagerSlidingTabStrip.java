@@ -17,8 +17,6 @@
 package za.jamie.soundstage.widgets;
 
 import za.jamie.soundstage.R;
-import za.jay.IcsViewPager.ViewPager;
-import za.jay.IcsViewPager.ViewPager.OnPageChangeListener;
 import android.animation.ArgbEvaluator;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -28,6 +26,8 @@ import android.graphics.Paint.Style;
 import android.graphics.Typeface;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
