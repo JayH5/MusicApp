@@ -5,6 +5,7 @@ import za.jamie.soundstage.adapters.AlbumsAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
+import android.app.ActivityOptions;
 import android.app.Fragment;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -78,8 +79,9 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 				MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, id);
 		final Intent intent = new Intent(Intent.ACTION_VIEW)
 			.setDataAndType(data, MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE);
-		
-		startActivity(intent);
+		ActivityOptions options = 
+				ActivityOptions.makeScaleUpAnimation(v, 0, 0, v.getWidth(), v.getHeight());
+		getActivity().startActivity(intent, options.toBundle());
 	}
 
 }
