@@ -2,10 +2,8 @@ package za.jamie.soundstage.musicstore;
 
 import android.app.LoaderManager;
 import android.content.Context;
-import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.CursorAdapter;
 
@@ -24,7 +22,7 @@ public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return mRequest.load(mContext);
+		return mRequest.createLoader(mContext);
 	}
 
 	@Override
@@ -35,68 +33,5 @@ public class CursorManager implements LoaderManager.LoaderCallbacks<Cursor> {
 	@Override
 	public void onLoaderReset(Loader<Cursor> loader) {
 		mAdapter.swapCursor(null);
-	}
-	
-	public static class CursorRequest {
-		private Uri mBaseUri;
-		private String[] mProjection;
-		private String mSelection;
-		private String[] mSelectionArgs;
-		private String mSortOrder;
-		
-		public CursorRequest(Uri baseUri) {
-			mBaseUri = baseUri;
-		}
-		
-		public CursorRequest(Uri baseUri, String[] projection, String selection, 
-				String[] selectionArgs, String sortOrder) {
-			mBaseUri = baseUri;
-			mProjection = projection;
-			mSelection = selection;
-			mSelectionArgs = selectionArgs;
-			mSortOrder = sortOrder;
-		}
-		
-		public CursorLoader load(Context context) {
-			return new CursorLoader(context,
-					mBaseUri,
-					mProjection,
-					mSelection,
-					mSelectionArgs,
-					mSortOrder);
-		}
-		
-		public CursorRequest addProjection(String... projection) {
-			if (mProjection != null) {
-				final int oldLength = mProjection.length;
-				final int extraLength = projection.length;
-				String[] newProjection = new String[oldLength + extraLength];
-				for (int i = 0; i < oldLength; i++) {
-					newProjection[i] = mProjection[i];
-				}
-				for (int i = 0; i < extraLength; i++) {
-					newProjection[oldLength + i] = projection[i];
-				}
-				mProjection = newProjection;
-			} else {
-				mProjection = projection;
-			}
-			return this;
-		}
-
-		public CursorRequest setSelection(String selection) {
-			mSelection = selection;
-			return this;
-		}
-		
-		public CursorRequest setSelectionArgs(String[] selectionArgs) {
-			mSelectionArgs = selectionArgs;
-			return this;
-		}
-		
-		public CursorRequest setSortOrder(String sortOrder) {
-			mSortOrder = sortOrder;
-			return this;
-		}
 	}
 }

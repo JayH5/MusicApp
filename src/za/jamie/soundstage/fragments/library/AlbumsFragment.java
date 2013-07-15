@@ -45,7 +45,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         
         // Load up the cursor
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		MusicStore.Albums.CURSOR);
+        		MusicStore.Albums.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
     }
     

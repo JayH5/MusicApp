@@ -36,7 +36,7 @@ public class PlaylistsFragment extends ListFragment {
         setListAdapter(adapter);
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		MusicStore.Playlists.CURSOR);
+        		MusicStore.Playlists.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
     }
     

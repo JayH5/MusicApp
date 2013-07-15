@@ -48,7 +48,7 @@ public class ArtistsFragment extends FastscrollListFragment {
         }
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 
-        		MusicStore.Artists.CURSOR);
+        		MusicStore.Artists.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
     }
     

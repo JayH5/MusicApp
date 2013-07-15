@@ -6,7 +6,6 @@ import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import za.jamie.soundstage.musicstore.CursorManager.CursorRequest;
 import android.os.Bundle;
 
 public class PlaylistTrackListFragment extends TrackListFragment {
@@ -33,8 +32,8 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 		
 		long playlistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
 		
-		CursorRequest cr = MusicStore.Tracks.getPlaylistTracks(playlistId);
-		CursorManager cm = new CursorManager(getActivity(), adapter, cr);
+		CursorManager cm = new CursorManager(getActivity(), adapter, 
+				MusicStore.Tracks.getPlaylistTracks(playlistId));
 		
 		getLoaderManager().initLoader(0, null, cm);
 	}
