@@ -65,7 +65,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         	new OneTimeDataSetObserver(mAdapter) {
 				@Override
 				public void onFirstChange() {
-					gridView.setSelection(mAdapter.getPosition(itemId));
+					gridView.setSelection(mAdapter.getItemPosition(itemId));
 				}
         	};
         }

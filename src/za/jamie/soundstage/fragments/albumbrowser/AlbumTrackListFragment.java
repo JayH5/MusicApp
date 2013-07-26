@@ -4,7 +4,6 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.models.Artist;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.TextUtils;
@@ -84,12 +83,9 @@ public class AlbumTrackListFragment extends TrackListFragment {
 			
 			// Iterate through the cursor collecting artists, duration and year
 			do {
-				Artist artist = new Artist(
-						cursor.getString(artistKeyColIdx), // Key
-						cursor.getLong(artistIdColIdx),  // Id
-						cursor.getString(artistColIdx)); // Title
-				
-				builder.addArtist(artist)
+				builder.addArtist(cursor.getString(artistKeyColIdx),
+							cursor.getLong(artistIdColIdx),
+							cursor.getString(artistColIdx))
 						.addDuration(cursor.getLong(durationColIdx))
 						.addYear(cursor.getInt(yearColIdx));
 				

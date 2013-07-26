@@ -7,7 +7,7 @@ import za.jamie.soundstage.fragments.ImageDialogFragment;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.models.Artist;
+import za.jamie.soundstage.models.AlbumStatistics.Artist;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActionBar;

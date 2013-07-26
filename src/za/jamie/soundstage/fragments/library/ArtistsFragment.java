@@ -42,7 +42,7 @@ public class ArtistsFragment extends FastscrollListFragment {
 	        new OneTimeDataSetObserver(adapter) {
 				@Override
 				public void onFirstChange() {
-					setSelection(adapter.getPosition(itemId));
+					setSelection(adapter.getItemPosition(itemId));
 				}
 	        };
         }

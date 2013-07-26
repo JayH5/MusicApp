@@ -7,17 +7,17 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 
-public class Track implements Parcelable, IdItem {
-	private long mId;
-	private String mTitle;
+public class Track implements Parcelable {
+	private final long mId;
+	private final String mTitle;
     
-	private long mArtistId;
-	private String mArtist;
+	private final long mArtistId;
+	private final String mArtist;
     
-    private long mAlbumId;
-    private String mAlbum;
+    private final long mAlbumId;
+    private final String mAlbum;
     
-    private long mDuration;
+    private final long mDuration;
 
     public Track(long id, String title, long artistId, String artist, 
     		long albumId, String album, long duration) {
@@ -31,12 +31,6 @@ public class Track implements Parcelable, IdItem {
         mAlbum = album;
         
         mDuration = duration;
-    }
-    
-    public Track() {
-    	mId = -1;
-    	mArtistId = -1;
-    	mAlbumId = -1;
     }
 
     public long getId() {

@@ -7,5 +7,5 @@ public interface SearchableAdapter {
 	 * @return The position of the item with the specified id. -1 if that item is
 	 *   not in the adapter's dataset.
 	 */
-	public int getPosition(long itemId);
+	public int getItemPosition(long itemId);
 }

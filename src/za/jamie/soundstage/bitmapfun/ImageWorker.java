@@ -39,12 +39,16 @@ import android.widget.ImageView;
 public abstract class ImageWorker {
     private static final String TAG = "ImageWorker";
     public static final String KEY = "key";
+    
+    private static final int FADE_IN_TIME = 150;
 
     protected Cache mMemoryCache;
     protected Cache mDiskCache;
     
     private Bitmap mLoadingBitmap;
     private boolean mExitTasksEarly = false;
+    
+    private boolean mFadeInBitmap = true;
     
     private ImageAdapter mAdapter = null;
 
@@ -323,7 +327,7 @@ public abstract class ImageWorker {
      * @param bitmap
      */
     private void setImageBitmap(ImageView imageView, Bitmap bitmap) {
-        /*if (mFadeInBitmap) {
+        if (mFadeInBitmap) {
             // Transition drawable with a transparent drawable and the final bitmap
             final TransitionDrawable td =
                     new TransitionDrawable(new Drawable[] {
@@ -335,9 +339,7 @@ public abstract class ImageWorker {
                     new BitmapDrawable(mContext.getResources(), mLoadingBitmap));
 
             imageView.setImageDrawable(td);
-            td.startTransition(FADE_IN_TIME);*/
-    	if (mAdapter != null) {
-    		mAdapter.bindView(mContext, imageView, bitmap);
+            td.startTransition(FADE_IN_TIME);
         } else {
             imageView.setImageBitmap(bitmap);
         }

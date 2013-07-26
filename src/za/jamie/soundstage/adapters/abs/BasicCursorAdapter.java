@@ -21,7 +21,7 @@ public abstract class BasicCursorAdapter extends ResourceCursorAdapter implement
 	}
 	
 	@Override
-	public int getPosition(long itemId) {
+	public int getItemPosition(long itemId) {
 		final int len = getCount();
 		for (int i = 0; i < len; i++) {
 			if (getItemId(i) == itemId) {
