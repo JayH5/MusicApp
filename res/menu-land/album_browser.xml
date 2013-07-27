@@ -3,15 +3,15 @@
     <item
         android:id="@+id/menu_browse_artist"
         android:icon="@drawable/ic_browse_artist"
-        android:title="Browse artist"
-        android:titleCondensed="Artist"
+        android:title="@string/menu_browse_artist"
+        android:titleCondensed="@string/menu_browse_artist_condensed"
         android:showAsAction="ifRoom|withText" />
     
     <item
         android:id="@+id/menu_shuffle"
         android:icon="@drawable/ic_shuffle_dark"
-        android:title="Shuffle album"
-        android:titleCondensed="Shuffle"
+        android:title="@string/menu_shuffle_album"
+        android:titleCondensed="@string/menu_shuffle_album_condensed"
         android:showAsAction="ifRoom|withText" />
     
     <item

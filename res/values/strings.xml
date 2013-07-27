@@ -2,33 +2,32 @@
 <resources>
 
     <string name="app_name">Soundstage</string>
-    <string name="fast_scroll_alphabet">ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_library">LibraryActivity</string>
+    <string name="menu_search">Search</string>
+    
+    <!-- Album browser menu items -->
+    <string name="menu_browse_artist">Browse artist</string>
+    <string name="menu_browse_artist_condensed">Artist</string>
+    <string name="menu_shuffle_album">Shuffle album</string>
+    <string name="menu_shuffle_album_condensed">Shuffle</string>
 
     <string name="browse_all_tracks">Browse by tracks</string>
     
-    <string name="various_artists">Various artists</string>
+    <string name="various_artists">Various artists</string>    
     
-    <string-array name="library_sections">
-        <item>Albums</item>
-        <item>Artists</item>
-        <item>Songs</item>
-        <item>Playlists</item>
-        <item>Genres</item>
-    </string-array>
-    
-    <string name="menu_search">Search</string>
-    
-    <string name="title_albums">Albums</string>
-    <string name="title_artists">Artists</string>
-    <string name="title_songs">Songs</string>
-    <string name="title_playlists">Playlists</string>
+    <string name="library_section_albums">Albums</string>
+    <string name="library_section_artists">Artists</string>
+    <string name="library_section_songs">Songs</string>
+    <string name="library_section_playlists">Playlists</string>
 
+    <string name="title_activity_library">LibraryActivity</string>
     <string name="title_activity_album_browser">AlbumBrowserActivity</string>
     <string name="title_activity_artist_browser">ArtistBrowserActivity</string>
     
     <string name="title_play_queue">Play Queue</string>
+    <string name="title_music_player">Now Playing</string>
+    
     <string name="play_queue_save">Save as playlist</string>
     <string name="play_queue_close">Close</string>
     <string name="play_queue_is_shuffled">The play queue is currently <b>shuffled</b></string>
@@ -54,7 +53,6 @@
         <item quantity="other">%d albums</item>
     </plurals>
     
-    <string name="track_number_missing">--</string>
-    
+    <string name="track_number_missing">--</string>    
 
 </resources>

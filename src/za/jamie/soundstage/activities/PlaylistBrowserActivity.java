@@ -19,7 +19,7 @@ public class PlaylistBrowserActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_browser);
+		setMainContentView(R.layout.activity_album_browser);
 		
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 		

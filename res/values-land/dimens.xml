@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="menu_drawer_width">500dp</dimen>
+    <dimen name="menudrawer_width">500dp</dimen>
 </resources>

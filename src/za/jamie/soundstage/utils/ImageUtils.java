@@ -77,7 +77,7 @@ public class ImageUtils {
 	}
 	
 	public static ImageResizer getThumbResizer(Context context) {
-		int dimen = context.getResources().getDimensionPixelSize(R.dimen.album_image_thumb_size);
+		int dimen = context.getResources().getDimensionPixelSize(R.dimen.image_thumb_album);
 		return new ImageResizer(context, dimen);
 	}
 	

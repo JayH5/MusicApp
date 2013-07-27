@@ -114,9 +114,9 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		public CharSequence getPageTitle(int position) {
 			switch(position) {
 			case 0:
-				return getResources().getString(R.string.title_albums);
+				return getResources().getString(R.string.library_section_albums);
 			case 1:
-				return getResources().getString(R.string.title_songs);
+				return getResources().getString(R.string.library_section_songs);
 			}
 			return null;
 		}

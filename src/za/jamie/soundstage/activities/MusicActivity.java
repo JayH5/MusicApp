@@ -48,9 +48,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		// Set up the menu drawer to display the player
 		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		mMenuDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menu_drawer_width));
-		mMenuDrawer.setMenuView(R.layout.slidingmenu_frame);
-		mMenuDrawer.setDropShadow(R.drawable.slidingmenu_shadow);
+		mMenuDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menudrawer_width));
+		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
+		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
 		mMenuDrawer.setOnDrawerStateChangeListener(this);
 		
 		if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {

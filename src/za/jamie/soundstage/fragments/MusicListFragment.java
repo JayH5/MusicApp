@@ -23,7 +23,7 @@ public class MusicListFragment extends ListFragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup parent, 
 			Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.list_fragment_default, parent, false);
+		return inflater.inflate(R.layout.list_fragment, parent, false);
 	}
 	
 	/**

@@ -26,5 +26,5 @@
         android:drawable="@color/transparent_white" />
 
     <item
-        android:drawable="@color/transparent" />
+        android:drawable="@android:color/transparent" />
 </selector>

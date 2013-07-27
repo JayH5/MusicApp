@@ -141,13 +141,13 @@ public class LibraryActivity extends MusicActivity {
 		public CharSequence getPageTitle(int position) {
 			switch (position) {
 			case SECTION_ARTISTS:
-				return getString(R.string.title_artists).toUpperCase();
+				return getString(R.string.library_section_artists).toUpperCase();
 			case SECTION_ALBUMS:
-				return getString(R.string.title_albums).toUpperCase();
+				return getString(R.string.library_section_albums).toUpperCase();
 			case SECTION_SONGS:
-				return getString(R.string.title_songs).toUpperCase();
+				return getString(R.string.library_section_songs).toUpperCase();
 			case SECTION_PLAYLISTS:
-				return getString(R.string.title_playlists).toUpperCase();
+				return getString(R.string.library_section_playlists).toUpperCase();
 			}
 			return null;
 		}
