@@ -1,17 +1,13 @@
 package za.jamie.soundstage.service;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.models.Track;
 import android.app.Notification;
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
-import android.util.Log;
 import android.widget.RemoteViews;
 
 public class MusicNotification {
@@ -64,7 +60,7 @@ public class MusicNotification {
 	    }
 	}
 	
-	public PendingIntent getPendingIntent(Context context, ComponentName componentName, 
+	/*public PendingIntent getPendingIntent(Context context, ComponentName componentName, 
 			Uri uri) {
 		
 		Class<?> launchClass = null;
@@ -86,10 +82,10 @@ public class MusicNotification {
 			
 		}
 		return null;
-	}
+	}*/
 	
-	public Notification newNotification(Context context, ComponentName componentName, Uri uri) {
-		initNotification(context, getPendingIntent(context, componentName, uri));
+	public Notification newNotification(Context context, PendingIntent intent) {
+		initNotification(context, intent);
 		
 		return mNotification;
 	}

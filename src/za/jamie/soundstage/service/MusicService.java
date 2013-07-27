@@ -175,7 +175,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
         mDiskCache = ImageUtils.getBigDiskCacheInstance(this);
         
-        final PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass().getName());
         mWakeLock.setReferenceCounted(false);
         
@@ -386,7 +386,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	sendDelayedStopMessage(true);
         
         mDelayedStopHandler.postDelayed(new Runnable() {
-
             @Override
             public void run() {
                 hideNotification();
@@ -641,63 +640,40 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Register callbacks and deliver requested information
 	
-	public void deliverMusicStatus() {
-		final Track currentTrack = getCurrentTrack();
-		final boolean playState = isPlaying();
-		final boolean shuffleState = isShuffleEnabled();
-		final int repeatMode = getRepeatMode();
-		synchronized (mMusicStatusCallbackList) {
-			int i = mMusicStatusCallbackList.beginBroadcast();
-	    	while (i > 0) {
-	    		i--;
-				try {
-					final IMusicStatusCallback callback = 
-							mMusicStatusCallbackList.getBroadcastItem(i);
-					callback.onTrackChanged(currentTrack);
-					callback.onPlayStateChanged(playState);
-					callback.onShuffleStateChanged(shuffleState);
-					callback.onRepeatModeChanged(repeatMode);
-					callback.onPositionSync(position(), System.currentTimeMillis());
-				} catch (RemoteException e) {
-					Log.w(TAG, "Remote error while performing track changed callback.", e);
-				}
-			}
-			mMusicStatusCallbackList.finishBroadcast();
+	private void deliverMusicStatus(IMusicStatusCallback callback) {
+		try {
+			callback.onTrackChanged(getCurrentTrack());
+			callback.onPlayStateChanged(isPlaying());
+			callback.onShuffleStateChanged(isShuffleEnabled());
+			callback.onRepeatModeChanged(getRepeatMode());
+			callback.onPositionSync(position(), System.currentTimeMillis());
+		} catch (RemoteException e) {
+			Log.w(TAG, "deliverMusicStatus()", e);
 		}
 	}
 	
 	// Reckon this is threadsafe looking at source of RemoteCallbackList
 	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
 		mMusicStatusCallbackList.register(callback);
+		deliverMusicStatus(callback);
 	}
 	
 	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
 		mMusicStatusCallbackList.unregister(callback);
 	}
 	
-	public void deliverPlayQueue() {
-    	final List<Track> trackList = mPlayQueue.getTrackList();
-    	final boolean isShuffled = mPlayQueue.isShuffled();
-    	final int position = mPlayQueue.getPosition();
-    	
-    	synchronized(mPlayQueueCallbackList) {
-    		int i = mPlayQueueCallbackList.beginBroadcast();
-    		while (i > 0) {
-    			i--;
-    			try {
-	    			final IPlayQueueCallback callback = 
-	    					mPlayQueueCallbackList.getBroadcastItem(i);
-	    			callback.deliverTrackList(trackList, position, isShuffled);
-				} catch (RemoteException e) {
-					Log.w(TAG, "notifyQueueChanged()", e);
-				}
-    		}
-	    	mPlayQueueCallbackList.finishBroadcast();
-    	}
-    }
+	private void deliverPlayQueue(IPlayQueueCallback callback) {
+		try {
+			callback.deliverTrackList(mPlayQueue.getTrackList(), 
+					mPlayQueue.getPosition(), mPlayQueue.isShuffled());
+		} catch (RemoteException e) {
+			Log.w(TAG, "deliverPlayQueue()", e);
+		}
+	}
 	
 	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
 		mPlayQueueCallbackList.register(callback);
+		deliverPlayQueue(callback);
 	}
 	
 	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
@@ -1085,9 +1061,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update notification/lock screen controls
     
-    public synchronized void showNotification(ComponentName componentName, Uri uri) {
+    public synchronized void showNotification(PendingIntent intent) {
     	mShowNotification = true;
-    	mNotification.newNotification(this, componentName, uri);
+    	mNotification.newNotification(this, intent);
     	final Track currentTrack = getCurrentTrack();
     	mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
     	mNotification.updatePlayState(isPlaying());

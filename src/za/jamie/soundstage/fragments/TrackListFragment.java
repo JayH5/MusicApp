@@ -2,54 +2,33 @@ package za.jamie.soundstage.fragments;
 
 import java.util.List;
 
-import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.interfaces.TrackAdapter;
 import za.jamie.soundstage.models.Track;
-import android.app.Activity;
 import android.view.View;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-public class TrackListFragment extends DefaultListFragment {
-	
-	private MusicActivity mCallback;
-	private TrackAdapter mAdapter;
-	
-	@Override
-	public void onAttach(Activity activity) {
-		super.onAttach(activity);
-		mCallback = (MusicActivity) activity;
-	}
-	
-	@Override
-	public void onDetach() {
-		super.onDetach();
-		mCallback = null;
-	}
+public class TrackListFragment extends MusicListFragment {
 	
 	@Override
 	public void setListAdapter(ListAdapter adapter) {
 		if (adapter != null && !(adapter instanceof TrackAdapter)) {
 			throw new IllegalArgumentException("TrackListFragments must have TrackAdapter!");
-		} else {
-			super.setListAdapter(adapter);
-			mAdapter = (TrackAdapter) adapter;
 		}
+		super.setListAdapter(adapter);
 	}
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		if (mCallback != null) {
-			List<Track> trackList = mAdapter.getTrackList();
-			mCallback.open(trackList, position);
-		}
+		List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
+		getMusicConnection().open(trackList, position);
+		showPlayer();
     }
 	
 	public void shuffleAll() {
-		if (mCallback != null) {
-			List<Track> trackList = mAdapter.getTrackList();
-			mCallback.shuffle(trackList);
-		}
+		List<Track> trackList = ((TrackAdapter) getListAdapter()).getTrackList();
+		getMusicConnection().shuffle(trackList);
+		showPlayer();
 	}
 
 }

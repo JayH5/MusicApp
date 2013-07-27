@@ -3,14 +3,14 @@ package za.jamie.soundstage.fragments.musicplayer;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
+import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.service.connections.MusicPlaybackConnection;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 import android.animation.ObjectAnimator;
-import android.app.Fragment;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -30,13 +30,13 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class MusicPlayerFragment extends Fragment {
+public class MusicPlayerFragment extends MusicFragment {
 
 	// Rate at which the repeat listeners for the seek buttons refresh in ms
 	private static final int REPEAT_INTERVAL = 260;
 	
 	// Handle elapsed time text updates
-    private Handler mHandler;
+    private final Handler mHandler = new Handler();
     private boolean mSeeking = false;
 	
 	private ImageFetcher mImageWorker;
@@ -75,7 +75,18 @@ public class MusicPlayerFragment extends Fragment {
 	private long mTimeSync;
 	private long mTimeSyncStamp;
 	
-	private MusicPlaybackConnection mService;
+	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
+			new MusicConnection.ConnectionCallbacks() {
+		@Override
+		public void onConnected() {
+			getMusicConnection().registerMusicStatusCallback(mCallback);
+		}
+
+		@Override
+		public void onDisconnected() {
+			
+		}
+	};
 	
 	public MusicPlayerFragment() {}
 	
@@ -85,7 +96,8 @@ public class MusicPlayerFragment extends Fragment {
 		
 		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
 		
-        mHandler = new Handler();
+		// Register connection observer
+		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
 	}
 	
 	@Override
@@ -103,9 +115,10 @@ public class MusicPlayerFragment extends Fragment {
 	@Override
 	public void onDestroy() {
         super.onDestroy();
-        if (mService != null) {
-        	mService.unregisterMusicStatusCallback(mCallback);
-        }
+        
+        // Remove all our callbacks
+        getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
+        getMusicConnection().unregisterMusicStatusCallback(mCallback);
 	}
 	
 	@Override
@@ -196,7 +209,7 @@ public class MusicPlayerFragment extends Fragment {
 
         @Override
         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
-            if (!fromuser || mService == null) {
+            if (!fromuser) {
                 return;
             }
             final long seekPosition = (long) (mDuration * ((float) progress / 1000));
@@ -220,11 +233,7 @@ public class MusicPlayerFragment extends Fragment {
      * @param delta The long press duration
      */
     private void scan(long duration, int repeatCount, boolean backward) {
-        if (mService == null) {
-        	return;
-        }
-    	
-    	if (repeatCount == 0) {
+        if (repeatCount == 0) {
         	mSeekStartPosition = calculatePosition();
             beginSeek();
         } else {
@@ -238,9 +247,9 @@ public class MusicPlayerFragment extends Fragment {
             duration = backward ? -duration : duration;
             final long seekPosition = mSeekStartPosition + duration;
             if (seekPosition < 0) {
-                mService.previous();
+                getMusicConnection().previous();
             } else if (seekPosition > mDuration) {
-                mService.next();
+                getMusicConnection().next();
             } else {
             	seek(seekPosition);
             }
@@ -255,7 +264,7 @@ public class MusicPlayerFragment extends Fragment {
      * When a new track comes in from the server all the UI must get updated
      */
     private void updateTrack(Track track) {
-    	if (track != null && mService != null) {
+    	if (track != null) {
 			mTrackText.setText(track.getTitle());
 			
 			mAlbumText.setText(track.getAlbum());
@@ -302,7 +311,7 @@ public class MusicPlayerFragment extends Fragment {
     }
     
     private void seek(long position) {
-        mService.seek(position);
+        getMusicConnection().seek(position);
         updateTime(position, System.currentTimeMillis());
     }
 
@@ -377,20 +386,16 @@ public class MusicPlayerFragment extends Fragment {
 		
 		@Override
 		public void onClick(View v) {
-			if (mService == null) {
-				return;
-			}
-			
 			if (v == mPlayPauseButton) {
-				mService.togglePlayback();
+				getMusicConnection().togglePlayback();
 			} else if (v == mNextButton) {
-				mService.next();
+				getMusicConnection().next();
 			} else if (v == mPreviousButton) {
-				mService.previous();
+				getMusicConnection().previous();
 			} else if (v == mShuffleButton) {
-				mService.toggleShuffle();
+				getMusicConnection().toggleShuffle();
 			} else if (v == mRepeatButton) {
-				mService.cycleRepeatMode();
+				getMusicConnection().cycleRepeatMode();
 			}
 			
 		}
@@ -420,19 +425,11 @@ public class MusicPlayerFragment extends Fragment {
 	public boolean isPlaying() {
 		return mIsPlaying;
 	}
-    
-    public void setServiceConnection(MusicPlaybackConnection service) {
-    	mService = service;
-    	if (mService != null) {    		
-    		mService.registerMusicStatusCallback(mCallback);
-    		mService.requestMusicStatus();
-    	}
-    }
 
     private final Runnable mTimeRefresh = new Runnable() {
         @Override
         public void run() {
-            if (mService != null && !mSeeking && mDuration != 0) {
+            if (!mSeeking && mDuration != 0) {
                 updateElapsedTime(calculatePosition());
             }
         }

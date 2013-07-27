@@ -13,7 +13,6 @@ oneway interface IMusicService {
 	void removeTrack(int position);
 	
 	// QueueStatusCallback
-	void requestPlayQueue();
 	void registerPlayQueueCallback(IPlayQueueCallback callback);
 	void unregisterPlayQueueCallback(IPlayQueueCallback callback);
 	
@@ -26,7 +25,6 @@ oneway interface IMusicService {
 	void cycleRepeatMode();
 	
 	// MusicStatusCallback
-	void requestMusicStatus();
 	void registerMusicStatusCallback(IMusicStatusCallback callback);
 	void unregisterMusicStatusCallback(IMusicStatusCallback callback);	
 	
@@ -36,6 +34,6 @@ oneway interface IMusicService {
 	void enqueue(in List<Track> tracks, int action);
 	
 	// Tell the service to show/remove notification
-	void showNotification(in ComponentName component, in Uri uri);
+	void showNotification(in PendingIntent intent);
 	void hideNotification();
 }

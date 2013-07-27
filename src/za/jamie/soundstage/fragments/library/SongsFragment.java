@@ -2,21 +2,23 @@ package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.SongsAdapter;
-import za.jamie.soundstage.fragments.FastscrollTrackListFragment;
+import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-public class SongsFragment extends FastscrollTrackListFragment {
+public class SongsFragment extends TrackListFragment {
     
     private SongsAdapter mAdapter;
     
@@ -34,6 +36,12 @@ public class SongsFragment extends FastscrollTrackListFragment {
         CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Tracks.CURSOR);
         getLoaderManager().initLoader(0, null, cm);
+    }
+	
+	@Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup parent, 
+    		Bundle savedInstanceState) {
+    	return inflater.inflate(R.layout.list_fragment_fastscroll, parent, false);
     }
     
     @Override

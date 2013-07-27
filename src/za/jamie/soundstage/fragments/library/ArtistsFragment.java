@@ -4,7 +4,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.ArtistsAdapter;
 import za.jamie.soundstage.adapters.abs.ArtistAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
-import za.jamie.soundstage.fragments.FastscrollListFragment;
+import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import android.content.ContentUris;
@@ -12,10 +12,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ListView;
 
-public class ArtistsFragment extends FastscrollListFragment {
+public class ArtistsFragment extends MusicListFragment {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
@@ -50,6 +52,12 @@ public class ArtistsFragment extends FastscrollListFragment {
         CursorManager cm = new CursorManager(getActivity(), adapter, 
         		MusicStore.Artists.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
+    }
+    
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup parent, 
+    		Bundle savedInstanceState) {
+    	return inflater.inflate(R.layout.list_fragment_fastscroll, parent, false);    	
     }
     
     @Override

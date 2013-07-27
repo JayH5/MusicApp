@@ -5,10 +5,10 @@ import java.util.List;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
+import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.connections.MusicQueueConnection;
+import za.jamie.soundstage.service.MusicConnection;
 import android.app.Dialog;
-import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -23,7 +23,7 @@ import android.widget.ImageButton;
 
 import com.mobeta.android.dslv.DragSortListView;
 
-public class PlayQueueFragment extends DialogFragment implements 
+public class PlayQueueFragment extends MusicDialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 	
 	private static final String STATE_LIST_POSITION = "state_list_position";
@@ -38,12 +38,23 @@ public class PlayQueueFragment extends DialogFragment implements
 	
 	private View mIsShuffledView;
 	
-	private MusicQueueConnection mService;
-	
 	private Vibrator mVibrator;
 	
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
+	
+	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
+			new MusicConnection.ConnectionCallbacks() {
+		@Override
+		public void onConnected() {
+			getMusicConnection().registerPlayQueueCallback(mCallback);
+		}
+
+		@Override
+		public void onDisconnected() {
+			
+		}
+	};
 	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
@@ -56,10 +67,7 @@ public class PlayQueueFragment extends DialogFragment implements
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
 		
-		if (mService != null && mAdapter.isEmpty()) {
-			mService.registerPlayQueueCallback(mCallback);
-			mService.requestPlayQueue();
-		}
+		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
 		
 		if (savedInstanceState != null) {
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
@@ -77,19 +85,6 @@ public class PlayQueueFragment extends DialogFragment implements
 			final View v = mDslv.getChildAt(0);
 			outState.putInt(STATE_LIST_OFFSET, v != null ? v.getTop() : 0);
 		}
-	}
-	
-	public void setServiceConnection(MusicQueueConnection service) {
-		if (mService != null) {
-			mService.unregisterPlayQueueCallback(mCallback);
-		}
-		if (service != null) {
-			service.registerPlayQueueCallback(mCallback);
-			if (isVisible() && mAdapter.isEmpty()) {
-				service.requestPlayQueue();
-			}
-		}
-		mService = service;
 	}
 	
 	@Override
@@ -142,9 +137,8 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		if (mService != null) {
-			mService.unregisterPlayQueueCallback(mCallback);
-		}
+		getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
+		getMusicConnection().unregisterPlayQueueCallback(mCallback);
 	}
 	
 	public void scrollToPosition() {
@@ -157,7 +151,7 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void remove(int which) {
 		mAdapter.remove(which);
-		mService.removeTrack(which);
+		getMusicConnection().removeTrack(which);
 		
 		if (mAdapter.getCount() == 0) {
 			getDialog().dismiss();
@@ -168,13 +162,13 @@ public class PlayQueueFragment extends DialogFragment implements
 	public void drop(int from, int to) {
 		if (from != to) {
 			mAdapter.move(from, to);
-			mService.moveQueueItem(from, to);
+			getMusicConnection().moveQueueItem(from, to);
 		}
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
-		mService.setQueuePosition(which);
+		getMusicConnection().setQueuePosition(which);
 		getDialog().dismiss();
 	}
 
@@ -192,6 +186,7 @@ public class PlayQueueFragment extends DialogFragment implements
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					mAdapter.clear();
 					mAdapter.addAll(trackList);
 					mAdapter.setQueuePosition(position);
 					if (mSavedPosition != -1 && mSavedOffset != -1) {

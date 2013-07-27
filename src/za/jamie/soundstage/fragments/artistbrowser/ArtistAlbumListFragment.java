@@ -4,7 +4,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.AlbumAdapter;
 import za.jamie.soundstage.adapters.wrappers.HeaderFooterAdapterWrapper;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
-import za.jamie.soundstage.fragments.DefaultListFragment;
+import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.ImageUtils;
@@ -25,7 +25,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class ArtistAlbumListFragment extends DefaultListFragment {
+public class ArtistAlbumListFragment extends MusicListFragment {
 	
 	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
