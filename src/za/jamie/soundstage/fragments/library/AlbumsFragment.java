@@ -1,14 +1,19 @@
 package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.AlbumsAdapter;
+import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
+import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
+import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActivityOptions;
 import android.app.Fragment;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -17,6 +22,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
@@ -82,6 +89,45 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 		ActivityOptions options = 
 				ActivityOptions.makeScaleUpAnimation(v, 0, 0, v.getWidth(), v.getHeight());
 		getActivity().startActivity(intent, options.toBundle());
+	}
+	
+	private static class AlbumsAdapter extends LibraryAdapter {
+		
+		private int mAlbumColIdx;
+		private int mAlbumIdColIdx;
+		private int mArtistColIdx;
+		
+		private ImageFetcher mImageWorker;
+
+		public AlbumsAdapter(Context context, int layout, int headerLayout,
+				Cursor c, int flags) {
+			super(context, layout, headerLayout, c, flags);
+			mImageWorker = ImageUtils.getThumbImageFetcher(context);
+		}
+
+		@Override
+		protected void getColumnIndices(Cursor cursor) {
+			mAlbumColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
+			mAlbumIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID);
+			mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
+		}
+
+		@Override
+		protected String getSection(Context context, Cursor cursor) {
+			return TextUtils.headerFor(cursor.getString(mAlbumColIdx));
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+			TextView album = (TextView) view.findViewById(R.id.title);
+			TextView artist = (TextView) view.findViewById(R.id.subtitle);
+			ImageView albumArt = (ImageView) view.findViewById(R.id.image);
+			
+			album.setText(cursor.getString(mAlbumColIdx));
+			artist.setText(cursor.getString(mArtistColIdx));
+			mImageWorker.loadAlbumImage(cursor.getLong(mAlbumIdColIdx), albumArt);
+		}
+		
 	}
 
 }

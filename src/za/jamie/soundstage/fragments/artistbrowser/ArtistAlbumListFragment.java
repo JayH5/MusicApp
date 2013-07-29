@@ -1,7 +1,7 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.AlbumAdapter;
+import za.jamie.soundstage.adapters.abs.BasicCursorAdapter;
 import za.jamie.soundstage.adapters.wrappers.HeaderFooterAdapterWrapper;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicListFragment;
@@ -78,20 +78,19 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 		startActivity(intent);
 	}
 	
-	private static class ArtistAlbumListAdapter extends AlbumAdapter {
+	private static class ArtistAlbumListAdapter extends BasicCursorAdapter {
 
+		private int mIdColIdx;
+		private int mAlbumColIdx;
 		private int mNumSongsForArtistColIdx;
 		private int mFirstYearColIdx;
 		private int mLastYearColIdx;
 		
-		private Resources mResources;
 		private ImageFetcher mImageWorker;
 		
 		public ArtistAlbumListAdapter(Context context, int layout, Cursor c,
-				int flags) {
-			
+				int flags) {			
 			super(context, layout, c, flags);
-			mResources = context.getResources();
 			mImageWorker = ImageUtils.getThumbImageFetcher(context);
 		}
 
@@ -102,20 +101,22 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 			TextView yearText = (TextView) view.findViewById(R.id.albumYear);
 			ImageView thumbImage = (ImageView) view.findViewById(R.id.albumThumb);
 			
-			nameText.setText(cursor.getString(getAlbumColIdx()));
+			nameText.setText(cursor.getString(mAlbumColIdx));
 			
-			tracksText.setText(TextUtils.getNumTracksText(mResources, 
+			final Resources res = context.getResources();
+			tracksText.setText(TextUtils.getNumTracksText(res, 
 					cursor.getInt(mNumSongsForArtistColIdx)));
 			
 			yearText.setText(TextUtils.getYearText(cursor.getInt(mFirstYearColIdx), 
 					cursor.getInt(mLastYearColIdx)));
 			
-			mImageWorker.loadAlbumImage(cursor.getLong(getIdColIdx()), thumbImage);
+			mImageWorker.loadAlbumImage(cursor.getLong(mIdColIdx), thumbImage);
 		}
 		
 		@Override
 		protected void getColumnIndices(Cursor cursor) {
-			super.getColumnIndices(cursor);
+			mIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID);
+			mAlbumColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
 			mNumSongsForArtistColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST);
 			mFirstYearColIdx = cursor.getColumnIndexOrThrow(

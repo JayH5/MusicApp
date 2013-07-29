@@ -1,29 +1,29 @@
 package za.jamie.soundstage.fragments.library;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.SongsAdapter;
+import za.jamie.soundstage.adapters.abs.LibraryAdapter;
+import za.jamie.soundstage.adapters.interfaces.TrackAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
+import za.jamie.soundstage.utils.TextUtils;
+import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
-import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class SongsFragment extends TrackListFragment {
     
     private SongsAdapter mAdapter;
-    
-    private Interpolator mAccelerator = new AccelerateInterpolator();
-    private Interpolator mDecelerator = new DecelerateInterpolator();
 	
 	@Override
     public void onCreate(Bundle savedInstanceState) {
@@ -39,62 +39,99 @@ public class SongsFragment extends TrackListFragment {
     }
 	
 	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		super.onListItemClick(l, v, mAdapter.getCursorPosition(position), id);
+	}
+	
+	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, 
     		Bundle savedInstanceState) {
     	return inflater.inflate(R.layout.list_fragment_fastscroll, parent, false);
     }
-    
-    @Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-    	super.onListItemClick(l, v, mAdapter.getRealPosition(position), id);
-    }
-    
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-    	super.onViewCreated(view, savedInstanceState);
-    	
-    	getListView().setOnItemLongClickListener(mOnLongClickListener);
-    }
-    
-    private void flipit(View view) {
-        final View listItem = view.findViewById(R.id.list_item);
-    	final View flippedView = view.findViewById(R.id.flipped_view);
-    	final View visibleView, invisibleView;
-    	if (listItem.getVisibility() == View.GONE) {
-    		visibleView = flippedView;
-            invisibleView = listItem;
-        } else {
-        	invisibleView = flippedView;
-        	visibleView = listItem;
-        }
-        ObjectAnimator visToInvis = ObjectAnimator.ofFloat(visibleView, "rotationX", 0f, 90f);
-        visToInvis.setDuration(500);
-        visToInvis.setInterpolator(mAccelerator);
-        final ObjectAnimator invisToVis = ObjectAnimator.ofFloat(invisibleView, "rotationX",
-                -90f, 0f);
-        invisToVis.setDuration(500);
-        invisToVis.setInterpolator(mDecelerator);
-        visToInvis.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator anim) {
-            	visibleView.setVisibility(View.GONE);
-                invisToVis.start();
-                invisibleView.setVisibility(View.VISIBLE);
-            }
-        });
-        visToInvis.start();
-    }
-    
-    private AdapterView.OnItemLongClickListener mOnLongClickListener = 
-    		new AdapterView.OnItemLongClickListener() {
+	
+	private static class SongsAdapter extends LibraryAdapter implements TrackAdapter {
+
+		private int mIdColIdx;
+		private int mTitleColIdx;
+		private int mArtistIdColIdx;
+		private int mArtistColIdx;
+		private int mAlbumIdColIdx;
+		private int mAlbumColIdx;
+		private int mDurationColIdx;
+		
+		public SongsAdapter(Context context, int layout, int headerLayout,
+				Cursor c, int flags) {
+			super(context, layout, headerLayout, c, flags);
+		}
 
 		@Override
-		public boolean onItemLongClick(AdapterView<?> adapterView, View view,
-				int position, long id) {
-			
-			flipit(view);
-			return true;
+		protected void getColumnIndices(Cursor cursor) {
+			mIdColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+			mTitleColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
+			mArtistIdColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID);
+			mArtistColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+			mAlbumIdColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+			mAlbumColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
+			mDurationColIdx = cursor
+					.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
 		}
-	};
+
+		@Override
+		protected String getSection(Context context, Cursor cursor) {
+			return TextUtils.headerFor(cursor.getString(mTitleColIdx));
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+			TextView title = (TextView) view.findViewById(R.id.title);
+			TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
+			
+			title.setText(cursor.getString(mTitleColIdx));
+			subtitle.setText(cursor.getString(mArtistColIdx));
+		}
+
+		@Override
+		public List<Track> getTrackList() {
+			Cursor cursor = getCursor();
+			List<Track> trackList = null;
+			if (cursor != null && cursor.moveToFirst()) {
+				trackList = new LinkedList<Track>();
+				do {
+					trackList.add(new Track(
+							cursor.getLong(mIdColIdx),
+							cursor.getString(mTitleColIdx),
+							cursor.getLong(mArtistIdColIdx),
+							cursor.getString(mArtistColIdx),
+							cursor.getLong(mAlbumIdColIdx),
+							cursor.getString(mAlbumColIdx),
+							cursor.getLong(mDurationColIdx)));
+				} while (cursor.moveToNext());
+			}
+			return trackList;
+		}
+
+		@Override
+		public Track getTrack(int position) {
+			Cursor cursor = (Cursor) getItem(position);
+			Track track = null;
+			if (cursor != null) {
+				track = new Track(cursor.getLong(mIdColIdx),
+						cursor.getString(mTitleColIdx),
+						cursor.getLong(mArtistIdColIdx),
+						cursor.getString(mArtistColIdx),
+						cursor.getLong(mAlbumIdColIdx),
+						cursor.getString(mAlbumColIdx),
+						cursor.getLong(mDurationColIdx));
+			}
+			return track;
+		}
+		
+	}
   
 }
