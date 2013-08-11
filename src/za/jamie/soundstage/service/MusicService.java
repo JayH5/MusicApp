@@ -2,7 +2,6 @@ package za.jamie.soundstage.service;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.Random;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
@@ -37,7 +36,7 @@ import android.util.Log;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
-		GaplessPlayer.PlayerEventListener {
+		MusicPlayer.PlayerEventListener {
 
 	private static final String TAG = "MusicService";
 	
@@ -98,7 +97,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     // Audio playback objects
     private AudioManager mAudioManager;
-    private GaplessPlayer mPlayer;
+    private MusicPlayer mPlayer;
     private PowerManager.WakeLock mWakeLock;
     
     // Handlers
@@ -184,8 +183,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mNotificationManager = (NotificationManager) 
         		getSystemService(Context.NOTIFICATION_SERVICE);
 
-        // Initialize the player and the fader
-        mPlayer = new GaplessPlayer(this);
+        // Initialize the player
+        mPlayer = new MusicPlayer(this);
         mPlayer.setPlayerEventListener(this);
         
         mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
