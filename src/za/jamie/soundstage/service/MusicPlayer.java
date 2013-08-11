@@ -10,11 +10,13 @@ import android.media.MediaPlayer;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.util.Log;
 
-public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
+public class MusicPlayer implements MediaPlayer.OnCompletionListener,
     	MediaPlayer.OnErrorListener {
     	
     private static final String TAG = "GaplessPlayer";
@@ -26,13 +28,18 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
 
     private PlayerEventListener mListener;
     
-    private final FadeHandler mHandler = new FadeHandler(this);
+    private final PlayerHandler mHandler;
 
     private boolean mIsInitialized = false;
 
-    public GaplessPlayer(Context context) {
+    public MusicPlayer(Context context) {
     	mContext = context;
     	mCurrentMediaPlayer.setWakeMode(mContext, PowerManager.PARTIAL_WAKE_LOCK);
+    	
+    	final HandlerThread thread = new HandlerThread("MusicPlayerHandler",
+                android.os.Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        mHandler = new PlayerHandler(thread.getLooper(), this);
     }
 
     private boolean setDataSourceImpl(MediaPlayer player, Uri uri) {
@@ -166,14 +173,9 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     		mCurrentMediaPlayer.release();
     		mCurrentMediaPlayer = mNextMediaPlayer;
     		mNextMediaPlayer = null;
-    		
-    		if (mListener != null) {
-    			mListener.onTrackWentToNext();
-    		}
+    		mHandler.sendEmptyMessage(PlayerHandler.TRACK_WENT_TO_NEXT);    		
     	} else {
-    		if (mListener != null) {
-    			mListener.onTrackEnded();
-    		}
+    		mHandler.sendEmptyMessage(PlayerHandler.TRACK_ENDED);
     	}
 
     }
@@ -185,11 +187,8 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     		mIsInitialized = false;
     		mCurrentMediaPlayer.release();
     		mCurrentMediaPlayer = new MediaPlayer();
-    		mCurrentMediaPlayer.setWakeMode(mContext, PowerManager.PARTIAL_WAKE_LOCK);
-    		
-    		if (mListener != null) {
-    			mListener.onServerDied();
-    		}
+    		mCurrentMediaPlayer.setWakeMode(mContext, PowerManager.PARTIAL_WAKE_LOCK);    		
+    		mHandler.sendEmptyMessage(PlayerHandler.SERVER_DIED);
     		return true;
     	default:
     		break;
@@ -205,20 +204,20 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     
     public void fadeUp() {
         stopFadeDown();
-        mHandler.sendEmptyMessage(FadeHandler.FADEUP);
+        mHandler.sendEmptyMessage(PlayerHandler.FADEUP);
     }
     
     public void fadeDown() {
         stopFadeUp();
-        mHandler.sendEmptyMessage(FadeHandler.FADEDOWN);
+        mHandler.sendEmptyMessage(PlayerHandler.FADEDOWN);
     }
     
     public void stopFadeUp() {
-    	mHandler.removeMessages(FadeHandler.FADEUP);
+    	mHandler.removeMessages(PlayerHandler.FADEUP);
     }
     
     public void stopFadeDown() {
-    	mHandler.removeMessages(FadeHandler.FADEDOWN);
+    	mHandler.removeMessages(PlayerHandler.FADEDOWN);
     }
     
     public void stopFade() {
@@ -230,21 +229,50 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
     	setVolume(0.0f);
     }
     
-    private static class FadeHandler extends Handler {
+    private void notifyTrackWentToNext() {
+    	if (mListener != null) {
+    		mListener.onTrackWentToNext();
+    	}
+    }
+    
+    private void notifyTrackEnded() {
+    	if (mListener != null) {
+    		mListener.onTrackEnded();
+    	}
+    }
+    
+    private void notifyServerDied() {
+    	if (mListener != null) {
+    		mListener.onServerDied();
+    	}
+    }
+    
+    private static class PlayerHandler extends Handler {
     	private static final float VOLUME_DUCK = 0.2f;
+    	
     	private static final int FADEDOWN = 1;
     	private static final int FADEUP = 2;
+    	private static final int TRACK_WENT_TO_NEXT = 3;
+    	private static final int TRACK_ENDED = 4;
+    	private static final int SERVER_DIED = 5;    	
     	
-    	private final WeakReference<GaplessPlayer> mPlayer;
     	private float mCurrentVolume = 1.0f;
     	
-    	public FadeHandler(GaplessPlayer player) {
-    		mPlayer = new WeakReference<GaplessPlayer>(player);
+    	private final WeakReference<MusicPlayer> mPlayer;
+    	
+    	private PlayerHandler(Looper looper, MusicPlayer player) {
+    		super(looper);
+    		mPlayer = new WeakReference<MusicPlayer>(player);
     	}
     	
     	@Override
         public void handleMessage(final Message msg) {
-            switch (msg.what) {
+            final MusicPlayer player = mPlayer.get();
+            if (player == null) {
+            	return;
+            }
+    		
+    		switch (msg.what) {
             // Fading for focus ducking
             case FADEDOWN:
                 mCurrentVolume -= .05f;
@@ -253,7 +281,7 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
                 } else {
                     mCurrentVolume = VOLUME_DUCK;
                 }
-                mPlayer.get().setVolume(mCurrentVolume);
+                player.setVolume(mCurrentVolume);
                 break;
             case FADEUP:
                 mCurrentVolume += .01f;
@@ -262,8 +290,17 @@ public class GaplessPlayer implements MediaPlayer.OnCompletionListener,
                 } else {
                     mCurrentVolume = 1.0f;
                 }
-                mPlayer.get().setVolume(mCurrentVolume);
+                player.setVolume(mCurrentVolume);
                 break;
+            case TRACK_WENT_TO_NEXT:
+            	player.notifyTrackWentToNext();
+            	break;
+            case TRACK_ENDED:
+            	player.notifyTrackEnded();
+            	break;
+            case SERVER_DIED:
+            	player.notifyServerDied();
+            	break;            
             default:
             	break;
             }

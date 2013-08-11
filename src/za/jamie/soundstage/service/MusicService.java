@@ -1,6 +1,8 @@
 package za.jamie.soundstage.service;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Random;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
@@ -33,7 +35,7 @@ import android.util.Log;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
-		GaplessPlayer.PlayerEventListener {
+		MusicPlayer.PlayerEventListener {
 
 	private static final String TAG = "MusicService";
 	
@@ -94,7 +96,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     // Audio playback objects
     private AudioManager mAudioManager;
-    private GaplessPlayer mPlayer;
+    private MusicPlayer mPlayer;
+    private PowerManager.WakeLock mWakeLock;
     
     // Use alarm manager to shut down service after time
     private AlarmManager mAlarmManager;
@@ -158,7 +161,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     @Override
     public void onRebind(Intent intent) {
-    	cancelShutdown();
+        mDelayedStopHandler.removeCallbacksAndMessages(null);
+
         mIsBound = true;
     }
 
@@ -356,6 +360,14 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, mPlayer.getAudioSessionId());
         intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
         sendBroadcast(intent);
+    }
+
+    private void sendDelayedStopMessage(boolean removeMessages) {
+    	if (removeMessages) {
+    		mDelayedStopHandler.removeCallbacksAndMessages(null);
+    	}
+    	final Message message = mDelayedStopHandler.obtainMessage();
+        mDelayedStopHandler.sendMessageDelayed(message, IDLE_DELAY);
     }
 
     private void restoreState() {
