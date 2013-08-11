@@ -2,13 +2,14 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicCursorAdapter;
-import za.jamie.soundstage.adapters.wrappers.HeaderFooterAdapterWrapper;
+import za.jamie.soundstage.adapters.wrappers.HeaderViewListAdapter;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
+import za.jamie.soundstage.utils.ViewUtils;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -49,11 +50,10 @@ public class ArtistAlbumListFragment extends MusicListFragment {
         
         ListAdapter listAdapter;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        	HeaderFooterAdapterWrapper wrapper = new HeaderFooterAdapterWrapper(getActivity(), adapter);
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
-        	wrapper.setFooterViewResource(R.layout.list_item_spacer);
-        	wrapper.setNumHeaders(1);
-        	wrapper.setNumFooters(1);
+        	HeaderViewListAdapter wrapper = new HeaderViewListAdapter(adapter);
+        	View spacer = ViewUtils.createListSpacer(getActivity());
+        	wrapper.addHeaderView(spacer);
+        	wrapper.addFooterView(spacer);
         	listAdapter = wrapper;
         } else {
         	listAdapter = adapter;

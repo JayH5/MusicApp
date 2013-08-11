@@ -3,8 +3,9 @@ package za.jamie.soundstage.adapters.interfaces;
 import java.util.List;
 
 import za.jamie.soundstage.models.Track;
+import android.widget.ListAdapter;
 
-public interface TrackAdapter {
+public interface TrackListAdapter extends ListAdapter {
 	
 	/**
 	 * Gets the list of tracks

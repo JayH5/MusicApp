@@ -5,7 +5,7 @@ import java.util.List;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
-import za.jamie.soundstage.adapters.interfaces.TrackAdapter;
+import za.jamie.soundstage.adapters.interfaces.TrackListAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.musicstore.CursorManager;
@@ -49,7 +49,7 @@ public class SongsFragment extends TrackListFragment {
     	return inflater.inflate(R.layout.list_fragment_fastscroll, parent, false);
     }
 	
-	private static class SongsAdapter extends LibraryAdapter implements TrackAdapter {
+	private static class SongsAdapter extends LibraryAdapter implements TrackListAdapter {
 
 		private int mIdColIdx;
 		private int mTitleColIdx;

@@ -28,6 +28,7 @@
     <dimen name="music_player_duration_text_size">12sp</dimen>
     <dimen name="list_padding_default">12dp</dimen>
     <dimen name="list_padding_fastscroll">32dp</dimen>
+    <dimen name="list_header_footer_spacing">8dp</dimen>
     
     <!-- Notifications -->
     <dimen name="notification_big_icon_width">64dp</dimen>

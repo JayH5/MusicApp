@@ -2,10 +2,11 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
-import za.jamie.soundstage.adapters.wrappers.TrackHeaderFooterAdapterWrapper;
+import za.jamie.soundstage.adapters.wrappers.TrackHeaderViewListAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
+import za.jamie.soundstage.utils.ViewUtils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -48,12 +49,10 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		
 		ListAdapter listAdapter;
 		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			TrackHeaderFooterAdapterWrapper wrapper = 
-					new TrackHeaderFooterAdapterWrapper(getActivity(), mAdapter);
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
-        	wrapper.setFooterViewResource(R.layout.list_item_spacer);
-        	wrapper.setNumHeaders(1);
-        	wrapper.setNumFooters(1);
+			TrackHeaderViewListAdapter wrapper = new TrackHeaderViewListAdapter(mAdapter);
+        	View spacer = ViewUtils.createListSpacer(getActivity());
+        	wrapper.addHeaderView(spacer);
+        	wrapper.addFooterView(spacer);
         	listAdapter = wrapper;
         } else {
         	listAdapter = mAdapter;
