@@ -1,7 +1,7 @@
 package za.jamie.soundstage.fragments;
 
 import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicService;
 import android.app.Activity;
 import android.app.DialogFragment;
 
@@ -15,8 +15,8 @@ public class MusicDialogFragment extends DialogFragment {
 		}
 	}
 	
-	protected MusicConnection getMusicConnection() {
-		return ((MusicActivity) getActivity()).getMusicConnection();
+	protected MusicService getMusicService() {
+		return ((MusicActivity) getActivity()).getMusicService();
 	}
 
 }

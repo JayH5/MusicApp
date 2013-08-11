@@ -2,6 +2,7 @@ package za.jamie.soundstage.service;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Random;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
@@ -25,6 +26,7 @@ import android.media.MediaMetadataRetriever;
 import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -116,7 +118,21 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private RemoteControlClient mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
 
-    private final IBinder mBinder = new MusicServiceStub(this);
+    //private final IBinder mBinder = new MusicServiceStub(this);
+    
+    // Binder given to clients
+    private final IBinder mBinder = new LocalBinder();
+
+    /**
+     * Class used for the client Binder.  Because we know this service always
+     * runs in the same process as its clients, we don't need to deal with IPC.
+     */
+    public class LocalBinder extends Binder {
+        public MusicService getService() {
+            // Return this instance of LocalService so clients can call public methods
+            return MusicService.this;
+        }
+    }
 
     // Callback lists for remote listeners
     private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =

@@ -2,7 +2,7 @@ package za.jamie.soundstage.fragments;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicService;
 import android.app.Activity;
 import android.app.ListFragment;
 import android.os.Bundle;
@@ -29,8 +29,8 @@ public class MusicListFragment extends ListFragment {
 	/**
 	 * See {@link MusicActivity#getMusicConnection()}
 	 */
-	protected MusicConnection getMusicConnection() {
-		return ((MusicActivity) getActivity()).getMusicConnection();
+	protected MusicService getMusicService() {
+		return ((MusicActivity) getActivity()).getMusicService();
 	}
 	
 	/**

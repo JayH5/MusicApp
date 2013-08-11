@@ -7,7 +7,6 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicConnection;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -43,19 +42,6 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
 	
-	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
-			new MusicConnection.ConnectionCallbacks() {
-		@Override
-		public void onConnected() {
-			getMusicConnection().registerPlayQueueCallback(mCallback);
-		}
-
-		@Override
-		public void onDisconnected() {
-			
-		}
-	};
-	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
 	}
@@ -67,7 +53,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
 		
-		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
+		getMusicService().registerPlayQueueCallback(mCallback);
 		
 		if (savedInstanceState != null) {
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
@@ -137,8 +123,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
-		getMusicConnection().unregisterPlayQueueCallback(mCallback);
+		getMusicService().unregisterPlayQueueCallback(mCallback);
 	}
 	
 	public void scrollToPosition() {
@@ -151,7 +136,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	@Override
 	public void remove(int which) {
 		mAdapter.remove(which);
-		getMusicConnection().removeTrack(which);
+		getMusicService().removeTrack(which);
 		
 		if (mAdapter.getCount() == 0) {
 			getDialog().dismiss();
@@ -162,13 +147,13 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	public void drop(int from, int to) {
 		if (from != to) {
 			mAdapter.move(from, to);
-			getMusicConnection().moveQueueItem(from, to);
+			getMusicService().moveQueueItem(from, to);
 		}
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
-		getMusicConnection().setQueuePosition(which);
+		getMusicService().setQueuePosition(which);
 		getDialog().dismiss();
 	}
 

@@ -21,13 +21,13 @@ public class TrackListFragment extends MusicListFragment {
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		List<Track> trackList = ((TrackListAdapter) getListAdapter()).getTrackList();
-		getMusicConnection().open(trackList, position);
+		getMusicService().open(trackList, position);
 		showPlayer();
     }
 	
 	public void shuffleAll() {
 		List<Track> trackList = ((TrackListAdapter) getListAdapter()).getTrackList();
-		getMusicConnection().shuffle(trackList);
+		getMusicService().shuffle(trackList);
 		showPlayer();
 	}
 

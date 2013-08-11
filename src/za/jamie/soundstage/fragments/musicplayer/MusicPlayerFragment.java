@@ -5,7 +5,6 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
@@ -75,29 +74,17 @@ public class MusicPlayerFragment extends MusicFragment {
 	private long mTimeSync;
 	private long mTimeSyncStamp;
 	
-	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
-			new MusicConnection.ConnectionCallbacks() {
-		@Override
-		public void onConnected() {
-			getMusicConnection().registerMusicStatusCallback(mCallback);
-		}
-
-		@Override
-		public void onDisconnected() {
-			
-		}
-	};
-	
 	public MusicPlayerFragment() {}
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		MusicService service = getMusicService();
+		if (service != null) {
+			service.registerMusicStatusCallback(mCallback);
+		}
 		
 		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
-		
-		// Register connection observer
-		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
 	}
 	
 	@Override
@@ -115,10 +102,7 @@ public class MusicPlayerFragment extends MusicFragment {
 	@Override
 	public void onDestroy() {
         super.onDestroy();
-        
-        // Remove all our callbacks
-        getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
-        getMusicConnection().unregisterMusicStatusCallback(mCallback);
+        getMusicService().unregisterMusicStatusCallback(mCallback);
 	}
 	
 	@Override
@@ -247,9 +231,9 @@ public class MusicPlayerFragment extends MusicFragment {
             duration = backward ? -duration : duration;
             final long seekPosition = mSeekStartPosition + duration;
             if (seekPosition < 0) {
-                getMusicConnection().previous();
+                getMusicService().previous();
             } else if (seekPosition > mDuration) {
-                getMusicConnection().next();
+                getMusicService().next();
             } else {
             	seek(seekPosition);
             }
@@ -311,7 +295,7 @@ public class MusicPlayerFragment extends MusicFragment {
     }
     
     private void seek(long position) {
-        getMusicConnection().seek(position);
+        getMusicService().seek(position);
         updateTime(position, System.currentTimeMillis());
     }
 
@@ -387,22 +371,21 @@ public class MusicPlayerFragment extends MusicFragment {
 		@Override
 		public void onClick(View v) {
 			if (v == mPlayPauseButton) {
-				getMusicConnection().togglePlayback();
+				getMusicService().togglePlayback();
 			} else if (v == mNextButton) {
-				getMusicConnection().next();
+				getMusicService().next();
 			} else if (v == mPreviousButton) {
-				getMusicConnection().previous();
+				getMusicService().previous();
 			} else if (v == mShuffleButton) {
-				getMusicConnection().toggleShuffle();
+				getMusicService().toggleShuffle();
 			} else if (v == mRepeatButton) {
-				getMusicConnection().cycleRepeatMode();
+				getMusicService().cycleRepeat();
 			}
 			
 		}
 	};
 	
-	private final View.OnClickListener mMetaListener = new View.OnClickListener() {
-		
+	private final View.OnClickListener mMetaListener = new View.OnClickListener() {		
 		@Override
 		public void onClick(View v) {
 			if (v == mArtistText) {

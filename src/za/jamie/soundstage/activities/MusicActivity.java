@@ -8,14 +8,18 @@ import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.service.MusicService.LocalBinder;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Vibrator;
 import android.view.Menu;
 import android.view.View;
@@ -40,7 +44,24 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
-	private final MusicConnection mConnection = new MusicConnection();
+	//private final MusicConnection mConnection = new MusicConnection();
+	private MusicService mService;
+	private boolean mBound;
+	private final ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			LocalBinder binder = (LocalBinder) service;
+			mService = binder.getService();
+			mBound = true;
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			mBound = false;			
+		}
+		
+	};
 	
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -100,7 +121,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	@Override
     protected void onResume() {
         super.onResume();
-        mConnection.hideNotification();
+        if (mBound) {
+        	mService.hideNotification();
+        }
 	}
 	
 	@Override
@@ -163,7 +186,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	protected void showNotification() {
-		mConnection.showNotification(getNotificationIntent());
+		if (mBound) {
+			mService.showNotification(getNotificationIntent());
+		}
 	}
 	
 	/**
@@ -171,8 +196,11 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	 * be used to access the MusicService's controls.
 	 * @return The connection to the MusicService
 	 */
-	public MusicConnection getMusicConnection() {
-		return mConnection;
+	public MusicService getMusicService() {
+		if (mBound) {
+			return mService;
+		}
+		return null;
 	}
 	
 	/**
