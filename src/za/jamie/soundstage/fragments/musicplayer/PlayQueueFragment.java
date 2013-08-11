@@ -2,15 +2,15 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import java.util.List;
 
-import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicQueueCallback;
+import za.jamie.soundstage.service.MusicService;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,18 +42,12 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
 	
-	public static PlayQueueFragment newInstance() {		
-		return new PlayQueueFragment();
-	}
-	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
-		
-		getMusicService().registerPlayQueueCallback(mCallback);
 		
 		if (savedInstanceState != null) {
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
@@ -121,9 +115,28 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	}
 	
 	@Override
+	public void onStart() {
+		super.onStart();
+		final MusicService service = getMusicService();
+		if (service != null) {
+			service.registerMusicQueueCallback(mCallback);
+		}
+	}
+	
+	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		getMusicService().unregisterPlayQueueCallback(mCallback);
+		final MusicService service = getMusicService();
+		if (service != null) {
+			service.unregisterMusicQueueCallback(mCallback);
+		}
+	}
+	
+	public void onServiceConnected() {
+		final MusicService service = getMusicService();
+		if (service != null && isAdded()) {
+			service.registerMusicQueueCallback(mCallback);
+		}
 	}
 	
 	public void scrollToPosition() {
@@ -162,12 +175,21 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		mVibrator.vibrate(VIBE_DURATION);		
 	}
 	
-	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
+	private MusicQueueCallback mCallback = new MusicQueueCallback() {
+		
+		@Override
+		public void onPositionChanged(final int position) {
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					mAdapter.setQueuePosition(position);
+				}
+			});
+		}
 
 		@Override
-		public void deliverTrackList(final List<Track> trackList, final int position, 
-				final boolean isShuffled) throws RemoteException {
-			
+		public void deliverTrackList(final List<Track> trackList, final int position,
+				final boolean isShuffled) {
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -183,19 +205,8 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 						mIsShuffledView.setVisibility(View.VISIBLE);
 					}
 				}
-			});
-			
+			});			
 		}
-
-		@Override
-		public void onPositionChanged(final int position) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					mAdapter.setQueuePosition(position);
-				}
-			});
-		}
-		
 	};
+
 }

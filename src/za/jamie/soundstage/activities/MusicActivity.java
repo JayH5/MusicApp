@@ -46,19 +46,24 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	//private final MusicConnection mConnection = new MusicConnection();
 	private MusicService mService;
-	private boolean mBound;
 	private final ServiceConnection mConnection = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			LocalBinder binder = (LocalBinder) service;
 			mService = binder.getService();
-			mBound = true;
+			
+			if (mPlayer != null) {
+				mPlayer.onServiceConnected();
+			}
+			if (mPlayQueue != null) {
+				mPlayQueue.onServiceConnected();
+			}
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			mBound = false;			
+			mService = null;
 		}
 		
 	};
@@ -80,6 +85,10 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
+		Intent serviceIntent = new Intent(this, MusicService.class);
+		startService(serviceIntent);
+		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
+		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
 		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
@@ -92,7 +101,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
 		if (mPlayQueue == null) {
-			mPlayQueue = PlayQueueFragment.newInstance();
+			mPlayQueue = new PlayQueueFragment();
 		}
 		
 		
@@ -103,10 +112,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
 			}
 		});
-		
-		Intent serviceIntent = new Intent(this, MusicService.class);
-		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
 	}
 
 	/**
@@ -121,7 +126,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	@Override
     protected void onResume() {
         super.onResume();
-        if (mBound) {
+        if (mService != null) {
         	mService.hideNotification();
         }
 	}
@@ -186,7 +191,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	protected void showNotification() {
-		if (mBound) {
+		if (mService != null) {
 			mService.showNotification(getNotificationIntent());
 		}
 	}
@@ -197,10 +202,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	 * @return The connection to the MusicService
 	 */
 	public MusicService getMusicService() {
-		if (mBound) {
-			return mService;
-		}
-		return null;
+		return mService;
 	}
 	
 	/**

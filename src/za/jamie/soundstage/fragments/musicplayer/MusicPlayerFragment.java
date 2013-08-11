@@ -1,10 +1,10 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
-import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicPlaybackCallback;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -81,7 +80,7 @@ public class MusicPlayerFragment extends MusicFragment {
 		super.onCreate(savedInstanceState);
 		MusicService service = getMusicService();
 		if (service != null) {
-			service.registerMusicStatusCallback(mCallback);
+			service.registerMusicPlaybackCallback(mCallback);
 		}
 		
 		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
@@ -99,10 +98,20 @@ public class MusicPlayerFragment extends MusicFragment {
 		mHandler.removeCallbacksAndMessages(null);
 	}
 	
+	public void onServiceConnected() {
+		MusicService service = getMusicService();
+		if (service != null && isAdded()) {
+			service.registerMusicPlaybackCallback(mCallback);
+		}
+	}
+	
 	@Override
 	public void onDestroy() {
         super.onDestroy();
-        getMusicService().unregisterMusicStatusCallback(mCallback);
+        MusicService service = getMusicService();
+        if (service != null) {
+        	service.unregisterMusicPlaybackCallback(mCallback);
+        }
 	}
 	
 	@Override
@@ -417,79 +426,59 @@ public class MusicPlayerFragment extends MusicFragment {
             }
         }
     };
-	
-	private final IMusicStatusCallback mCallback = new IMusicStatusCallback.Stub() {
-		
-		@Override
-		public void onTrackChanged(final Track track) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updateTrack(track);
-					
-				}
-				
-			});
-		}
-		
-		@Override
-		public void onPositionSync(final long position, final long timeStamp)
-				throws RemoteException {
-			
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updateTime(position, timeStamp);
-					
-				}
-				
-			});
-		}
-		
-		@Override
-		public void onPlayStateChanged(final boolean isPlaying) throws RemoteException {			
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updatePlayState(isPlaying);
-					
-				}
-				
-			});
-			
-		}
+    
+    private final MusicPlaybackCallback mCallback = new MusicPlaybackCallback() {
 
 		@Override
-		public void onShuffleStateChanged(final boolean shuffleEnabled)
-				throws RemoteException {
-			
+		public void onPositionSync(final long position, final long timeStamp) {
 			getActivity().runOnUiThread(new Runnable() {
-
 				@Override
 				public void run() {
-					updateShuffleState(shuffleEnabled);
-					
-				}
-				
+					updateTime(position, timeStamp);					
+				}				
 			});
 		}
 
 		@Override
-		public void onRepeatModeChanged(final int repeatMode) throws RemoteException {
+		public void onTrackChanged(final Track track) {
 			getActivity().runOnUiThread(new Runnable() {
-
 				@Override
 				public void run() {
-					updateRepeatMode(repeatMode);
-					
-				}
-				
-			});
-			
+					updateTrack(track);					
+				}				
+			});			
 		}
-	};
+
+		@Override
+		public void onPlayStateChanged(final boolean isPlaying) {
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					updatePlayState(isPlaying);					
+				}				
+			});
+		}
+
+		@Override
+		public void onShuffleStateChanged(final boolean isShuffled) {
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					updateShuffleState(isShuffled);					
+				}				
+			});
+		}
+
+		@Override
+		public void onRepeatModeChanged(final int repeatMode) {
+			getActivity().runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					updateRepeatMode(repeatMode);					
+				}				
+			});
+		}
+    	
+    };
 
 }

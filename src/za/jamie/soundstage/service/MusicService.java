@@ -1,6 +1,7 @@
 package za.jamie.soundstage.service;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.IMusicStatusCallback;
@@ -30,8 +31,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
-import android.os.RemoteCallbackList;
-import android.os.RemoteException;
 import android.util.Log;
 
 
@@ -134,11 +133,17 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
 
     // Callback lists for remote listeners
-    private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
+    /*private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
     		new RemoteCallbackList<IMusicStatusCallback>();
     
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
-    		new RemoteCallbackList<IPlayQueueCallback>();
+    		new RemoteCallbackList<IPlayQueueCallback>();*/
+    
+    private final List<MusicPlaybackCallback> mMusicPlaybackCallbacks = 
+    		new ArrayList<MusicPlaybackCallback>();
+    
+    private final List<MusicQueueCallback> mMusicQueueCallbacks =
+    		new ArrayList<MusicQueueCallback>();
     
     // Image caches
     private SingleBitmapCache mMemoryCache;
@@ -299,8 +304,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonReceiverComponent);
 
         // Remove music control callbacks
-        mMusicStatusCallbackList.kill();
-        mPlayQueueCallbackList.kill();
+        mMusicPlaybackCallbacks.clear();
+        mMusicQueueCallbacks.clear();
 
         // Unregister the broadcast receivers
         unregisterReceiver(mIntentReceiver);
@@ -498,8 +503,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void syncSeekPosition() {
     	final long seekPosition = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized (mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized (mMusicPlaybackCallbacks) {
+    		/*int i = mMusicStatusCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -509,7 +514,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			Log.w(TAG, "syncPosition()", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicStatusCallbackList.finishBroadcast();*/
+    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
+    			callback.onPositionSync(seekPosition, timestamp);
+    		}
     	}
     	
     	mPreferences.edit()
@@ -521,8 +529,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final Track currentTrack = getCurrentTrack();
     	final long position = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized(mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlaybackCallbacks) {
+    		/*int i = mMusicStatusCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -534,7 +542,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicStatusCallbackList.finishBroadcast();*/
+    		
+    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
+    			callback.onTrackChanged(currentTrack);
+    			callback.onPositionSync(position, timestamp);
+    		}
     	}
     	
     	onQueuePositionChanged();
@@ -560,8 +573,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onQueuePositionChanged() {
     	final int queuePosition = mPlayQueue.getPosition();
-    	synchronized(mPlayQueueCallbackList) {
-    		int i = mPlayQueueCallbackList.beginBroadcast();
+    	synchronized(mMusicQueueCallbacks) {
+    		/*int i = mPlayQueueCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -571,7 +584,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 					Log.w(TAG, "Remote error while performing queue position changed callback.", e);
 				}
 	    	}
-	    	mPlayQueueCallbackList.finishBroadcast();
+	    	mPlayQueueCallbackList.finishBroadcast();*/
+    		
+    		for (MusicQueueCallback callback : mMusicQueueCallbacks) {
+    			callback.onPositionChanged(queuePosition);
+    		}
     	}
 
     	//mPreferences.edit()
@@ -583,8 +600,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final boolean isPlaying = isPlaying();
     	final long position = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized(mMusicStatusCallbackList) {
-	    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlaybackCallbacks) {
+	    	/*int i = mMusicStatusCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -596,7 +613,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicStatusCallbackList.finishBroadcast();*/
+    		
+    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
+    			callback.onPlayStateChanged(isPlaying);
+    			callback.onPositionSync(position, timestamp);
+    		}
     	}
     	
     	if (mShowNotification) {
@@ -612,8 +634,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onShuffleStateChanged() {
     	final boolean shuffleEnabled = isShuffleEnabled();
-    	synchronized (mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized (mMusicPlaybackCallbacks) {
+    		/*int i = mMusicStatusCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -623,7 +645,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			Log.w(TAG, "Remote error during shuffle mode change.", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicStatusCallbackList.finishBroadcast();*/
+    		
+    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
+    			callback.onShuffleStateChanged(shuffleEnabled);
+    		}
     	}
 
     	//mPreferences.edit()
@@ -633,8 +659,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onRepeatModeChanged() {
     	final int repeatMode = getRepeatMode();
-    	synchronized(mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlaybackCallbacks) {
+    		/*int i = mMusicStatusCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
@@ -644,7 +670,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			Log.w(TAG, "notifyRepeatModeChanged()", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicStatusCallbackList.finishBroadcast();*/
+    		
+    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
+    			callback.onRepeatModeChanged(repeatMode);
+    		}
     	}
 
     	mPreferences.edit()
@@ -655,8 +685,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Register callbacks and deliver requested information
 	
-	private void deliverMusicStatus(IMusicStatusCallback callback) {
-		try {
+	private void deliverMusicStatus(MusicPlaybackCallback callback) {
+		/*try {
 			callback.onTrackChanged(getCurrentTrack());
 			callback.onPlayStateChanged(isPlaying());
 			callback.onShuffleStateChanged(isShuffleEnabled());
@@ -664,35 +694,66 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 			callback.onPositionSync(position(), System.currentTimeMillis());
 		} catch (RemoteException e) {
 			Log.w(TAG, "deliverMusicStatus()", e);
-		}
+		}*/
+		callback.onTrackChanged(getCurrentTrack());
+		callback.onPlayStateChanged(isPlaying());
+		callback.onShuffleStateChanged(isShuffleEnabled());
+		callback.onRepeatModeChanged(getRepeatMode());
+		callback.onPositionSync(position(), System.currentTimeMillis());
 	}
 	
 	// Reckon this is threadsafe looking at source of RemoteCallbackList
 	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
-		mMusicStatusCallbackList.register(callback);
-		deliverMusicStatus(callback);
+		//mMusicStatusCallbackList.register(callback);
+		//deliverMusicStatus(callback);
 	}
 	
-	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
-		mMusicStatusCallbackList.unregister(callback);
-	}
-	
-	private void deliverPlayQueue(IPlayQueueCallback callback) {
-		try {
-			callback.deliverTrackList(mPlayQueue.getTrackList(), 
-					mPlayQueue.getPosition(), mPlayQueue.isShuffled());
-		} catch (RemoteException e) {
-			Log.w(TAG, "deliverPlayQueue()", e);
+	public void registerMusicPlaybackCallback(MusicPlaybackCallback callback) {
+		synchronized (mMusicPlaybackCallbacks) {
+			if (!mMusicPlaybackCallbacks.contains(callback)) {
+				mMusicPlaybackCallbacks.add(callback);
+				deliverMusicStatus(callback);
+			}
 		}
 	}
 	
+	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
+		//mMusicStatusCallbackList.unregister(callback);
+	}
+	
+	public void unregisterMusicPlaybackCallback(MusicPlaybackCallback callback) {
+		synchronized (mMusicPlaybackCallbacks) {
+			mMusicPlaybackCallbacks.remove(callback);
+		}
+	}
+	
+	private void deliverPlayQueue(MusicQueueCallback callback) {
+		callback.deliverTrackList(mPlayQueue.getTrackList(), 
+				mPlayQueue.getPosition(), mPlayQueue.isShuffled());
+	}
+	
 	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
-		mPlayQueueCallbackList.register(callback);
-		deliverPlayQueue(callback);
+		//mPlayQueueCallbackList.register(callback);
+		//deliverPlayQueue(callback);
+	}
+	
+	public void registerMusicQueueCallback(MusicQueueCallback callback) {
+		synchronized (mMusicQueueCallbacks) {
+			if (!mMusicQueueCallbacks.contains(callback)) {
+				mMusicQueueCallbacks.add(callback);
+				deliverPlayQueue(callback);
+			}
+		}
 	}
 	
 	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
-		mPlayQueueCallbackList.unregister(callback);
+		
+	}
+	
+	public void unregisterMusicQueueCallback(MusicQueueCallback callback) {
+		synchronized (mMusicQueueCallbacks) {
+			mMusicQueueCallbacks.remove(callback);
+		}
 	}
 
 
