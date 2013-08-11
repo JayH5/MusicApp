@@ -4,8 +4,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.bitmapfun.DiskCache;
 import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
 import za.jamie.soundstage.models.Track;
@@ -133,12 +131,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
 
     // Callback lists for remote listeners
-    /*private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
-    		new RemoteCallbackList<IMusicStatusCallback>();
-    
-    private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
-    		new RemoteCallbackList<IPlayQueueCallback>();*/
-    
     private final List<MusicPlaybackCallback> mMusicPlaybackCallbacks = 
     		new ArrayList<MusicPlaybackCallback>();
     
@@ -686,26 +678,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	// Register callbacks and deliver requested information
 	
 	private void deliverMusicStatus(MusicPlaybackCallback callback) {
-		/*try {
-			callback.onTrackChanged(getCurrentTrack());
-			callback.onPlayStateChanged(isPlaying());
-			callback.onShuffleStateChanged(isShuffleEnabled());
-			callback.onRepeatModeChanged(getRepeatMode());
-			callback.onPositionSync(position(), System.currentTimeMillis());
-		} catch (RemoteException e) {
-			Log.w(TAG, "deliverMusicStatus()", e);
-		}*/
 		callback.onTrackChanged(getCurrentTrack());
 		callback.onPlayStateChanged(isPlaying());
 		callback.onShuffleStateChanged(isShuffleEnabled());
 		callback.onRepeatModeChanged(getRepeatMode());
 		callback.onPositionSync(position(), System.currentTimeMillis());
-	}
-	
-	// Reckon this is threadsafe looking at source of RemoteCallbackList
-	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
-		//mMusicStatusCallbackList.register(callback);
-		//deliverMusicStatus(callback);
 	}
 	
 	public void registerMusicPlaybackCallback(MusicPlaybackCallback callback) {
@@ -715,10 +692,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 				deliverMusicStatus(callback);
 			}
 		}
-	}
-	
-	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
-		//mMusicStatusCallbackList.unregister(callback);
 	}
 	
 	public void unregisterMusicPlaybackCallback(MusicPlaybackCallback callback) {
@@ -732,11 +705,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 				mPlayQueue.getPosition(), mPlayQueue.isShuffled());
 	}
 	
-	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
-		//mPlayQueueCallbackList.register(callback);
-		//deliverPlayQueue(callback);
-	}
-	
 	public void registerMusicQueueCallback(MusicQueueCallback callback) {
 		synchronized (mMusicQueueCallbacks) {
 			if (!mMusicQueueCallbacks.contains(callback)) {
@@ -744,10 +712,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 				deliverPlayQueue(callback);
 			}
 		}
-	}
-	
-	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
-		
 	}
 	
 	public void unregisterMusicQueueCallback(MusicQueueCallback callback) {

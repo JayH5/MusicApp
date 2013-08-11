@@ -6,7 +6,6 @@ import net.simonvt.menudrawer.Position;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.service.MusicService.LocalBinder;
 import za.jamie.soundstage.utils.AppUtils;
@@ -85,10 +84,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
-		Intent serviceIntent = new Intent(this, MusicService.class);
-		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
-		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
 		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
@@ -112,6 +107,10 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
 			}
 		});
+		
+		Intent serviceIntent = new Intent(this, MusicService.class);
+		startService(serviceIntent);
+		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
 	}
 
 	/**
