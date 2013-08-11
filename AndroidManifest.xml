@@ -71,7 +71,6 @@
         <service
             android:name=".service.MusicService"
             android:label="@string/app_name"
-            android:process=":musicservice"
             android:exported="false" >
             <intent-filter>
                 <action android:name="za.jamie.soundstage.action.TOGGLE_PLAYBACK" />
