@@ -1,6 +1,5 @@
 package za.jamie.soundstage.service;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 
 import za.jamie.soundstage.IMusicStatusCallback;
@@ -9,6 +8,7 @@ import za.jamie.soundstage.bitmapfun.DiskCache;
 import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.utils.ImageUtils;
+import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -25,12 +25,10 @@ import android.media.MediaMetadataRetriever;
 import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.PowerManager;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
 
 
@@ -97,11 +95,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     // Audio playback objects
     private AudioManager mAudioManager;
     private GaplessPlayer mPlayer;
-    private PowerManager.WakeLock mWakeLock;
     
-    // Handlers
-    private final Handler mDelayedStopHandler = new DelayedStopHandler(this);
-    // Delay before releasing the media player to ensure fast stop/start
+    // Use alarm manager to shut down service after time
+    private AlarmManager mAlarmManager;
+    private PendingIntent mShutdownIntent;
+    private boolean mShutdownScheduled;
+    private static final String SHUTDOWN = "za.jamie.soundstage.shutdown";
     private static final int IDLE_DELAY = 60000;
 
     // Broadcast receivers
@@ -131,8 +130,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     @Override
     public IBinder onBind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
+    	cancelShutdown();
         mIsBound = true;
         return mBinder;
     }
@@ -142,21 +140,25 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	mIsBound = false;
 
     	Log.d(TAG, "Unbind!");
-    	if (!isPlaying() && !mPausedByTransientLossOfFocus) {
-    		stopSelf(mServiceStartId);
-    		return false;
-    	}
-    	if (mPlayQueue.isEmpty()) {
-    		sendDelayedStopMessage(false);
-    	}
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            // Something is currently playing, or will be playing once
+            // an in-progress action requesting audio focus ends, so don't stop
+            // the service now.
+            return true;
 
-    	return true;
+            // If there is a playlist but playback is paused, then wait a while
+            // before stopping the service, so that pause/resume isn't slow.
+        } else if (!mPlayQueue.isEmpty()) {
+            scheduleDelayedShutdown();
+            return true;
+        }
+        stopSelf(mServiceStartId);
+        return true;
     }
 
     @Override
     public void onRebind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
+    	cancelShutdown();
         mIsBound = true;
     }
 
@@ -175,9 +177,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
         mDiskCache = ImageUtils.getBigDiskCacheInstance(this);
         
-        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass().getName());
-        mWakeLock.setReferenceCounted(false);
+        final Intent shutdownIntent = new Intent(this, MusicService.class);
+        shutdownIntent.setAction(SHUTDOWN);
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        mShutdownIntent = PendingIntent.getService(this, 0, shutdownIntent, 0);
         
         // Initialize the audio manager and register any headset controls for
         // playback... set up the lockscreen controls
@@ -193,8 +196,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mCardId = getCardId();
         restoreState();
 
-        // In case of creation without binding
-        sendDelayedStopMessage(false);
+        // Listen for the idle state
+        scheduleDelayedShutdown();
     }
 
     /**
@@ -291,19 +294,55 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
 
-        // Remove any callbacks from the handlers
-        mDelayedStopHandler.removeCallbacksAndMessages(null); 
-        
-        mWakeLock.release();
+        // Remove any pending alarms
+        mAlarmManager.cancel(mShutdownIntent);
+    }
+    
+    private void releaseServiceAndStop() {
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            return;
+        }
+
+        Log.d(TAG, "Nothing is playing anymore, releasing notification");
+        hideNotification();
+        mAudioManager.abandonAudioFocus(this);
+
+        if (!mIsBound) {
+            stopSelf(mServiceStartId);
+        }
+    }
+    
+    private void scheduleDelayedShutdown() {
+        Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
+        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + IDLE_DELAY, mShutdownIntent);
+        mShutdownScheduled = true;
+    }
+
+    private void cancelShutdown() {
+        Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
+        if (mShutdownScheduled) {
+            mAlarmManager.cancel(mShutdownIntent);
+            mShutdownScheduled = false;
+        }
     }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mServiceStartId = startId;
         if (intent != null) {
+        	if (SHUTDOWN.equals(intent.getAction())) {
+                mShutdownScheduled = false;
+                releaseServiceAndStop();
+                return START_NOT_STICKY;
+            }
+        	
             mIntentReceiver.onReceive(this, intent);
         }
 
+        // Make sure the service will shut down on its own if it was
+        // just started but not bound to and nothing is playing
+        scheduleDelayedShutdown();
         return START_STICKY;
     }
 
@@ -317,14 +356,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, mPlayer.getAudioSessionId());
         intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
         sendBroadcast(intent);
-    }
-
-    private void sendDelayedStopMessage(boolean removeMessages) {
-    	if (removeMessages) {
-    		mDelayedStopHandler.removeCallbacksAndMessages(null);
-    	}
-    	final Message message = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(message, IDLE_DELAY);
     }
 
     private void restoreState() {
@@ -383,14 +414,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void gotoIdleState() {
     	Log.d(TAG, "Going to idle state.");
         // Post a delayed message to stop service
-    	sendDelayedStopMessage(true);
-        
-        mDelayedStopHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                hideNotification();
-            }
-        }, IDLE_DELAY);
+    	scheduleDelayedShutdown();
         
         // Update play state
         if (mIsSupposedToBePlaying) {
@@ -755,13 +779,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Stops playback
      * 
-     * @param removeStatusIcon True to go to the idle state, false otherwise
+     * @param gotoIdle True to go to the idle state, false otherwise
      */
-    private void stop(final boolean removeStatusIcon) {
+    private void stop(boolean gotoIdle) {
         if (mPlayer.isInitialized()) {
         	mPlayer.stop();
         }
-        if (removeStatusIcon) {
+        if (gotoIdle) {
             gotoIdleState();
         } else {
             stopForeground(false);
@@ -1124,7 +1148,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	@Override
 	public void onTrackEnded() {
 		Log.d(TAG, "Track ended");
-		mWakeLock.acquire(30000);
 		gotoIdleState();
 	}
 
@@ -1205,24 +1228,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 restoreState();
                 mMediaMounted = true;
                 onTrackChanged();
-            }
-        }
-    }
-
-    private static class DelayedStopHandler extends Handler {
-
-        private final WeakReference<MusicService> mService;
-        
-        public DelayedStopHandler(MusicService service) {
-        	mService = new WeakReference<MusicService>(service);
-        }
-    	
-    	@Override
-        public void handleMessage(final Message msg) {
-            if (!mService.get().isPlaying() && !mService.get().mPausedByTransientLossOfFocus 
-            		&& !mService.get().mIsBound) {
-                
-                mService.get().stopSelf(mService.get().mServiceStartId);
             }
         }
     }
