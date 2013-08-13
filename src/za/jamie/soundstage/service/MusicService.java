@@ -103,10 +103,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private static final String SHUTDOWN = "za.jamie.soundstage.shutdown";
     private static final int IDLE_DELAY = 60000;
 
-    // Broadcast receivers
-    private final BroadcastReceiver mIntentReceiver = new IntentReceiver();
-    private final BroadcastReceiver mUnmountReceiver = new UnmountReceiver();
-
     // Queue of tracks to be played
     private PlayQueue mPlayQueue;
 
@@ -1190,7 +1186,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Broadcast receivers
 
-    private class IntentReceiver extends BroadcastReceiver {
+    private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
 
     	@Override
         public void onReceive(final Context context, final Intent intent) {
@@ -1213,9 +1209,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 toggleShuffle();
             }
         }
-    }
+    };
 
-    private class UnmountReceiver extends BroadcastReceiver {
+    private final BroadcastReceiver mUnmountReceiver = new BroadcastReceiver() {
     	@Override
         public void onReceive(final Context context, final Intent intent) {
             final String action = intent.getAction();
@@ -1230,6 +1226,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 onTrackChanged();
             }
         }
-    }
+    };
 	
 }
