@@ -16,7 +16,7 @@ public class MusicDialogFragment extends DialogFragment {
 	}
 	
 	protected MusicService getMusicService() {
-		return ((MusicActivity) getActivity()).getMusicService();
+		return isAdded() ? ((MusicActivity) getActivity()).getMusicService() : null;
 	}
 
 }

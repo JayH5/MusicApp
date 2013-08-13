@@ -19,7 +19,7 @@ public class MusicFragment extends Fragment {
 	 * See {@link MusicActivity#getMusicConnection()}
 	 */
 	protected MusicService getMusicService() {
-		return ((MusicActivity) getActivity()).getMusicService();
+		return isAdded() ? ((MusicActivity) getActivity()).getMusicService() : null;
 	}
 	
 	/**

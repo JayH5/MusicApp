@@ -4,19 +4,21 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicPlaybackCallback;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 import android.animation.ObjectAnimator;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -73,45 +75,63 @@ public class MusicPlayerFragment extends MusicFragment {
 	private long mTimeSync;
 	private long mTimeSyncStamp;
 	
-	public MusicPlayerFragment() {}
+	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (MusicService.PLAYSTATE_CHANGED.equals(action)) {
+				updatePlayState(intent.getBooleanExtra(MusicService.EXTRA_PLAYSTATE, false));
+			} else if (MusicService.SHUFFLESTATE_CHANGED.equals(action)) {
+				updateShuffleState(intent.getBooleanExtra(MusicService.EXTRA_SHUFFLESTATE, false));
+			} else if (MusicService.REPEATMODE_CHANGED.equals(action)) {
+				updateRepeatMode(intent.getIntExtra(MusicService.EXTRA_REPEATMODE, 
+						MusicService.REPEAT_NONE));
+			} else if (MusicService.TRACK_CHANGED.equals(action)) {
+				updateTrack();
+			}
+			
+			syncTime();
+		}		
+	};
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		MusicService service = getMusicService();
-		if (service != null) {
-			service.registerMusicPlaybackCallback(mCallback);
-		}
-		
+		super.onCreate(savedInstanceState);		
 		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
 	}
 	
 	@Override
 	public void onResume() {
 		super.onResume();
-		updateTime(calculatePosition());
+		updateTimeIndicators(calculatePosition());
+	}
+	
+	@Override
+	public void onStart() {
+		super.onStart();
+		
+		// Register for music change events
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(MusicService.PLAYSTATE_CHANGED);
+		filter.addAction(MusicService.SHUFFLESTATE_CHANGED);
+		filter.addAction(MusicService.REPEATMODE_CHANGED);
+		filter.addAction(MusicService.TRACK_CHANGED);
+		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mReceiver, filter);
+		
+		fetchPlayerState();
 	}
 	
 	@Override
 	public void onStop() {
 		super.onStop();		
 		mHandler.removeCallbacksAndMessages(null);
+		
+		// Unregister from music change events
+		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
 	}
 	
 	public void onServiceConnected() {
-		MusicService service = getMusicService();
-		if (service != null && isAdded()) {
-			service.registerMusicPlaybackCallback(mCallback);
-		}
-	}
-	
-	@Override
-	public void onDestroy() {
-        super.onDestroy();
-        MusicService service = getMusicService();
-        if (service != null) {
-        	service.unregisterMusicPlaybackCallback(mCallback);
-        }
+		fetchPlayerState();
 	}
 	
 	@Override
@@ -253,9 +273,27 @@ public class MusicPlayerFragment extends MusicFragment {
         }
     }
     
+    private void fetchPlayerState() {
+    	final MusicService service = getMusicService();
+    	if (service != null) {
+    		updateTrack(service.getCurrentTrack());
+    		updatePlayState(service.isPlaying());
+    		updateShuffleState(service.isShuffleEnabled());
+    		updateRepeatMode(service.getRepeatMode());
+    		updateTime(service.getSeekPosition(), System.currentTimeMillis());
+    	}
+    }
+    
     /*
      * When a new track comes in from the server all the UI must get updated
      */
+    private void updateTrack() {
+    	final MusicService service = getMusicService();
+    	if (service != null) {
+    		updateTrack(service.getCurrentTrack());    		
+    	}
+    }
+    
     private void updateTrack(Track track) {
     	if (track != null) {
 			mTrackText.setText(track.getTitle());
@@ -283,7 +321,7 @@ public class MusicPlayerFragment extends MusicFragment {
     	if (isPlaying) {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_pause);
 			mElapsedTime.clearAnimation();
-            updateTime(calculatePosition());
+            updateTimeIndicators(calculatePosition());
 		} else {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_play);
 			if (isAdded()) { // Sometimes this is called before fragment is attached, causing NPE
@@ -294,9 +332,17 @@ public class MusicPlayerFragment extends MusicFragment {
 		}
     }
     
+    private void syncTime() {
+    	final MusicService service = getMusicService();
+    	if (service != null) {
+    		updateTime(service.getSeekPosition(), System.currentTimeMillis());
+    	}
+    }
+    
     private void updateTime(long position, long timeStamp) {
-    	syncTime(position, timeStamp);
-    	updateTime(position);
+    	mTimeSync = position;
+    	mTimeSyncStamp = timeStamp;
+    	updateTimeIndicators(position);
     }
     
     private long calculatePosition() {
@@ -307,20 +353,10 @@ public class MusicPlayerFragment extends MusicFragment {
         getMusicService().seek(position);
         updateTime(position, System.currentTimeMillis());
     }
-
-    private void syncTime(long position, long timeStamp) {
-    	mTimeSync = position;
-    	mTimeSyncStamp = timeStamp;
-    }
     
-    private void updateTime(long position) {
+    private void updateTimeIndicators(long position) {
     	updateSeekBar(position);
     	updateElapsedTime(position);    	
-    }
-    
-    private void stopTime() {
-    	mSeekBarAnimator.cancel();
-    	mHandler.removeCallbacks(mTimeRefresh);
     }
     
     private void updateSeekBar(long position) {
@@ -328,19 +364,6 @@ public class MusicPlayerFragment extends MusicFragment {
     		mSeekBarAnimator.start();
     	}
     	mSeekBarAnimator.setCurrentPlayTime(position);
-    }
-    
-    private void beginSeek() {
-    	mSeeking = true;
-    	updateTime(calculatePosition());
-    	if (mIsPlaying) {
-    		stopTime();
-    	}
-    }
-    
-    private void endSeek() {
-    	mSeeking = false;
-    	updateTime(calculatePosition());
     }
     
     private void updateElapsedTime(long position) {
@@ -351,9 +374,28 @@ public class MusicPlayerFragment extends MusicFragment {
     	} else {
     		mElapsedTime.setDuration(position);
     		if (!mSeeking && mIsPlaying) {
-    			mHandler.postDelayed(mTimeRefresh, 1000 - (position % 1000)); // Update again on the next second
+    			// Update again on the next second
+    			mHandler.postDelayed(mTimeRefresh, 1000 - (position % 1000));
     		}
     	}
+    }
+    
+    private void stopTime() {
+    	mSeekBarAnimator.cancel();
+    	mHandler.removeCallbacks(mTimeRefresh);
+    }    
+    
+    private void beginSeek() {
+    	mSeeking = true;
+    	updateTimeIndicators(calculatePosition());
+    	if (mIsPlaying) {
+    		stopTime();
+    	}
+    }
+    
+    private void endSeek() {
+    	mSeeking = false;
+    	updateTimeIndicators(calculatePosition());
     }
     
     private void updateShuffleState(boolean shuffleEnabled) {
@@ -375,8 +417,7 @@ public class MusicPlayerFragment extends MusicFragment {
     	}
     }
     
-    private final View.OnClickListener mButtonListener = new View.OnClickListener() {
-		
+    private final View.OnClickListener mButtonListener = new View.OnClickListener() {		
 		@Override
 		public void onClick(View v) {
 			if (v == mPlayPauseButton) {
@@ -389,8 +430,7 @@ public class MusicPlayerFragment extends MusicFragment {
 				getMusicService().toggleShuffle();
 			} else if (v == mRepeatButton) {
 				getMusicService().cycleRepeat();
-			}
-			
+			}			
 		}
 	};
 	
@@ -411,7 +451,6 @@ public class MusicPlayerFragment extends MusicFragment {
 						.setDataAndType(data, MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE));
 			}			
 		}
-
 	};
 	
 	public boolean isPlaying() {
@@ -425,60 +464,6 @@ public class MusicPlayerFragment extends MusicFragment {
                 updateElapsedTime(calculatePosition());
             }
         }
-    };
-    
-    private final MusicPlaybackCallback mCallback = new MusicPlaybackCallback() {
-
-		@Override
-		public void onPositionSync(final long position, final long timeStamp) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updateTime(position, timeStamp);					
-				}				
-			});
-		}
-
-		@Override
-		public void onTrackChanged(final Track track) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updateTrack(track);					
-				}				
-			});			
-		}
-
-		@Override
-		public void onPlayStateChanged(final boolean isPlaying) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updatePlayState(isPlaying);					
-				}				
-			});
-		}
-
-		@Override
-		public void onShuffleStateChanged(final boolean isShuffled) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updateShuffleState(isShuffled);					
-				}				
-			});
-		}
-
-		@Override
-		public void onRepeatModeChanged(final int repeatMode) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updateRepeatMode(repeatMode);					
-				}				
-			});
-		}
-    	
     };
 
 }

@@ -6,12 +6,15 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicQueueCallback;
 import za.jamie.soundstage.service.MusicService;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,6 +44,20 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
+	
+	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (MusicService.QUEUE_CHANGED.equals(action)) {
+				updateQueue();
+			} else if (MusicService.QUEUE_POSITION_CHANGED.equals(action)) {
+				updateQueuePosition(intent.getIntExtra(MusicService.EXTRA_QUEUE_POSITION, -1));
+			} else if (MusicService.SHUFFLESTATE_CHANGED.equals(action)) {
+				updateShuffleState(intent.getBooleanExtra(MusicService.EXTRA_SHUFFLESTATE, false));
+			}
+		}		
+	};
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -117,26 +134,23 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	@Override
 	public void onStart() {
 		super.onStart();
-		final MusicService service = getMusicService();
-		if (service != null) {
-			service.registerMusicQueueCallback(mCallback);
-		}
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(MusicService.QUEUE_CHANGED);
+		filter.addAction(MusicService.QUEUE_POSITION_CHANGED);
+		filter.addAction(MusicService.SHUFFLESTATE_CHANGED);
+		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mReceiver, filter);
+		
+		fetchQueue();
 	}
 	
 	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		final MusicService service = getMusicService();
-		if (service != null) {
-			service.unregisterMusicQueueCallback(mCallback);
-		}
+	public void onStop() {
+		super.onStop();
+		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
 	}
 	
 	public void onServiceConnected() {
-		final MusicService service = getMusicService();
-		if (service != null && isAdded()) {
-			service.registerMusicQueueCallback(mCallback);
-		}
+		fetchQueue();
 	}
 	
 	public void scrollToPosition() {
@@ -175,38 +189,38 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		mVibrator.vibrate(VIBE_DURATION);		
 	}
 	
-	private MusicQueueCallback mCallback = new MusicQueueCallback() {
-		
-		@Override
-		public void onPositionChanged(final int position) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					mAdapter.setQueuePosition(position);
-				}
-			});
+	private void fetchQueue() {
+		final MusicService service = getMusicService();
+		if (service != null) {
+			updateQueue(service.getQueue(), service.getQueuePosition());
+			updateShuffleState(service.isShuffleEnabled());
 		}
-
-		@Override
-		public void deliverTrackList(final List<Track> trackList, final int position,
-				final boolean isShuffled) {
-			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					mAdapter.clear();
-					mAdapter.addAll(trackList);
-					mAdapter.setQueuePosition(position);
-					if (mSavedPosition != -1 && mSavedOffset != -1) {
-						mDslv.setSelectionFromTop(mSavedPosition, mSavedOffset);
-					} else {
-						mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
-					}
-					if (isShuffled) {
-						mIsShuffledView.setVisibility(View.VISIBLE);
-					}
-				}
-			});			
+	}
+	
+	private void updateQueuePosition(int position) {
+		mAdapter.setQueuePosition(position);
+	}
+	
+	private void updateShuffleState(boolean isShuffled) {
+		mIsShuffledView.setVisibility(isShuffled ? View.VISIBLE : View.GONE);
+	}
+	
+	private void updateQueue() {
+		final MusicService service = getMusicService();
+		if (service != null) {
+			updateQueue(service.getQueue(), service.getQueuePosition());
 		}
-	};
+	}
+	
+	private void updateQueue(List<Track> tracks, int position) {
+		mAdapter.clear();
+		mAdapter.addAll(tracks);
+		mAdapter.setQueuePosition(position);
+		if (mSavedPosition != -1 && mSavedOffset != -1) {
+			mDslv.setSelectionFromTop(mSavedPosition, mSavedOffset);
+		} else {
+			mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+		}
+	}
 
 }
