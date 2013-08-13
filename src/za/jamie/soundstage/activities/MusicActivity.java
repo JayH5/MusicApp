@@ -110,7 +110,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		Intent serviceIntent = new Intent(this, MusicService.class);
 		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
+		bindService(serviceIntent, mConnection, 0);
 	}
 
 	/**
