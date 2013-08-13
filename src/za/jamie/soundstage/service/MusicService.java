@@ -850,7 +850,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      * @return the current Track list with any effects (shuffling) applied
      */
     public synchronized List<Track> getQueue() {
-    	return mPlayQueue.getTrackList();
+    	return mPlayQueue.getPlayQueue();
     }
     
     public synchronized int getQueuePosition() {
