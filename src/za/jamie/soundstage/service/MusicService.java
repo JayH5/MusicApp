@@ -1,12 +1,12 @@
 package za.jamie.soundstage.service;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 
 import za.jamie.soundstage.bitmapfun.DiskCache;
 import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.utils.ImageUtils;
+import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -24,10 +24,8 @@ import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.PowerManager;
+import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -70,9 +68,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String SHUFFLESTATE_CHANGED = "za.jamie.soundstage.shufflestatechanged";
     public static final String EXTRA_SHUFFLESTATE = "za.jamie.soundstage.shufflestate";
 
-    // Shuffle modes
-    //private boolean mShuffleEnabled = false;
-
     // Repeat modes
     public static final int REPEAT_NONE = 0;
     public static final int REPEAT_CURRENT = 1;
@@ -104,11 +99,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     // Audio playback objects
     private AudioManager mAudioManager;
     private MusicPlayer mPlayer;
-    private PowerManager.WakeLock mWakeLock;
     
-    // Handlers
-    private final Handler mDelayedStopHandler = new DelayedStopHandler(this);
-    // Delay before releasing the media player to ensure fast stop/start
+    // Use alarm manager to shut down service after time
+    private AlarmManager mAlarmManager;
+    private PendingIntent mShutdownIntent;
+    private boolean mShutdownScheduled;
+    private static final String SHUTDOWN = "za.jamie.soundstage.shutdown";
     private static final int IDLE_DELAY = 60000;
 
     // Broadcast receivers
@@ -122,8 +118,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private NotificationManager mNotificationManager;
     private RemoteControlClient mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
-
-    //private final IBinder mBinder = new MusicServiceStub(this);
     
     // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
@@ -138,13 +132,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             return MusicService.this;
         }
     }
-
-    // Callback lists for remote listeners
-    /*private final List<MusicPlaybackCallback> mMusicPlaybackCallbacks = 
-    		new ArrayList<MusicPlaybackCallback>();
-    
-    private final List<MusicQueueCallback> mMusicQueueCallbacks =
-    		new ArrayList<MusicQueueCallback>();*/
     
     // Image caches
     private SingleBitmapCache mMemoryCache;
@@ -152,7 +139,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     @Override
     public IBinder onBind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
+        cancelShutdown();
 
         mIsBound = true;
         return mBinder;
@@ -163,21 +150,25 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	mIsBound = false;
 
     	Log.d(TAG, "Unbind!");
-    	if (!isPlaying() && !mPausedByTransientLossOfFocus) {
-    		stopSelf(mServiceStartId);
-    		return false;
-    	}
-    	if (mPlayQueue.isEmpty()) {
-    		sendDelayedStopMessage(false);
-    	}
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            // Something is currently playing, or will be playing once
+            // an in-progress action requesting audio focus ends, so don't stop
+            // the service now.
+            return true;
 
-    	return true;
+            // If there is a playlist but playback is paused, then wait a while
+            // before stopping the service, so that pause/resume isn't slow.
+        } else if (!mPlayQueue.isEmpty()) {
+            scheduleDelayedShutdown();
+            return true;
+        }
+        stopSelf(mServiceStartId);
+        return true;
     }
 
     @Override
     public void onRebind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
+        cancelShutdown();
         mIsBound = true;
     }
 
@@ -196,9 +187,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
         mDiskCache = ImageUtils.getBigDiskCacheInstance(this);
         
-        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass().getName());
-        mWakeLock.setReferenceCounted(false);
+        final Intent shutdownIntent = new Intent(this, MusicService.class);
+        shutdownIntent.setAction(SHUTDOWN);
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        mShutdownIntent = PendingIntent.getService(this, 0, shutdownIntent, 0);
         
         // Initialize the audio manager and register any headset controls for
         // playback... set up the lockscreen controls
@@ -214,8 +206,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mCardId = getCardId();
         restoreState();
 
-        // In case of creation without binding
-        sendDelayedStopMessage(false);
+        // Listen for the idle state
+        scheduleDelayedShutdown();
     }
 
     /**
@@ -304,28 +296,45 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
         mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonReceiverComponent);
 
-        // Remove music control callbacks
-        //mMusicPlaybackCallbacks.clear();
-        //mMusicQueueCallbacks.clear();
-
         // Unregister the broadcast receivers
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
-
-        // Remove any callbacks from the handlers
-        mDelayedStopHandler.removeCallbacksAndMessages(null); 
         
-        mWakeLock.release();
+        // Remove any pending alarms
+        mAlarmManager.cancel(mShutdownIntent);
     }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mServiceStartId = startId;
         if (intent != null) {
+        	if (SHUTDOWN.equals(intent.getAction())) {
+                mShutdownScheduled = false;
+                releaseServiceAndStop();
+                return START_NOT_STICKY;
+            }
+        	
             mIntentReceiver.onReceive(this, intent);
         }
 
+        // Make sure the service will shut down on its own if it was
+        // just started but not bound to and nothing is playing
+        scheduleDelayedShutdown();
         return START_STICKY;
+    }
+    
+    private void releaseServiceAndStop() {
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            return;
+        }
+
+        Log.d(TAG, "Nothing is playing anymore, releasing notification");
+        hideNotification();
+        mAudioManager.abandonAudioFocus(this);
+
+        if (!mIsBound) {
+            stopSelf(mServiceStartId);
+        }
     }
 
     private void setAudioEffectsEnabled(boolean enable) {
@@ -339,13 +348,20 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
         sendBroadcast(intent);
     }
+    
+    private void scheduleDelayedShutdown() {
+        Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
+        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + IDLE_DELAY, mShutdownIntent);
+        mShutdownScheduled = true;
+    }
 
-    private void sendDelayedStopMessage(boolean removeMessages) {
-    	if (removeMessages) {
-    		mDelayedStopHandler.removeCallbacksAndMessages(null);
-    	}
-    	final Message message = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(message, IDLE_DELAY);
+    private void cancelShutdown() {
+        Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
+        if (mShutdownScheduled) {
+            mAlarmManager.cancel(mShutdownIntent);
+            mShutdownScheduled = false;
+        }
     }
 
     private void restoreState() {
@@ -404,14 +420,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void gotoIdleState() {
     	Log.d(TAG, "Going to idle state.");
         // Post a delayed message to stop service
-    	sendDelayedStopMessage(true);
-        
-        mDelayedStopHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                hideNotification();
-            }
-        }, IDLE_DELAY);
+    	scheduleDelayedShutdown();
         
         // Update play state
         if (mIsSupposedToBePlaying) {
@@ -502,29 +511,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     // Notify listeners and store state upon change
 
     private void syncSeekPosition() {
-    	//final long seekPosition = position();
-    	//final long timestamp = System.currentTimeMillis();
-    	/*synchronized (mMusicPlaybackCallbacks) {
-    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
-    			callback.onPositionSync(seekPosition, timestamp);
-    		}
-    	}*/
-    	
     	mPreferences.edit()
     			.putLong(PREF_SEEK_POSITION, getSeekPosition())
     			.apply();
     }
     
     private void onTrackChanged() {
-    	/*final Track currentTrack = getCurrentTrack();
-    	final long position = position();
-    	final long timestamp = System.currentTimeMillis();
-    	synchronized(mMusicPlaybackCallbacks) {
-    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
-    			callback.onTrackChanged(currentTrack);
-    			callback.onPositionSync(position, timestamp);
-    		}
-    	}*/
     	Intent broadcastIntent = new Intent(TRACK_CHANGED);
     	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
     	
@@ -542,24 +534,17 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     private void onQueueChanged() {
+    	Intent broadcastIntent = new Intent(QUEUE_CHANGED);
+    	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+    	
     	// Next track may have become invalid
     	setNextTrack();
     	
     	// Queue position may have changed
-    	//onQueuePositionChanged();
-    	Intent broadcastIntent = new Intent(QUEUE_CHANGED);
-    	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+    	onQueuePositionChanged();
     }
     
     private void onQueuePositionChanged() {
-    	//Intent broadcastIntent = new Intent(QUEUE_CHANGED);
-    	//LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(QUEUE_CHANGED));
-    	/*final int queuePosition = mPlayQueue.getPosition();
-    	synchronized(mMusicQueueCallbacks) {
-    		for (MusicQueueCallback callback : mMusicQueueCallbacks) {
-    			callback.onPositionChanged(queuePosition);
-    		}
-    	}*/
     	Intent broadcastIntent = new Intent(QUEUE_POSITION_CHANGED);
     	broadcastIntent.putExtra(EXTRA_QUEUE_POSITION, mPlayQueue.getPosition());
     	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -567,14 +552,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onPlayStateChanged() {
     	final boolean isPlaying = isPlaying();
-    	//final long position = position();
-    	//final long timestamp = System.currentTimeMillis();
-    	/*synchronized(mMusicPlaybackCallbacks) {
-    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
-    			callback.onPlayStateChanged(isPlaying);
-    			callback.onPositionSync(position, timestamp);
-    		}
-    	}*/
     	Intent broadcastIntent = new Intent(PLAYSTATE_CHANGED);
     	broadcastIntent.putExtra(EXTRA_PLAYSTATE, isPlaying);
     	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -591,12 +568,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     private void onShuffleStateChanged() {
-    	/*final boolean shuffleEnabled = isShuffleEnabled();
-    	synchronized (mMusicPlaybackCallbacks) {
-    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
-    			callback.onShuffleStateChanged(shuffleEnabled);
-    		}
-    	}*/
     	Intent broadcastIntent = new Intent(SHUFFLESTATE_CHANGED);
     	broadcastIntent.putExtra(EXTRA_SHUFFLESTATE, isShuffleEnabled());
     	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -604,11 +575,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onRepeatModeChanged() {
     	final int repeatMode = getRepeatMode();
-    	/*synchronized(mMusicPlaybackCallbacks) {
-    		for (MusicPlaybackCallback callback : mMusicPlaybackCallbacks) {
-    			callback.onRepeatModeChanged(repeatMode);
-    		}
-    	}*/
     	Intent broadcastIntent = new Intent(REPEATMODE_CHANGED);
     	broadcastIntent.putExtra(EXTRA_REPEATMODE, repeatMode);
     	LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -692,13 +658,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Stops playback
      * 
-     * @param removeStatusIcon True to go to the idle state, false otherwise
+     * @param gotoIdleState True to go to the idle state, false otherwise
      */
-    private void stop(final boolean removeStatusIcon) {
+    private void stop(boolean gotoIdleState) {
         if (mPlayer.isInitialized()) {
         	mPlayer.stop();
         }
-        if (removeStatusIcon) {
+        if (gotoIdleState) {
             gotoIdleState();
         } else {
             stopForeground(false);
@@ -1072,7 +1038,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	@Override
 	public void onTrackEnded() {
 		Log.d(TAG, "Track ended");
-		mWakeLock.acquire(30000);
 		gotoIdleState();
 	}
 
@@ -1153,24 +1118,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 restoreState();
                 mMediaMounted = true;
                 onTrackChanged();
-            }
-        }
-    }
-
-    private static class DelayedStopHandler extends Handler {
-
-        private final WeakReference<MusicService> mService;
-        
-        public DelayedStopHandler(MusicService service) {
-        	mService = new WeakReference<MusicService>(service);
-        }
-    	
-    	@Override
-        public void handleMessage(final Message msg) {
-            if (!mService.get().isPlaying() && !mService.get().mPausedByTransientLossOfFocus 
-            		&& !mService.get().mIsBound) {
-                
-                mService.get().stopSelf(mService.get().mServiceStartId);
             }
         }
     }
