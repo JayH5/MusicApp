@@ -1113,11 +1113,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 mMediaMounted = false;
                 stop(true);
 		        onTrackChanged();
+		        onQueueChanged();
             } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
                 mCardId = getCardId();
                 restoreState();
                 mMediaMounted = true;
                 onTrackChanged();
+                onQueueChanged();
             }
         }
     }
