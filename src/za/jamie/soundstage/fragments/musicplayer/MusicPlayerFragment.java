@@ -2,12 +2,10 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 import android.animation.ObjectAnimator;
@@ -30,16 +28,19 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 public class MusicPlayerFragment extends MusicFragment {
 
 	// Rate at which the repeat listeners for the seek buttons refresh in ms
 	private static final int REPEAT_INTERVAL = 260;
 	
+	private static final Uri ALBUM_ART_BASE_URI = 
+			Uri.parse("content://media/external/audio/albumart");
+	
 	// Handle elapsed time text updates
     private final Handler mHandler = new Handler();
     private boolean mSeeking = false;
-	
-	private ImageFetcher mImageWorker;
 	
 	// Play control buttons
 	private ImageButton mPlayPauseButton;
@@ -93,8 +94,6 @@ public class MusicPlayerFragment extends MusicFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
 		
 		// Register connection observer
 		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
@@ -273,7 +272,8 @@ public class MusicPlayerFragment extends MusicFragment {
 			mArtistText.setText(track.getArtist());
 			mArtistText.setTag(track.getArtistId());
 			
-			mImageWorker.loadAlbumImage(track, mAlbumArt);
+			final Uri uri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, track.getAlbumId());
+			Picasso.with(getActivity()).load(uri).placeholder(mAlbumArt.getDrawable()).into(mAlbumArt);
 			
 			updateDuration(track.getDuration());
 		}

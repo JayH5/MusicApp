@@ -3,10 +3,8 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActivityOptions;
 import android.app.Fragment;
@@ -24,6 +22,8 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
@@ -93,16 +93,19 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 	
 	private static class AlbumsAdapter extends LibraryAdapter {
 		
+		private static final Uri ALBUM_ART_BASE_URI = 
+				Uri.parse("content://media/external/audio/albumart");
+		
 		private int mAlbumColIdx;
 		private int mAlbumIdColIdx;
 		private int mArtistColIdx;
 		
-		private ImageFetcher mImageWorker;
+		private final Context mContext;
 
 		public AlbumsAdapter(Context context, int layout, int headerLayout,
 				Cursor c, int flags) {
 			super(context, layout, headerLayout, c, flags);
-			mImageWorker = ImageUtils.getThumbImageFetcher(context);
+			mContext = context;
 		}
 
 		@Override
@@ -125,7 +128,10 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 			
 			album.setText(cursor.getString(mAlbumColIdx));
 			artist.setText(cursor.getString(mArtistColIdx));
-			mImageWorker.loadAlbumImage(cursor.getLong(mAlbumIdColIdx), albumArt);
+			
+			final Uri uri = 
+					ContentUris.withAppendedId(ALBUM_ART_BASE_URI, cursor.getLong(mAlbumIdColIdx));
+			Picasso.with(mContext).load(uri).into(albumArt);
 		}
 		
 	}

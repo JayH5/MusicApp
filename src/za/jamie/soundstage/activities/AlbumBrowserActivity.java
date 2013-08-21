@@ -8,7 +8,6 @@ import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.models.AlbumStatistics.Artist;
-import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -32,6 +31,8 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 public class AlbumBrowserActivity extends MusicActivity implements 
 		AlbumTrackListFragment.AlbumStatisticsCallback {
 	
@@ -40,6 +41,9 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	private static final String TAG_IMAGE_DIALOG = "tag_image_dialog";
 
 	private static final String EXTRA_ALBUM_ID = "extra_album_id";
+	
+	private static final Uri ALBUM_ART_BASE_URI = 
+			Uri.parse("content://media/external/audio/albumart");
 	
 	private long mAlbumId;
 	
@@ -97,7 +101,10 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		
 		// Load up the album artwork
 		ImageView albumArt = (ImageView) findViewById(R.id.albumThumb);
-		ImageUtils.getThumbImageFetcher(this).loadAlbumImage(mAlbumId, albumArt);
+		
+		final Uri uri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, mAlbumId);
+		Picasso.with(this).load(uri).into(albumArt);
+		
 		albumArt.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
