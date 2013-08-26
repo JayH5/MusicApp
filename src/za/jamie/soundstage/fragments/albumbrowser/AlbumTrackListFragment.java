@@ -112,6 +112,7 @@ public class AlbumTrackListFragment extends TrackListFragment {
 	private static class AlbumTrackListAdapter extends BasicTrackAdapter {
 
 		private int mTrackNumColIdx;
+		private boolean mIsCompilation = false;
 		
 		public AlbumTrackListAdapter(Context context, int layout, Cursor c,
 				int flags) {
@@ -124,18 +125,33 @@ public class AlbumTrackListFragment extends TrackListFragment {
 			super.getColumnIndices(cursor);
 			mTrackNumColIdx = cursor
 					.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK);
+			
+			// Search to determine if there is more than one artist
+			if (cursor.moveToFirst()) {
+				final long artistId = cursor.getLong(getArtistIdColIdx());
+				while (cursor.moveToNext()) {
+					if (artistId != cursor.getLong(getArtistIdColIdx())) {
+						mIsCompilation = true;
+						break;
+					}
+				}
+			}
 		}
 		
 		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
+		public void bindView(View view, Context context, Cursor cursor) {			
 			TextView titleText = (TextView) view.findViewById(R.id.title);
-			TextView durationText = (TextView) view.findViewById(R.id.subtitle);
+			TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
 			TextView trackNumText = (TextView) view.findViewById(R.id.trackNumber);
 			
 			titleText.setText(cursor.getString(getTitleColIdx()));
 			
-			long duration = cursor.getLong(getDurationColIdx());
-			durationText.setText(TextUtils.getTrackDurationText(duration));
+			if (mIsCompilation) {
+				subtitleText.setText(cursor.getString(getArtistColIdx()));
+			} else {
+				long duration = cursor.getLong(getDurationColIdx());
+				subtitleText.setText(TextUtils.getTrackDurationText(duration));
+			}
 			
 			int trackNum = cursor.getInt(mTrackNumColIdx);
 			trackNumText.setText(TextUtils.getTrackNumText(trackNum));
