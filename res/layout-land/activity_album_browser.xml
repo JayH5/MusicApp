@@ -4,12 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="horizontal" >
     
-    <include
-        android:id="@+id/summaryFrame"
+    <fragment
+        android:name="za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment"
+        android:id="@+id/summary_fragment"
         android:layout_width="@dimen/summary_album_image_size"
         android:layout_height="match_parent"
-        android:layout_margin="8dp"
-        layout="@layout/fragment_album_summary" />
+        android:layout_margin="8dp" />
     
     <FrameLayout 
         android:id="@+id/listFrame"
