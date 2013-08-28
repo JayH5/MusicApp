@@ -15,8 +15,7 @@
     
     <TextView
    		android:id="@+id/albumTracks"
-   		style="@style/NowText"
-   		android:maxLines="2" />
+   		style="@style/NowText" />
 
 	<TextView
    		android:id="@+id/albumDuration"

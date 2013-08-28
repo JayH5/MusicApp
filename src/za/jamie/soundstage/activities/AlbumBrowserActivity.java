@@ -52,7 +52,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		if (mTrackListFragment == null) {
 			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);			
 			fm.beginTransaction()
-					.add(R.id.listFrame, mTrackListFragment, TAG_LIST_FRAG)
+					.add(R.id.list_frame, mTrackListFragment, TAG_LIST_FRAG)
 					.commit();
 		}		
 	}
