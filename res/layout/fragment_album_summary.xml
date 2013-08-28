@@ -33,7 +33,8 @@
            	<TextView
            		android:id="@+id/albumTracks"
            		android:layout_weight="1"
-           		style="@style/NowText" />
+           		style="@style/NowText"
+           		android:maxLines="2" />
         
        		<TextView
            		android:id="@+id/albumDuration"
