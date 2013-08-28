@@ -15,6 +15,7 @@ import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.Menu;
@@ -48,7 +49,12 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		// Set up the menu drawer to display the player
 		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		mMenuDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menudrawer_width));
+		
+		// Have to set offset... kind of a pain
+		final Resources res = getResources();
+		int menuSize = res.getDisplayMetrics().widthPixels
+				- res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
+		mMenuDrawer.setMenuSize(menuSize);		
 		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
 		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
 		mMenuDrawer.setOnDrawerStateChangeListener(this);
