@@ -24,7 +24,7 @@ import android.widget.SearchView;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 	
-	private static final String TAG_PLAYER = "player";
+	//private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
@@ -61,13 +61,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
-		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
-		if (mPlayer == null) {
-			mPlayer = new MusicPlayerFragment();
-			fm.beginTransaction()
-				.add(R.id.menu_frame, mPlayer, TAG_PLAYER)
-				.commit();
-		}
+		mPlayer = (MusicPlayerFragment) fm.findFragmentById(R.id.player);
 		
 		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
 		if (mPlayQueue == null) {
