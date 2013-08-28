@@ -7,6 +7,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
@@ -80,6 +81,18 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 			}
 		});
 		
+		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
+			@Override
+			public void onConnected() {
+				if (!AppUtils.isApplicationSentToBackground(MusicActivity.this)) {
+					mConnection.hideNotification();
+				}
+			}
+
+			@Override
+			public void onDisconnected() { }			
+		});
+		
 		Intent serviceIntent = new Intent(this, MusicService.class);
 		startService(serviceIntent);
 		bindService(serviceIntent, mConnection, 0);
@@ -103,9 +116,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	@Override
-    protected void onResume() {
-        super.onResume();
-        mConnection.hideNotification();
+	protected void onResume() {
+		super.onResume();
+		mConnection.hideNotification();
 	}
 	
 	@Override
