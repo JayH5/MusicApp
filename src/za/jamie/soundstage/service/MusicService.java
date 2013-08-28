@@ -684,7 +684,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	
 	private void deliverPlayQueue(IPlayQueueCallback callback) {
 		try {
-			callback.deliverTrackList(mPlayQueue.getTrackList(), 
+			callback.deliverTrackList(mPlayQueue.getPlayQueue(), 
 					mPlayQueue.getPosition(), mPlayQueue.isShuffled());
 		} catch (RemoteException e) {
 			Log.w(TAG, "deliverPlayQueue()", e);
