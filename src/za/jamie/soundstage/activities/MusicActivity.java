@@ -14,7 +14,6 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -217,13 +216,11 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	private PendingIntent getNotificationIntent() {
-		// Bring back activity as is was with player showing
-		Intent intent = Intent.makeMainActivity(
-				new ComponentName(this, this.getClass()));
+		// Bring back activity as it was with player showing
+		Intent intent = new Intent(this, this.getClass());
 		intent.setAction(ACTION_SHOW_PLAYER)
 			.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-			.fillIn(getIntent(), 0);
+			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 		
 		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
