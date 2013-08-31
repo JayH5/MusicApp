@@ -59,10 +59,7 @@
         	
         </activity>
 
-        <receiver android:name=".service.MusicIntentReceiver" >
-            <intent-filter>
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
-            </intent-filter>
+        <receiver android:name=".service.MediaButtonReceiver" >
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
@@ -80,6 +77,13 @@
                 <action android:name="za.jamie.soundstage.action.NEXT" />
                 <action android:name="za.jamie.soundstage.action.PREVIOUS" />
                 <action android:name="za.jamie.soundstage.action.STOP" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_MEDIA_EJECT" />
+                <action android:name="android.intent.action.ACTION_MEDIA_MOUNT" />
             </intent-filter>
         </service>
         

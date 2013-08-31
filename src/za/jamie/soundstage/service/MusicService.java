@@ -181,11 +181,15 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         // Initialize the audio manager and register any headset controls for
         // playback... set up the lockscreen controls
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        initRemoteControlClient();
+        mMediaButtonReceiverComponent =	new ComponentName(this, MediaButtonReceiver.class);
+        mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
+        mRemoteControlClient = createRemoteControlClient(mMediaButtonReceiverComponent);
+        mAudioManager.registerRemoteControlClient(mRemoteControlClient);
 
         // Register the broadcast receivers
         registerIntentReceiver();
         registerUnmountReceiver();
+        registerNoisyReceiver();
         
         // Restore previous state from shared preferences
         mPreferences = getSharedPreferences(PREFERENCES, 0);
@@ -199,19 +203,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Initializes the remote control client
      */
-    private void initRemoteControlClient() {
-        if (mMediaButtonReceiverComponent == null || mRemoteControlClient == null) {
-        	mMediaButtonReceiverComponent = new ComponentName(this, MusicIntentReceiver.class);
-        	mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
-        
-        	Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        	mediaButtonIntent.setComponent(mMediaButtonReceiverComponent);
-        	PendingIntent mediaPendingIntent = PendingIntent
-        			.getBroadcast(getApplicationContext(), 0, mediaButtonIntent, 0);
-        
-        	mRemoteControlClient = new RemoteControlClient(mediaPendingIntent);
-        	mAudioManager.registerRemoteControlClient(mRemoteControlClient);
-        }
+    private RemoteControlClient createRemoteControlClient(ComponentName mediaButtonReceiver) {       
+    	Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+    	mediaButtonIntent.setComponent(mediaButtonReceiver);
+    	PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(getApplicationContext(),
+    			0, mediaButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    
+    	RemoteControlClient rcc = new RemoteControlClient(mediaPendingIntent);
 		
 		// Flags for the media transport control that this client supports.
         final int flags = RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
@@ -220,7 +218,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE
                 | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE
                 | RemoteControlClient.FLAG_KEY_MEDIA_STOP;
-        mRemoteControlClient.setTransportControlFlags(flags);
+        rcc.setTransportControlFlags(flags);
+        
+        return rcc;
     }
 
     private void registerIntentReceiver() {
@@ -241,6 +241,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
         filter.addDataScheme("file");
         registerReceiver(mUnmountReceiver, filter);
+    }
+    
+    private void registerNoisyReceiver() {
+    	final IntentFilter filter = new IntentFilter();
+    	filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+    	registerReceiver(mNoisyReceiver, filter);
     }
 
     /**
@@ -289,6 +295,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         // Unregister the broadcast receivers
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
+        unregisterReceiver(mNoisyReceiver);
 
         // Remove any pending alarms
         mAlarmManager.cancel(mShutdownIntent);
@@ -374,6 +381,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             	Log.w(TAG, "Player not initialized while restoring state.");
                 return;
             }
+            onTrackChanged();
 
             // Get the saved seek position
             long seekPosition = mPreferences.getLong(PREF_SEEK_POSITION, 0);
@@ -548,7 +556,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
     		mNotificationManager.notify(NOTIFICATION_ID, mNotification.getNotification());
     	}
-    	updateRCCMetaData();
+    	updateRCCMetaData(currentTrack);
     	
     	mPreferences.edit()
 				.putLong(PREF_SEEK_POSITION, position())
@@ -1096,24 +1104,41 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
 
     private void updateRCCPlayState(boolean isPlaying) {
-    	initRemoteControlClient();
     	mRemoteControlClient
 				.setPlaybackState(isPlaying ? RemoteControlClient.PLAYSTATE_PLAYING
 						: RemoteControlClient.PLAYSTATE_PAUSED);
     }
     
-    private void updateRCCMetaData() {
-    	final Track track = getCurrentTrack();
-    	if (track != null) {
-    		mRemoteControlClient.editMetadata(true)
-				.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
-				.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())
-				.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
-				.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, track.getDuration())
-				.putBitmap(RemoteControlClient.MetadataEditor.BITMAP_KEY_ARTWORK,
-						getAlbumArt(track)).apply();    		
-    	}
+    private void updateRCCMetaData(Track track) {
+    	Bitmap albumArt = getAlbumArt(track);
+        if (albumArt != null) {
+            // RemoteControlClient wants to recycle the bitmaps thrown at it, so we need
+            // to make sure not to hand out our cache copy
+            Bitmap.Config config = albumArt.getConfig();
+            if (config == null) {
+                config = Bitmap.Config.ARGB_8888;
+            }
+            albumArt = albumArt.copy(config, false);
+        }
+    	mRemoteControlClient.editMetadata(true)
+			.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
+			.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())
+			.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
+			.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, track.getDuration())
+			.putBitmap(RemoteControlClient.MetadataEditor.BITMAP_KEY_ARTWORK,
+					albumArt).apply();
     }
+    
+    /**
+     * Workaround for Android weirdness when headphones unplugged
+     */
+    /*private void resetRCC() {
+    	mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
+    	mRemoteControlClient = createRemoteControlClient(mMediaButtonReceiverComponent);
+    	mAudioManager.registerRemoteControlClient(mRemoteControlClient);
+    	updateRCCPlayState(isPlaying());
+    	updateRCCMetaData(getCurrentTrack());
+    }*/
     
     private Bitmap getAlbumArt(Track track) {
     	final String key = String.valueOf(track.getAlbumId());
@@ -1215,12 +1240,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	@Override
         public void onReceive(final Context context, final Intent intent) {
             final String action = intent.getAction();
-            if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
+            if (Intent.ACTION_MEDIA_EJECT.equals(action)) {
                 mMediaMounted = false;
                 stop(true);
 		        onTrackChanged();
 		        onQueueChanged();
-            } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
+            } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) {
                 mCardId = getCardId();
                 restoreState();
                 mMediaMounted = true;
@@ -1228,6 +1253,17 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 onQueueChanged();
             }
         }
+    };
+    
+    private final BroadcastReceiver mNoisyReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
+				pause();
+				//resetRCC();
+			}
+		}    	
     };
 	
 }
