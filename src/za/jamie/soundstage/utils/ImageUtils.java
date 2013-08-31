@@ -7,9 +7,7 @@ import za.jamie.soundstage.bitmapfun.ImageResizer;
 import za.jamie.soundstage.bitmapfun.MemoryLruCache;
 import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
 import android.content.Context;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 public class ImageUtils {
 	
@@ -82,14 +80,7 @@ public class ImageUtils {
 	}
 	
 	public static ImageResizer getBigResizer(Context context) {
-		int dimen = getDisplayMetrics(context).widthPixels;
+		int dimen = context.getResources().getDisplayMetrics().widthPixels;
 		return new ImageResizer(context, dimen);
-	}
-	
-	public static DisplayMetrics getDisplayMetrics(final Context context) {
-		final DisplayMetrics displayMetrics = new DisplayMetrics();
-     	WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-     	wm.getDefaultDisplay().getMetrics(displayMetrics);
-     	return displayMetrics;
 	}
 }

@@ -28,15 +28,14 @@ import android.view.KeyEvent;
  * broadcast, for example, when the user disconnects the headphones. This class works because we are
  * declaring it in a &lt;receiver&gt; tag in AndroidManifest.xml.
  */
-public class MusicIntentReceiver extends BroadcastReceiver {
+public class MediaButtonReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
-            context.startService(new Intent(MusicService.ACTION_PAUSE));
-        } else if (intent.getAction().equals(Intent.ACTION_MEDIA_BUTTON)) {
+        if (intent.getAction().equals(Intent.ACTION_MEDIA_BUTTON)) {
             KeyEvent keyEvent = (KeyEvent) intent.getExtras().get(Intent.EXTRA_KEY_EVENT);
-            if (keyEvent.getAction() != KeyEvent.ACTION_DOWN)
+            if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
                 return;
+            }
 
             switch (keyEvent.getKeyCode()) {
                 case KeyEvent.KEYCODE_HEADSETHOOK:
@@ -56,8 +55,6 @@ public class MusicIntentReceiver extends BroadcastReceiver {
                     context.startService(new Intent(MusicService.ACTION_NEXT));
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                    // TODO: ensure that doing this in rapid succession actually plays the
-                    // previous song
                     context.startService(new Intent(MusicService.ACTION_PREVIOUS));
                     break;
             }

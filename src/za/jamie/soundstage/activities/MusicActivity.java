@@ -7,6 +7,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
@@ -15,6 +16,7 @@ import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.view.Menu;
@@ -24,11 +26,11 @@ import android.widget.SearchView;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 	
-	private static final String TAG_PLAYER = "player";
+	//private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
-	public static final String EXTRA_OPEN_DRAWER = "extra_open_drawer";
+	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
 	private ImageButton mPlayQueueButton;
 	
@@ -48,26 +50,21 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		
 		// Set up the menu drawer to display the player
 		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		mMenuDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menudrawer_width));
+		
+		// Have to set offset... kind of a pain
+		final Resources res = getResources();
+		int menuSize = res.getDisplayMetrics().widthPixels
+				- res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
+		mMenuDrawer.setMenuSize(menuSize);		
 		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
 		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
 		mMenuDrawer.setOnDrawerStateChangeListener(this);
-		
-		if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
-			mMenuDrawer.openMenu();
-		}
 
 		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
-		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
-		if (mPlayer == null) {
-			mPlayer = new MusicPlayerFragment();
-			fm.beginTransaction()
-				.add(R.id.menu_frame, mPlayer, TAG_PLAYER)
-				.commit();
-		}
+		mPlayer = (MusicPlayerFragment) fm.findFragmentById(R.id.player);
 		
 		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
 		if (mPlayQueue == null) {
@@ -81,6 +78,18 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 			public void onClick(View v) {
 				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
 			}
+		});
+		
+		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
+			@Override
+			public void onConnected() {
+				if (!AppUtils.isApplicationSentToBackground(MusicActivity.this)) {
+					mConnection.hideNotification();
+				}
+			}
+
+			@Override
+			public void onDisconnected() { }			
 		});
 		
 		Intent serviceIntent = new Intent(this, MusicService.class);
@@ -98,9 +107,17 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	@Override
-    protected void onResume() {
-        super.onResume();
-        mConnection.hideNotification();
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		if (ACTION_SHOW_PLAYER.equals(intent.getAction())) {
+			mMenuDrawer.openMenu();
+		}
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		mConnection.hideNotification();
 	}
 	
 	@Override
@@ -152,7 +169,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
+		if (mVibrator != null && 
+				(newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
 			mVibrator.vibrate(VIBRATION_LENGTH);
 		}
 	}
@@ -198,8 +216,13 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	}
 	
 	private PendingIntent getNotificationIntent() {
-		// TODO
-		return null;
+		// Bring back activity as it was with player showing
+		Intent intent = new Intent(this, this.getClass());
+		intent.setAction(ACTION_SHOW_PLAYER)
+			.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		
+		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
 
 }
