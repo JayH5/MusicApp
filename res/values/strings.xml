@@ -53,6 +53,8 @@
         <item quantity="other">%d albums</item>
     </plurals>
     
-    <string name="track_number_missing">--</string>    
+    <string name="track_number_missing">--</string>
+    
+    <string name="image_unavailable">Image unavailable</string>
 
 </resources>

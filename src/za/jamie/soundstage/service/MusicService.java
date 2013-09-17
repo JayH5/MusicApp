@@ -4,12 +4,11 @@ import java.util.List;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
-import za.jamie.soundstage.bitmapfun.DiskCache;
-import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
+import za.jamie.soundstage.R;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 import android.app.AlarmManager;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -19,10 +18,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
-import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
 import android.os.IBinder;
@@ -31,13 +27,13 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.squareup.picasso.Picasso;
+
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
 		MusicPlayer.PlayerEventListener {
 
 	private static final String TAG = "MusicService";
-	
-	private static final int NOTIFICATION_ID = 1;
 	
 	// Intent actions for external control
 	public static final String ACTION_TOGGLE_PLAYBACK = 
@@ -106,9 +102,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     // Queue of tracks to be played
     private PlayQueue mPlayQueue;
 
-    private MusicNotification mNotification; // Notifications 
-    private NotificationManager mNotificationManager;
-    private RemoteControlClient mRemoteControlClient; // Lockscreen controls
+    private MusicNotificationHelper mNotificationHelper; // Notifications
+    private MusicRCC mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
 
     private final IBinder mBinder = new MusicServiceStub(this);
@@ -120,9 +115,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
     		new RemoteCallbackList<IPlayQueueCallback>();
     
-    // Image caches
-    private SingleBitmapCache mMemoryCache;
-    private DiskCache mDiskCache;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -162,16 +154,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public void onCreate() {
         super.onCreate();
 
-        mNotification = new MusicNotification(this);
-        mNotificationManager = (NotificationManager) 
-        		getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Initialize the player and the fader
+        // Initialize the player
         mPlayer = new MusicPlayer(this);
         mPlayer.setPlayerEventListener(this);
-        
-        mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
-        mDiskCache = ImageUtils.getBigDiskCacheInstance(this);
         
         final Intent shutdownIntent = new Intent(this, MusicService.class);
         shutdownIntent.setAction(SHUTDOWN);
@@ -183,8 +168,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mMediaButtonReceiverComponent =	new ComponentName(this, MediaButtonReceiver.class);
         mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
-        mRemoteControlClient = createRemoteControlClient(mMediaButtonReceiverComponent);
+        mRemoteControlClient = MusicRCC.createRemoteControlClient(getApplicationContext(),
+        		mMediaButtonReceiverComponent);
         mAudioManager.registerRemoteControlClient(mRemoteControlClient);
+        
+        mNotificationHelper = new MusicNotificationHelper(this);
 
         // Register the broadcast receivers
         registerIntentReceiver();
@@ -198,29 +186,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
         // Listen for the idle state
         scheduleDelayedShutdown();
-    }
-
-    /**
-     * Initializes the remote control client
-     */
-    private RemoteControlClient createRemoteControlClient(ComponentName mediaButtonReceiver) {       
-    	Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-    	mediaButtonIntent.setComponent(mediaButtonReceiver);
-    	PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(getApplicationContext(),
-    			0, mediaButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-    
-    	RemoteControlClient rcc = new RemoteControlClient(mediaPendingIntent);
-		
-		// Flags for the media transport control that this client supports.
-        final int flags = RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-        		| RemoteControlClient.FLAG_KEY_MEDIA_NEXT
-                | RemoteControlClient.FLAG_KEY_MEDIA_PLAY
-                | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE
-                | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE
-                | RemoteControlClient.FLAG_KEY_MEDIA_STOP;
-        rcc.setTransportControlFlags(flags);
-        
-        return rcc;
     }
 
     private void registerIntentReceiver() {
@@ -275,7 +240,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         Log.d(TAG, "Destroying service.");
 
         mPlayQueue.closeDb();
-        mDiskCache.close();
         
         setAudioEffectsEnabled(false);
 
@@ -296,6 +260,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
         unregisterReceiver(mNoisyReceiver);
+        
+        Pablo.with(this).shutdown();
 
         // Remove any pending alarms
         mAlarmManager.cancel(mShutdownIntent);
@@ -369,11 +335,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         if (id == mCardId) {
         	// Bring back the queue
         	mPlayQueue = PlayQueue.restore(this);
-        	
-        	//final int pos = mPreferences.getInt(PREF_QUEUE_POSITION, 0);
-    		//if (!mPlayQueue.moveToPosition(pos)) {
-    			//return;
-    		//}
 
     		// Try load the tracks
     		openCurrentAndNext();
@@ -397,12 +358,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             if (repeatMode != REPEAT_ALL && repeatMode != REPEAT_CURRENT) {
             	repeatMode = REPEAT_NONE;
             }
-            setRepeatMode(repeatMode);
-
-            // Get the saved shuffle mode
-            //mShuffleEnabled = mPreferences.getBoolean(PREF_SHUFFLE_ENABLED, false);
-            //mShuffleEnabled = mPlayQueue.isShuffled();
-            
+            setRepeatMode(repeatMode);            
         } else {
         	mPlayQueue = new PlayQueue(this);
         }
@@ -553,14 +509,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	onQueuePositionChanged();
     	
     	if (mShowNotification) {
-    		mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
-    		mNotificationManager.notify(NOTIFICATION_ID, mNotification.getNotification());
+    		mNotificationHelper.updateMetaData(currentTrack);
     	}
-    	updateRCCMetaData(currentTrack);
+    	mRemoteControlClient.updateTrack(currentTrack);
     	
-    	mPreferences.edit()
-				.putLong(PREF_SEEK_POSITION, position())
-				.apply();
+    	updateAlbumArt(currentTrack);
     }
     
     private void onQueueChanged() {
@@ -586,10 +539,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mPlayQueueCallbackList.finishBroadcast();
     	}
-
-    	//mPreferences.edit()
-    			//.putInt(PREF_QUEUE_POSITION, queuePosition)
-    			//.apply();
     }
     
     private void onPlayStateChanged() {
@@ -613,10 +562,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	}
     	
     	if (mShowNotification) {
-    		mNotification.updatePlayState(isPlaying);
-    		mNotificationManager.notify(NOTIFICATION_ID, mNotification.getNotification());
+    		mNotificationHelper.updatePlayState(isPlaying);
     	}
-    	updateRCCPlayState(isPlaying);
+    	mRemoteControlClient.updatePlayState(isPlaying);
     	
     	mPreferences.edit()
 				.putLong(PREF_SEEK_POSITION, position())
@@ -638,10 +586,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
-
-    	//mPreferences.edit()
-    			//.putBoolean(PREF_SHUFFLE_ENABLED, shuffleEnabled)
-    			//.apply();
     }
     
     private void onRepeatModeChanged() {
@@ -1091,42 +1035,27 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     public synchronized void showNotification(PendingIntent intent) {
     	mShowNotification = true;
-    	mNotification.newNotification(this, intent);
-    	final Track currentTrack = getCurrentTrack();
-    	mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
-    	mNotification.updatePlayState(isPlaying());
-    	startForeground(NOTIFICATION_ID, mNotification.getNotification());
+    	mNotificationHelper.startForeground(this, intent);
+    	updateNotification();
+    }
+    
+    private void updateNotification() {
+    	Track currentTrack = getCurrentTrack();
+    	mNotificationHelper.updateMetaData(currentTrack);
+    	mNotificationHelper.updatePlayState(isPlaying());
+    	
+    	Uri albumArtUri = LastfmUris.getAlbumInfoUri(currentTrack);
+    	final int notificationDimen = R.dimen.notification_expanded_height;
+    	Pablo.with(this)
+    		.load(albumArtUri)
+    		.resizeDimen(notificationDimen, notificationDimen)
+    		.centerCrop()
+    		.into(mNotificationHelper);
     }
     
     public synchronized void hideNotification() {
     	mShowNotification = false;
     	stopForeground(true);
-    }
-
-    private void updateRCCPlayState(boolean isPlaying) {
-    	mRemoteControlClient
-				.setPlaybackState(isPlaying ? RemoteControlClient.PLAYSTATE_PLAYING
-						: RemoteControlClient.PLAYSTATE_PAUSED);
-    }
-    
-    private void updateRCCMetaData(Track track) {
-    	Bitmap albumArt = getAlbumArt(track);
-        if (albumArt != null) {
-            // RemoteControlClient wants to recycle the bitmaps thrown at it, so we need
-            // to make sure not to hand out our cache copy
-            Bitmap.Config config = albumArt.getConfig();
-            if (config == null) {
-                config = Bitmap.Config.ARGB_8888;
-            }
-            albumArt = albumArt.copy(config, false);
-        }
-    	mRemoteControlClient.editMetadata(true)
-			.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
-			.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())
-			.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
-			.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, track.getDuration())
-			.putBitmap(RemoteControlClient.MetadataEditor.BITMAP_KEY_ARTWORK,
-					albumArt).apply();
     }
     
     /**
@@ -1140,13 +1069,21 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	updateRCCMetaData(getCurrentTrack());
     }*/
     
-    private Bitmap getAlbumArt(Track track) {
-    	final String key = String.valueOf(track.getAlbumId());
-    	Bitmap albumArt = mMemoryCache.get(key);
-    	if (albumArt == null) {
-    		albumArt = mDiskCache.get(key);
+    private void updateAlbumArt(Track track) {
+    	Uri uri = LastfmUris.getAlbumInfoUri(track);
+    	Picasso pablo = Pablo.with(this);
+    	if (mShowNotification) {
+    		final int notificationDimen = R.dimen.notification_expanded_height;
+    		pablo.load(uri)
+    			.resizeDimen(notificationDimen, notificationDimen)
+    			.centerCrop()
+    			.into(mNotificationHelper);
     	}
-    	return albumArt;
+    	final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+    	pablo.load(uri)
+    		.resize(screenWidth, screenWidth)
+    		.centerCrop()
+    		.into(mRemoteControlClient);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

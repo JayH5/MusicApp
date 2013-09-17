@@ -3,123 +3,84 @@ package za.jamie.soundstage.service;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.models.Track;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.widget.RemoteViews;
 
-public class MusicNotification {
+import com.squareup.picasso.Picasso.LoadedFrom;
+import com.squareup.picasso.Target;
+
+public class MusicNotificationHelper implements Target {
+	
+	public static final int NOTIFICATION_ID = 1;
 	
 	private Notification mNotification;
+	private final NotificationManager mManager;
 	
 	private RemoteViews mBaseView;
 	private RemoteViews mExpandedView;
 	
-	public MusicNotification(Context context) {
-		mBaseView = new RemoteViews(context.getPackageName(),
-                R.layout.notification_base);
+	public MusicNotificationHelper(Context context) {
+		mManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+		
+		final String packageName = context.getPackageName();
+		mBaseView = new RemoteViews(packageName, R.layout.notification_base);
+		mExpandedView = new RemoteViews(packageName, R.layout.notification_expanded);
 		initPlaybackActions(context);
-		
-		mExpandedView = new RemoteViews(context.getPackageName(),
-        		R.layout.notification_expanded);
-		initExpandedPlaybackActions(context);
-		
-		
+		initExpandedPlaybackActions(context);		
     }
 	
-	private void initNotification(Context context, PendingIntent intent) {
-		mNotification = new Notification.Builder(context)
+	private Notification buildNotification(Context context, PendingIntent intent) {
+		Notification notification = new Notification.Builder(context)
 				.setSmallIcon(R.drawable.stat_notify_music)
 				.setContentIntent(intent)
 				.setPriority(Notification.PRIORITY_DEFAULT)
 				.setContent(mBaseView)
 				.build();
 
-		mNotification.bigContentView = mExpandedView;
+		notification.bigContentView = mExpandedView;
+		return notification;
 	}
 	
-	public void updateMeta(Track track, Bitmap albumArt) {		
-		if (mBaseView != null) {
-			initCollapsedLayout(track.getTitle(), track.getArtist(), albumArt);
-		}
-		if (mExpandedView != null) {
-			initExpandedLayout(track.getTitle(), track.getArtist(), track.getAlbum(), albumArt);
-		}
+	public void updateMetaData(Track track) {
+		initCollapsedLayout(track.getTitle(), track.getArtist());
+		initExpandedLayout(track.getTitle(), track.getArtist(), track.getAlbum());
+		mManager.notify(NOTIFICATION_ID, mNotification);
+	}
+	
+	public void updateAlbumArt(Bitmap albumArt) {
+		mBaseView.setImageViewBitmap(R.id.notification_base_image, albumArt);
+		mExpandedView.setImageViewBitmap(R.id.notification_expanded_image, albumArt);
+		mManager.notify(NOTIFICATION_ID, mNotification);
 	}
 	
 	public void updatePlayState(boolean isPlaying) {
-		if (mBaseView != null) {
-	        mBaseView.setImageViewResource(R.id.notification_base_play,
-	                isPlaying ? R.drawable.btn_playback_pause : R.drawable.btn_playback_play);
-	    }
-	    if (mExpandedView != null) {
-	        mExpandedView.setImageViewResource(R.id.notification_expanded_play,
-	                isPlaying ? R.drawable.btn_playback_pause : R.drawable.btn_playback_play);
-	    }
+		int playButtonDrawable = isPlaying ?
+				R.drawable.btn_playback_pause : R.drawable.btn_playback_play;
+	    mBaseView.setImageViewResource(R.id.notification_base_play, playButtonDrawable);
+	    mExpandedView.setImageViewResource(R.id.notification_expanded_play, playButtonDrawable);
+	    mManager.notify(NOTIFICATION_ID, mNotification);
 	}
 	
-	/*public PendingIntent getPendingIntent(Context context, ComponentName componentName, 
-			Uri uri) {
-		
-		Class<?> launchClass = null;
-		try {
-			launchClass = Class.forName(componentName.getClassName());
-		} catch (ClassNotFoundException e) {
-			Log.e("MusicNotification", "Couldn't find class for PendingIntent", e);
-		}
-		
-		if (launchClass != null) {
-			Intent launchIntent = new Intent(context, launchClass);
-			launchIntent = new Intent();
-			launchIntent.setData(uri);
-			launchIntent.putExtra(MusicActivity.EXTRA_OPEN_DRAWER, true);
-			TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-			stackBuilder.addParentStack(launchClass);
-			stackBuilder.addNextIntent(launchIntent);
-			return stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-			
-		}
-		return null;
-	}*/
-	
-	public Notification newNotification(Context context, PendingIntent intent) {
-		initNotification(context, intent);
-		
-		return mNotification;
+	public void startForeground(Service service, PendingIntent intent) {
+		mNotification = buildNotification(service, intent);
+		service.startForeground(NOTIFICATION_ID, mNotification);
 	}
 	
-	public Notification getNotification() {
-		return mNotification;
-	}
-	
-	/*private PendingIntent getPendingIntent(Context context) {
-		Intent intent = new Intent(context, LibraryActivity.class);
-		//intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		//intent.setAction(Intent.ACTION_MAIN);
-		intent.putExtra(MusicActivity.EXTRA_OPEN_DRAWER, true);
-		
-		TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-		stackBuilder.addParentStack(LibraryActivity.class);
-		stackBuilder.addNextIntent(intent);
-		PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-		
-		return pendingIntent;
-    }*/
-	
-	private void initCollapsedLayout(String track, String artist, Bitmap albumArt) {
+	private void initCollapsedLayout(String track, String artist) {
 	    mBaseView.setTextViewText(R.id.notification_base_line_one, track);
-	    mBaseView.setTextViewText(R.id.notification_base_line_two, artist);
-	    mBaseView.setImageViewBitmap(R.id.notification_base_image, albumArt);
+	    mBaseView.setTextViewText(R.id.notification_base_line_two, artist);	    
 	}
 	
-	private void initExpandedLayout(String track, String artist, String album, 
-			Bitmap albumArt) {
+	private void initExpandedLayout(String track, String artist, String album) {
         mExpandedView.setTextViewText(R.id.notification_expanded_base_line_one, track);
         mExpandedView.setTextViewText(R.id.notification_expanded_base_line_two, album);
         mExpandedView.setTextViewText(R.id.notification_expanded_base_line_three, artist);
-        mExpandedView.setImageViewBitmap(R.id.notification_expanded_image, albumArt);
     }
 	 
 	private void initPlaybackActions(Context context) {
@@ -199,5 +160,15 @@ public class MusicNotification {
 	            break;
 	    }
 	    return null;
+	}
+
+	@Override
+	public void onBitmapFailed() {
+		updateAlbumArt(null);
+	}
+
+	@Override
+	public void onBitmapLoaded(Bitmap bitmap, LoadedFrom from) {
+		updateAlbumArt(bitmap);		
 	}	
 }

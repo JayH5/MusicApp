@@ -2,12 +2,12 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicCursorAdapter;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.utils.ImageUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.ContentUris;
 import android.content.Context;
@@ -92,16 +92,18 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 
 		private int mIdColIdx;
 		private int mAlbumColIdx;
+		private int mArtistColIdx;
 		private int mNumSongsForArtistColIdx;
 		private int mFirstYearColIdx;
 		private int mLastYearColIdx;
+		//private int mAlbumArtColIdx;
 		
-		private ImageFetcher mImageWorker;
+		private final Context mContext;
 		
 		public ArtistAlbumListAdapter(Context context, int layout, Cursor c,
 				int flags) {			
 			super(context, layout, c, flags);
-			mImageWorker = ImageUtils.getThumbImageFetcher(context);
+			mContext = context;
 		}
 
 		@Override
@@ -111,7 +113,8 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 			TextView yearText = (TextView) view.findViewById(R.id.albumYear);
 			ImageView thumbImage = (ImageView) view.findViewById(R.id.albumThumb);
 			
-			nameText.setText(cursor.getString(mAlbumColIdx));
+			String album = cursor.getString(mAlbumColIdx);
+			nameText.setText(album);
 			
 			final Resources res = context.getResources();
 			tracksText.setText(TextUtils.getNumTracksText(res, 
@@ -120,19 +123,26 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 			yearText.setText(TextUtils.getYearText(cursor.getInt(mFirstYearColIdx), 
 					cursor.getInt(mLastYearColIdx)));
 			
-			mImageWorker.loadAlbumImage(cursor.getLong(mIdColIdx), thumbImage);
+			String artist = cursor.getString(mArtistColIdx);
+			long id = cursor.getLong(mIdColIdx);
+			Uri uri = LastfmUris.getAlbumInfoUri(album, artist, id);
+			
+			Pablo.with(mContext).load(uri).fit().centerCrop().into(thumbImage);
 		}
 		
 		@Override
 		protected void getColumnIndices(Cursor cursor) {
 			mIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID);
 			mAlbumColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
+			mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
 			mNumSongsForArtistColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST);
 			mFirstYearColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.FIRST_YEAR);
 			mLastYearColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.LAST_YEAR);
+			//mAlbumArtColIdx = cursor.getColumnIndexOrThrow(
+				//	MediaStore.Audio.Albums.ALBUM_ART);
 		}
 
 	}

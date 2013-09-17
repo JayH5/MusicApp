@@ -2,12 +2,11 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.SummaryAdapter;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.ImageDialogFragment;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.Activity;
-import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.Context;
@@ -42,8 +41,6 @@ public class ArtistSummaryFragment extends Fragment implements
 	private TextView mDurationText;
 	private ImageView mArtistImage;
 	
-	private ImageFetcher mImageWorker;
-	
 	public static ArtistSummaryFragment newInstance(Uri data) {
 		final Bundle args = new Bundle();
 		args.putParcelable(EXTRA_ARTIST_URI, data);
@@ -73,9 +70,6 @@ public class ArtistSummaryFragment extends Fragment implements
 		
 		mAdapter = new ArtistSummaryAdapter(getActivity(), null);
 		
-		// Get the image worker... can't load artwork until view inflated
-		mImageWorker = ImageUtils.getThumbImageFetcher(getActivity());
-		
 		getLoaderManager().initLoader(0, null, this);
 	}
 	
@@ -90,19 +84,6 @@ public class ArtistSummaryFragment extends Fragment implements
 		mNumTracksText = (TextView) view.findViewById(R.id.artistTracks);
 		mDurationText = (TextView) view.findViewById(R.id.artistDuration);
 		mArtistImage = (ImageView) view.findViewById(R.id.artistThumb);
-		
-		final long artistId = Long.parseLong(mArtistUri.getLastPathSegment());
-		mImageWorker.loadArtistImage(artistId, mArtistImage);
-		mArtistImage.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				final DialogFragment frag = ImageDialogFragment
-						.newInstance(artistId + ImageFetcher.ARTIST_SUFFIX);
-				
-				frag.show(getFragmentManager(), TAG_IMAGE_DIALOG);
-			}
-		});
 		
 		return view;
 	}
@@ -151,8 +132,24 @@ public class ArtistSummaryFragment extends Fragment implements
 				mNumTracksText.setText(TextUtils.getNumTracksText(res, 
 						cursor.getInt(numTracksColIdx)));
 				
+				final String artist = cursor.getString(artistColIdx);
+				final Uri lastfmUri = LastfmUris.getArtistInfoUri(artist);
+				Pablo.with(getActivity())
+					.load(lastfmUri)
+					.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
+					.centerCrop()
+					.into(mArtistImage);
+				
+				mArtistImage.setOnClickListener(new View.OnClickListener() {					
+					@Override
+					public void onClick(View v) {
+						ImageDialogFragment.newInstance(lastfmUri)
+							.show(getFragmentManager(), TAG_IMAGE_DIALOG);
+					}
+				});
+				
 				if (mCallback != null) {
-					mCallback.onArtistFound(cursor.getString(artistColIdx));
+					mCallback.onArtistFound(artist);
 				}
 			}		
 			

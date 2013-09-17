@@ -4,6 +4,8 @@ import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.widgets.DurationTextView;
@@ -28,15 +30,12 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Callback;
 
 public class MusicPlayerFragment extends MusicFragment {
 
 	// Rate at which the repeat listeners for the seek buttons refresh in ms
 	private static final int REPEAT_INTERVAL = 260;
-	
-	private static final Uri ALBUM_ART_BASE_URI = 
-			Uri.parse("content://media/external/audio/albumart");
 	
 	// Handle elapsed time text updates
     private final Handler mHandler = new Handler();
@@ -272,8 +271,22 @@ public class MusicPlayerFragment extends MusicFragment {
 			mArtistText.setText(track.getArtist());
 			mArtistText.setTag(track.getArtistId());
 			
-			final Uri uri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, track.getAlbumId());
-			Picasso.with(getActivity()).load(uri).placeholder(mAlbumArt.getDrawable()).into(mAlbumArt);
+			final Uri uri = LastfmUris.getAlbumInfoUri(track.getAlbum(), track.getArtist(),
+					track.getAlbumId());
+			Pablo.with(getActivity())
+				.load(uri)
+				.placeholder(mAlbumArt.getDrawable())
+				.into(mAlbumArt, new Callback() {
+
+					@Override
+					public void onError() {
+						mAlbumArt.setImageBitmap(null);
+					}
+
+					@Override
+					public void onSuccess() { }
+					
+				});
 			
 			updateDuration(track.getDuration());
 		}

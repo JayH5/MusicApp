@@ -11,7 +11,8 @@ public final class MusicStore {
 		public static final String[] PROJECTION = new String[] {
 			MediaStore.Audio.Albums._ID,
 			MediaStore.Audio.Albums.ALBUM,
-			MediaStore.Audio.Albums.ARTIST
+			MediaStore.Audio.Albums.ARTIST,
+			MediaStore.Audio.Albums.ALBUM_ART
 		};
 		public static final String SORT_ORDER = MediaStore.Audio.Albums.DEFAULT_SORT_ORDER;
 		
@@ -25,7 +26,8 @@ public final class MusicStore {
 					MediaStore.Audio.Albums.ARTIST,
 					MediaStore.Audio.Albums.FIRST_YEAR,
 					MediaStore.Audio.Albums.LAST_YEAR,
-					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST
+					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST,
+					MediaStore.Audio.Albums.ALBUM_ART
 			};
 			
 			return new CursorRequest(MediaStore.Audio.Artists.Albums.getContentUri("external", artistId),

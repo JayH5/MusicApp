@@ -3,11 +3,11 @@ package za.jamie.soundstage.fragments.library;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
 import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.ContentUris;
 import android.content.Context;
@@ -81,22 +81,22 @@ public class ArtistsFragment extends MusicListFragment {
     private static class ArtistsAdapter extends LibraryAdapter {
 
     	private int mArtistColIdx;
-    	private int mArtistIdColIdx;
+    	//private int mArtistIdColIdx;
     	private int mNumAlbumsIdx;
     	private int mNumTracksIdx;
     	
-    	private ImageFetcher mImageWorker;
+    	private final Context mContext;
     	
     	public ArtistsAdapter(Context context, int layout, int headerLayout,
 				Cursor c, int flags) {
 			super(context, layout, headerLayout, c, flags);
-			mImageWorker = ImageUtils.getThumbImageFetcher(context);
+			mContext = context;
 		}
 
 		@Override
 		protected void getColumnIndices(Cursor cursor) {
 			mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
-			mArtistIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
+			//mArtistIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
 			mNumAlbumsIdx = cursor
 					.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);
 			mNumTracksIdx = cursor
@@ -122,7 +122,12 @@ public class ArtistsFragment extends MusicListFragment {
 			numAlbumsText.setText(TextUtils.getNumAlbumsText(res, cursor.getInt(mNumAlbumsIdx)));
 			numTracksText.setText(TextUtils.getNumTracksText(res, cursor.getInt(mNumTracksIdx)));
 			
-			mImageWorker.loadArtistImage(cursor.getLong(mArtistIdColIdx), artist, artistImage);
+			Uri uri = LastfmUris.getArtistInfoUri(artist);
+			Pablo.with(mContext)
+				.load(uri)
+				.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
+				.centerCrop()
+				.into(artistImage);
 		}
     	
     }
