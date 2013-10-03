@@ -12,7 +12,6 @@ import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,9 +56,7 @@ public class ArtistTrackListFragment extends TrackListFragment {
 			Bundle savedInstanceState) {
 		View v = super.onCreateView(inflater, parent, savedInstanceState);
 		
-		if (AppUtils.isLandscape(getResources())) {
-			mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
-		}
+		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
 		
 		return v;
 	}
@@ -67,23 +64,18 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		if (mSpacerView != null) {
-			setListAdapter(null);
-			final ListView lv = getListView();
-			lv.addHeaderView(mSpacerView);
+		setListAdapter(null);
+		final ListView lv = getListView();
+		lv.addHeaderView(mSpacerView);
+		if (AppUtils.isLandscape(getResources())) {
 			lv.addFooterView(mSpacerView);
-			Log.d("ArtistTrackList", "Added headers and footers");
 		}
 		setListAdapter(mAdapter);
 	}
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		if (mSpacerView != null) {
-			super.onListItemClick(l, v, position - 1, id);
-		} else {
-			super.onListItemClick(l, v, position, id);
-		}
+		super.onListItemClick(l, v, position - 1, id);
     }
 	
 	@Override

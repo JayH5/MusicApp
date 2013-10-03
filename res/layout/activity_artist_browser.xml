@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res/za.jamie.soundstage"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:layout_height="match_parent" >
+    
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="-16dp"
+        android:layout_below="@+id/summary_and_strip" />
     
     <LinearLayout
+        android:id="@+id/summary_and_strip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
+        android:layout_gravity="top"
         android:background="@drawable/card_background"
         android:divider="?android:attr/dividerHorizontal"
         android:showDividers="middle"
@@ -30,11 +38,6 @@
             app:indicatorHeight="0dp"
             app:dividerPadding="8dp" />
           
-    </LinearLayout>
+    </LinearLayout>        
     
-	<android.support.v4.view.ViewPager
-        android:id="@+id/pager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />        
-    
-</LinearLayout>
+</RelativeLayout>

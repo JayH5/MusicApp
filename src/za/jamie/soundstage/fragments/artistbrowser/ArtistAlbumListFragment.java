@@ -58,10 +58,8 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup parent,
 			Bundle savedInstanceState) {
 		View v = super.onCreateView(inflater, parent, savedInstanceState);
-		
-		if (AppUtils.isLandscape(getResources())) {
-			mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
-		}
+
+		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
 		
 		return v;
 	}
@@ -69,10 +67,10 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		if (mSpacerView != null) {
-			setListAdapter(null);
-			final ListView lv = getListView();
-			lv.addHeaderView(mSpacerView);
+		setListAdapter(null);
+		final ListView lv = getListView();
+		lv.addHeaderView(mSpacerView);
+		if (AppUtils.isLandscape(getResources())) {
 			lv.addFooterView(mSpacerView);
 		}
 		setListAdapter(mAdapter);
