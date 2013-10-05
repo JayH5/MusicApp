@@ -18,9 +18,6 @@
         android:layout_margin="8dp"
         android:layout_gravity="top"
         android:background="@drawable/card_background"
-        android:divider="?android:attr/dividerHorizontal"
-        android:showDividers="middle"
-        android:dividerPadding="8dp"
         android:orientation="vertical" >
         
         <FrameLayout
