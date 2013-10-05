@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.media.RemoteControlClient;
 import android.os.Looper;
@@ -47,11 +48,6 @@ public class MusicRCC extends RemoteControlClient implements Target {
 	}
 
 	@Override
-	public void onBitmapFailed() {
-		editMetadata(false).putBitmap(MetadataEditor.BITMAP_KEY_ARTWORK, null).apply();		
-	}
-
-	@Override
 	public void onBitmapLoaded(Bitmap bitmap, LoadedFrom from) {
 		if (bitmap != null) {
 			// RemoteControlClient wants to recycle the bitmaps thrown at it, so we need
@@ -65,8 +61,8 @@ public class MusicRCC extends RemoteControlClient implements Target {
 		editMetadata(false).putBitmap(MetadataEditor.BITMAP_KEY_ARTWORK, bitmap).apply();		
 	}
 	
-	public void updateTrack(Track track) {
-		editMetadata(true)
+	public void updateTrack(Track track, boolean clearMetadata) {
+		editMetadata(clearMetadata)
 			.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
 			.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
 			.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())			
@@ -76,6 +72,17 @@ public class MusicRCC extends RemoteControlClient implements Target {
 	
 	public void updatePlayState(boolean isPlaying) {
 		setPlaybackState(isPlaying ? PLAYSTATE_PLAYING : PLAYSTATE_PAUSED);
+	}
+
+	@Override
+	public void onBitmapFailed(Drawable errorDrawable) {
+		editMetadata(false).putBitmap(MetadataEditor.BITMAP_KEY_ARTWORK, null).apply();
+	}
+
+	@Override
+	public void onPrepareLoad(Drawable arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

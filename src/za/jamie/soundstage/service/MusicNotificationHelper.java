@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso.LoadedFrom;
@@ -163,12 +164,17 @@ public class MusicNotificationHelper implements Target {
 	}
 
 	@Override
-	public void onBitmapFailed() {
+	public void onBitmapLoaded(Bitmap bitmap, LoadedFrom from) {
+		updateAlbumArt(bitmap);		
+	}
+
+	@Override
+	public void onBitmapFailed(Drawable errorDrawable) {
 		updateAlbumArt(null);
 	}
 
 	@Override
-	public void onBitmapLoaded(Bitmap bitmap, LoadedFrom from) {
-		updateAlbumArt(bitmap);		
+	public void onPrepareLoad(Drawable placeholder) {
+		updateAlbumArt(null);		
 	}	
 }

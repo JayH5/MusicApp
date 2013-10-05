@@ -105,6 +105,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private MusicNotificationHelper mNotificationHelper; // Notifications
     private MusicRCC mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
+    private long mLastAlbumId = -1;
 
     private final IBinder mBinder = new MusicServiceStub(this);
 
@@ -511,7 +512,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	if (mShowNotification) {
     		mNotificationHelper.updateMetaData(currentTrack);
     	}
-    	mRemoteControlClient.updateTrack(currentTrack);
+    	mRemoteControlClient.updateTrack(currentTrack, mLastAlbumId != currentTrack.getAlbumId());
     	
     	updateAlbumArt(currentTrack);
     }
@@ -1070,6 +1071,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }*/
     
     private void updateAlbumArt(Track track) {
+    	if (mLastAlbumId == track.getAlbumId()) {
+    		return;
+    	}
+    	
     	Uri uri = LastfmUris.getAlbumInfoUri(track);
     	Picasso pablo = Pablo.with(this);
     	if (mShowNotification) {
@@ -1084,6 +1089,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		.resize(screenWidth, screenWidth)
     		.centerCrop()
     		.into(mRemoteControlClient);
+    	
+    	mLastAlbumId = track.getAlbumId();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
