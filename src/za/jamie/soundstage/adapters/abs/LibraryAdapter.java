@@ -238,7 +238,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 						// Increment the position to account for the header view
 						position++;
 						// Mark as a header
-						mItemPositions.add(-section - 1);
+						mItemPositions.add((-section) - 1);
 						// Increment section count
 						section++;
 					} else {
