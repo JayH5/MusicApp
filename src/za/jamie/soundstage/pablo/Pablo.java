@@ -9,7 +9,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 
-import com.squareup.picasso.LruCache;
 import com.squareup.picasso.Picasso;
 
 public class Pablo {
@@ -38,7 +37,7 @@ public class Pablo {
 	private static Picasso buildPicasso(Context context) {
 		Picasso.Builder builder = new Picasso.Builder(context);
 		builder.downloader(new LastfmDownloader(context))
-			.memoryCache(new LruCache(calculateMemoryCacheSize(context, CACHE_PORTION)));
+			.memoryCache(new HackCache(context, calculateMemoryCacheSize(context, CACHE_PORTION)));
 		return builder.build();
 	}
 	
@@ -46,7 +45,7 @@ public class Pablo {
 		Picasso.Builder builder = new Picasso.Builder(context);
 		builder.downloader(new LastfmDownloader(context))
 			.executor(getSingleThreadExecutor())
-			.memoryCache(new LruCache(calculateMemoryCacheSize(context, SERVICE_CACHE_PORTION)));
+			.memoryCache(new HackCache(context, calculateMemoryCacheSize(context, SERVICE_CACHE_PORTION)));
 		return builder.build();
 	}
 	

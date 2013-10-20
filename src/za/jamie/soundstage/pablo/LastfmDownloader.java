@@ -25,13 +25,10 @@ public class LastfmDownloader implements Downloader {
 	
 	private static final int DEFAULT_READ_TIMEOUT = 20 * 1000; // 20s
 	private static final int DEFAULT_CONNECT_TIMEOUT = 15 * 1000; // 15s
-
-	private final DiskCache mCache;
 	private final Context mContext;
 	
 	public LastfmDownloader(Context context) {
 		mContext = context;
-		mCache = new DiskCache(context);
 	}
 	
 	protected HttpURLConnection openConnection(Uri uri) throws IOException {
@@ -57,15 +54,8 @@ public class LastfmDownloader implements Downloader {
 			}
 		}
 		
-		final String key = uri.toString();
-		in = mCache.get(key);
-		if (in != null) {
-			return new Response(in, true);
-		}
-		
 		if (!localCacheOnly) {
-			downloadImageToCache(key, getLastfmUri(uri));
-			in = mCache.get(key);
+			in = getImageDownload(uri.toString(), getLastfmUri(uri));
 			if (in != null) {
 				return new Response(in, false);
 			}
@@ -74,16 +64,13 @@ public class LastfmDownloader implements Downloader {
 		return null;
 	}
 	
-	private void downloadImageToCache(String key, Uri uri) throws IOException {
+	private InputStream getImageDownload(String key, Uri uri) throws IOException {
 		HttpURLConnection connection = openConnection(uri);
 		int responseCode = connection.getResponseCode();
 	    if (responseCode < 300) {
-	    	InputStream in = connection.getInputStream();
-	    	if (in != null) {
-	    		Log.d(TAG, "Opened connection for image");
-	    		mCache.put(key, connection.getInputStream());
-	    	}
+	    	return connection.getInputStream();
 	    }
+	    return null;
 	}
 	
 	private Uri getLastfmUri(Uri request) throws IOException {

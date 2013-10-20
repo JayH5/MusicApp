@@ -1,7 +1,6 @@
 package za.jamie.soundstage.pablo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,13 +11,19 @@ import java.security.NoSuchAlgorithmException;
 
 import za.jamie.soundstage.utils.AppUtils;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
-public class DiskCache {
+import com.squareup.picasso.Cache;
+
+public class DiskCache implements Cache {
 
 	private static final String TAG = "DiskCache";
 	
 	public static final String DEFAULT_CACHE_DIR_NAME = "Cache";
+	public static final int DEFAULT_COMPRESS_QUALITY = 98;
 
 	private final File mCacheDir;
 	
@@ -44,30 +49,25 @@ public class DiskCache {
 		}
 	}
 
-	public void put(String key, InputStream in) {		
+	@Override
+	public void set(String key, Bitmap bitmap) {		
 		synchronized (mLock) {
 			if (createDirIfNeeded()) {
 				final String diskKey = hashKeyForDisk(key);
 				File file = new File(mCacheDir, diskKey);
+				if (file.exists()) { // Already have file saved
+					return;
+				}
 				OutputStream out = null;
 				try {
 					out = new FileOutputStream(file);
-					writeStreams(in, out);
+					bitmap.compress(CompressFormat.JPEG, DEFAULT_COMPRESS_QUALITY, out);
 				} catch (FileNotFoundException e) {
 					Log.e(TAG, "Cache file could not be created.", e);
-				} catch (IOException e) {
-					Log.e(TAG, "Error adding bitmap to cache.", e);
-					// Delete file if there was a problem writing it
-					file.delete();
 				} finally {
 					if (out != null) {
 						try {
 							out.close();
-						} catch (IOException e) {}
-					}
-					if (in != null) {
-						try {
-							in.close();
 						} catch (IOException e) {}
 					}
 				}
@@ -82,17 +82,17 @@ public class DiskCache {
 		}
 	}
 
-	public InputStream get(String key) {
-		final String diskKey = hashKeyForDisk(key);		
+	@Override
+	public Bitmap get(String key) {
+		Bitmap bitmap = null;
+		final String diskKey = hashKeyForDisk(key);
 		synchronized(mLock) {
-			if (createDirIfNeeded()) {
+			//if (createDirIfNeeded()) {
 				File cacheFile = new File(mCacheDir, diskKey);
-				try {
-					return new FileInputStream(cacheFile);
-				} catch (FileNotFoundException ignored) { }
-			}
+				bitmap = BitmapFactory.decodeFile(cacheFile.getPath());
+			//}
 		}
-		return null;
+		return bitmap;
 	}
 	
 	public boolean delete(String key) {
@@ -106,6 +106,7 @@ public class DiskCache {
 		return false;
 	}
 
+	@Override
 	public void clear() {
 		synchronized (mLock) {
 			if (createDirIfNeeded()) {
@@ -153,5 +154,15 @@ public class DiskCache {
         }
         return builder.toString();
     }
+
+	@Override
+	public int maxSize() {
+		return 1;
+	}
+
+	@Override
+	public int size() {
+		return 0; // Infinite size
+	}
 
 }
