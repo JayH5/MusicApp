@@ -22,7 +22,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	// Indexing
 	private final List<String> mSections = new ArrayList<String>();
 	private final List<Integer> mSectionPositions = new ArrayList<Integer>();
-	private Object[] mSectionsArray;
+	private Object[] mSectionsArray = null;
 	private int mMinSectionSize = 1;
 	
 	// This is where the magic happens... For each item in the adapter an integer is
@@ -94,7 +94,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	public View getView(int position, View convertView, ViewGroup parent) {
 		int itemPosition = mItemPositions.get(position);
 		if (itemPosition < 0) {
-			String header = mSections.get(-itemPosition - 1);
+			String header = mSections.get((-itemPosition) - 1);
 			if (convertView == null) {
 				convertView = newHeaderView(mContext, header, parent);
 			}
@@ -114,11 +114,15 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	@Override
 	public Object getItem(int position) {
 		int itemPosition = mItemPositions.get(position);
-		return itemPosition >= 0 ? super.getItem(itemPosition) : mSections.get(-itemPosition - 1);
+		return itemPosition >= 0 ? super.getItem(itemPosition) : mSections.get((-itemPosition) - 1);
 	}
 
 	@Override
 	public int getPositionForSection(int section) {
+		// Android fastscroll sometimes tries to fetch the section beyond the end
+		if (section >= mSectionPositions.size()) { // If section does not exist, return length
+			return getCount();
+		}
 		return mSectionPositions.get(section);
 	}
 
@@ -127,7 +131,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 		while (position >= 0 && mItemPositions.get(position) >= 0) {
 			position--;
 		}
-		return (-mItemPositions.get(position) - 1);
+		return ((-mItemPositions.get(position)) - 1);
 	}
 
 	@Override
@@ -253,7 +257,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 				}
 				mItemPositions.add(cursor.getPosition());
 				position++;
-			} while (cursor.moveToNext());			
+			} while (cursor.moveToNext());		
 		}
 	}
 
