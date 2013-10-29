@@ -522,7 +522,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	setNextTrack();
     	
     	// Queue position may have changed
-    	onQueuePositionChanged();
+    	//onQueuePositionChanged();
     }
     
     private void onQueuePositionChanged() {
