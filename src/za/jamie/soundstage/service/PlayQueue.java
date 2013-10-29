@@ -247,11 +247,7 @@ public class PlayQueue {
 	 */
 	public boolean moveToPosition(int position) {
 		if (isPositionValid(position)) {
-			if (mShuffled) {
-				mPosition = mShuffleMap.indexOf(position);
-			} else {
-				mPosition = position;
-			}
+			mPosition = position;
 			positionChanged();
 			return true;
 		}
@@ -295,13 +291,7 @@ public class PlayQueue {
 	public boolean moveItem(int from, int to) {
 		boolean positionMoved = false;
 		if (from != to) {
-			//mTrackList.add(to, mTrackList.remove(from));
 			if (mShuffled) {
-				/*from = mShuffleMap.indexOf(from);
-				to = mShuffleMap.indexOf(to);
-				mShuffleMap.add(to, mShuffleMap.remove(from));
-				shuffleMapChanged();*/
-				
 				mShuffleMap.add(to, mShuffleMap.remove(from));
 				shuffleMapChanged();
 			} else {
@@ -312,10 +302,10 @@ public class PlayQueue {
 			if (from == mPosition) {
 				mPosition = to;
 				positionMoved = true;
-			} else if (from < mPosition && to > mPosition) {
+			} else if (from < mPosition && to >= mPosition) {
 				mPosition--;
 				positionMoved = true;
-			} else if (from > mPosition && to < mPosition) {
+			} else if (from > mPosition && to <= mPosition) {
 				mPosition++;
 				positionMoved = true;
 			}
@@ -323,8 +313,6 @@ public class PlayQueue {
 			if (positionMoved) {
 				positionChanged();
 			}
-			
-			//mDatabase.move(from, to);
 		}		
 		return positionMoved;
 	}
@@ -456,28 +444,20 @@ public class PlayQueue {
 	/**
 	 * Removes and returns the Track at the specified position.
 	 *
-	 * @return The Track that has been removed. If the position is invlaid,
-	 * 	returns null.
+	 * @return The Track that has been removed or null if the position is invalid
 	 */
 	public Track remove(int position) {
 		if (isPositionValid(position)) {
 			int trackListPosition = position;
 			// If shuffled, get the position in the shuffle map
-			if (mShuffled) {
-				/*trackListPosition = mShuffleMap.indexOf(trackListPosition);
-				mShuffleMap.remove(trackListPosition);
-				shuffleMapChanged();*/
-				
+			if (mShuffled) {				
 				trackListPosition = mShuffleMap.remove(position);
 				shuffleMapChanged();
 			}
-			//if (trackListPosition < mPosition) {
 			if (position < mPosition) {
 				mPosition--;
 				positionChanged();
 			}
-			//mDatabase.remove(position);
-			//return mTrackList.remove(position);
 			mDatabase.remove(trackListPosition);
 			return mTrackList.remove(trackListPosition);
 		}

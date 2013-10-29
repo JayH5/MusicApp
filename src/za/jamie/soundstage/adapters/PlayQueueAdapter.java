@@ -58,11 +58,7 @@ public class PlayQueueAdapter extends ResourceArrayAdapter<Track> {
 	
 	@Override
 	public int getItemViewType(int position) {
-		if (position == mQueuePosition) {
-			return 1;
-		} else {
-			return 0;
-		}
+		return position == mQueuePosition ? 1 : 0;
 	}
 	
 	@Override
@@ -72,10 +68,14 @@ public class PlayQueueAdapter extends ResourceArrayAdapter<Track> {
 	
 	@Override
 	public void move(int from, int to) {
-		super.move(from, to);
 		if (from == mQueuePosition) {
 			mQueuePosition = to;
+		} else if (from < mQueuePosition && to >= mQueuePosition) {
+			mQueuePosition--;
+		} else if (from > mQueuePosition && to <= mQueuePosition) {
+			mQueuePosition++;
 		}
+		super.move(from, to);
 	}
 
 }
