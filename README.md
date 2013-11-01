@@ -2,7 +2,7 @@ Soundstage
 ==========
 
 The player that brings your music centre stage.
-![Play screen](/screenshots/2013-05-23 18.23.43.png)
+![Play screen](/screenshots/2013-11-01 13.50.26.png)
 
 
 Dependencies
