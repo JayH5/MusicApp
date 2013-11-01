@@ -161,7 +161,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 
 			Pablo.with(mContext)
 				.load(uri)
-				.resize(mItemHeight, mItemHeight)
+				.fit()
 				.centerCrop()
 				.into(albumArtImage);
 		}
