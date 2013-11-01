@@ -1,36 +1,36 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.AlbumAdapter;
-import za.jamie.soundstage.adapters.wrappers.HeaderFooterAdapterWrapper;
-import za.jamie.soundstage.bitmapfun.ImageFetcher;
-import za.jamie.soundstage.fragments.DefaultListFragment;
+import za.jamie.soundstage.adapters.abs.BasicCursorAdapter;
+import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.CursorAdapter;
+import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class ArtistAlbumListFragment extends DefaultListFragment {
+public class ArtistAlbumListFragment extends MusicListFragment {
 	
-	public static final String EXTRA_ARTIST_ID = "extra_artist_id";
+	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
-	public ArtistAlbumListFragment() {}
-	
+	private ArtistAlbumListAdapter mAdapter;
+	private View mSpacerView;
+
 	public static ArtistAlbumListFragment newInstance(long artistId) {
 		Bundle args = new Bundle();
 		args.putLong(EXTRA_ARTIST_ID, artistId);
@@ -44,28 +44,36 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
         
-        CursorAdapter adapter = new ArtistAlbumListAdapter(getActivity(), 
+        mAdapter = new ArtistAlbumListAdapter(getActivity(), 
         		R.layout.list_item_artist_album, null, 0);
         
-        ListAdapter listAdapter;
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        	HeaderFooterAdapterWrapper wrapper = new HeaderFooterAdapterWrapper(getActivity(), adapter);
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
-        	wrapper.setFooterViewResource(R.layout.list_item_spacer);
-        	wrapper.setNumHeaders(1);
-        	wrapper.setNumFooters(1);
-        	listAdapter = wrapper;
-        } else {
-        	listAdapter = adapter;
-        }
-        
-        setListAdapter(listAdapter);
-        
-        long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
-        CursorManager cm = new CursorManager(getActivity(), adapter, 
+        final long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
+        CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Albums.getArtistAlbums(artistId));
         
         getLoaderManager().initLoader(1, null, cm);
+	}
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup parent,
+			Bundle savedInstanceState) {
+		View v = super.onCreateView(inflater, parent, savedInstanceState);
+
+		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
+		
+		return v;
+	}
+	
+	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		setListAdapter(null);
+		final ListView lv = getListView();
+		lv.addHeaderView(mSpacerView);
+		if (AppUtils.isLandscape(getResources())) {
+			lv.addFooterView(mSpacerView);
+		}
+		setListAdapter(mAdapter);
 	}
 	
 	@Override
@@ -78,21 +86,22 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
 		startActivity(intent);
 	}
 	
-	private static class ArtistAlbumListAdapter extends AlbumAdapter {
+	private static class ArtistAlbumListAdapter extends BasicCursorAdapter {
 
+		private int mIdColIdx;
+		private int mAlbumColIdx;
+		private int mArtistColIdx;
 		private int mNumSongsForArtistColIdx;
 		private int mFirstYearColIdx;
 		private int mLastYearColIdx;
+		//private int mAlbumArtColIdx;
 		
-		private Resources mResources;
-		private ImageFetcher mImageWorker;
+		private final Context mContext;
 		
 		public ArtistAlbumListAdapter(Context context, int layout, Cursor c,
-				int flags) {
-			
+				int flags) {			
 			super(context, layout, c, flags);
-			mResources = context.getResources();
-			mImageWorker = ImageUtils.getThumbImageFetcher(context);
+			mContext = context;
 		}
 
 		@Override
@@ -102,26 +111,36 @@ public class ArtistAlbumListFragment extends DefaultListFragment {
 			TextView yearText = (TextView) view.findViewById(R.id.albumYear);
 			ImageView thumbImage = (ImageView) view.findViewById(R.id.albumThumb);
 			
-			nameText.setText(cursor.getString(getAlbumColIdx()));
+			String album = cursor.getString(mAlbumColIdx);
+			nameText.setText(album);
 			
-			tracksText.setText(TextUtils.getNumTracksText(mResources, 
+			final Resources res = context.getResources();
+			tracksText.setText(TextUtils.getNumTracksText(res, 
 					cursor.getInt(mNumSongsForArtistColIdx)));
 			
 			yearText.setText(TextUtils.getYearText(cursor.getInt(mFirstYearColIdx), 
 					cursor.getInt(mLastYearColIdx)));
 			
-			mImageWorker.loadAlbumImage(cursor.getLong(getIdColIdx()), thumbImage);
+			String artist = cursor.getString(mArtistColIdx);
+			long id = cursor.getLong(mIdColIdx);
+			Uri uri = LastfmUris.getAlbumInfoUri(album, artist, id);
+			
+			Pablo.with(mContext).load(uri).fit().centerCrop().into(thumbImage);
 		}
 		
 		@Override
 		protected void getColumnIndices(Cursor cursor) {
-			super.getColumnIndices(cursor);
+			mIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums._ID);
+			mAlbumColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
+			mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
 			mNumSongsForArtistColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST);
 			mFirstYearColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.FIRST_YEAR);
 			mLastYearColIdx = cursor.getColumnIndexOrThrow(
 					MediaStore.Audio.Albums.LAST_YEAR);
+			//mAlbumArtColIdx = cursor.getColumnIndexOrThrow(
+				//	MediaStore.Audio.Albums.ALBUM_ART);
 		}
 
 	}

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
   	android:layout_width="match_parent"
-   	android:layout_height="@dimen/artist_image_thumb_size" >
+   	android:layout_height="@dimen/image_thumb_artist" >
    	    
     <LinearLayout
         android:layout_width="match_parent"

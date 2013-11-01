@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Image thumbnails -->
-    <dimen name="artist_image_thumb_size">96dp</dimen>
-    <dimen name="album_image_thumb_size">120dp</dimen>
+    <dimen name="image_thumb_artist">96dp</dimen>
+    <dimen name="image_thumb_album">120dp</dimen>
     <dimen name="image_thumb_padding">1dp</dimen>
     
     <!-- Summary fragments -->
     <dimen name="summary_artist_image_size">96dp</dimen>
     <dimen name="summary_album_image_size">150dp</dimen>
         
-    <!-- ViewPagerIndicator -->
-    <dimen name="vpi_text_size">14sp</dimen>
-    <dimen name="vpi_height">48dp</dimen>
+    <!-- PagerSlidingTabStrips -->
+    <dimen name="tabstrip_text_size">14sp</dimen>
+    <dimen name="tabstrip_height">48dp</dimen>
+    <dimen name="tabstrip_underline_height">1dp</dimen>
     
     <!-- List and grid views -->
     <dimen name="track_number_width">48dp</dimen>
@@ -27,6 +28,7 @@
     <dimen name="music_player_duration_text_size">12sp</dimen>
     <dimen name="list_padding_default">12dp</dimen>
     <dimen name="list_padding_fastscroll">32dp</dimen>
+    <dimen name="list_header_footer_spacing">8dp</dimen>
     
     <!-- Notifications -->
     <dimen name="notification_big_icon_width">64dp</dimen>
@@ -45,10 +47,10 @@
     <dimen name="notification_expanded_content_padding_top">8dp</dimen>
     <dimen name="notification_expanded_collapse_padding">8dp</dimen>
     
-    <!-- Sliding menu -->
-    <dimen name="slidingmenu_offset">60dp</dimen>
-    <dimen name="shadow_width">15dp</dimen>
-    <dimen name="menu_drawer_width">280dp</dimen>
+    <!-- Menu drawer -->
+    <dimen name="menudrawer_offset">60dp</dimen>
+    <dimen name="menudrawer_shadow_width">15dp</dimen>
+    <dimen name="menudrawer_width">280dp</dimen>
     
     <!-- Button bars -->
     <dimen name="button_bar_height">48dp</dimen>

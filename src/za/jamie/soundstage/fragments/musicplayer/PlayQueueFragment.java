@@ -5,14 +5,13 @@ import java.util.List;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
+import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.connections.MusicQueueConnection;
+import za.jamie.soundstage.service.MusicConnection;
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.os.Vibrator;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,13 +22,12 @@ import android.widget.ImageButton;
 
 import com.mobeta.android.dslv.DragSortListView;
 
-public class PlayQueueFragment extends DialogFragment implements 
+public class PlayQueueFragment extends MusicDialogFragment implements 
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
 	
 	private static final String STATE_LIST_POSITION = "state_list_position";
 	private static final String STATE_LIST_OFFSET = "state_list_offset";
 	
-	private static final long VIBE_DURATION = 15;
 	private static final int SCROLL_OFFSET = 35;
 	private static final int SCROLL_DURATION = 250; // 250ms
 	
@@ -38,12 +36,21 @@ public class PlayQueueFragment extends DialogFragment implements
 	
 	private View mIsShuffledView;
 	
-	private MusicQueueConnection mService;
-	
-	private Vibrator mVibrator;
-	
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
+	
+	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
+			new MusicConnection.ConnectionCallbacks() {
+		@Override
+		public void onConnected() {
+			getMusicConnection().registerPlayQueueCallback(mCallback);
+		}
+
+		@Override
+		public void onDisconnected() {
+			
+		}
+	};
 	
 	public static PlayQueueFragment newInstance() {		
 		return new PlayQueueFragment();
@@ -56,17 +63,12 @@ public class PlayQueueFragment extends DialogFragment implements
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
 		
-		if (mService != null && mAdapter.isEmpty()) {
-			mService.registerPlayQueueCallback(mCallback);
-			mService.requestPlayQueue();
-		}
+		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
 		
 		if (savedInstanceState != null) {
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
 			mSavedOffset = savedInstanceState.getInt(STATE_LIST_OFFSET, -1);
 		}
-		
-		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
 	
 	@Override
@@ -77,19 +79,6 @@ public class PlayQueueFragment extends DialogFragment implements
 			final View v = mDslv.getChildAt(0);
 			outState.putInt(STATE_LIST_OFFSET, v != null ? v.getTop() : 0);
 		}
-	}
-	
-	public void setServiceConnection(MusicQueueConnection service) {
-		if (mService != null) {
-			mService.unregisterPlayQueueCallback(mCallback);
-		}
-		if (service != null) {
-			service.registerPlayQueueCallback(mCallback);
-			if (isVisible() && mAdapter.isEmpty()) {
-				service.requestPlayQueue();
-			}
-		}
-		mService = service;
 	}
 	
 	@Override
@@ -142,9 +131,8 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		if (mService != null) {
-			mService.unregisterPlayQueueCallback(mCallback);
-		}
+		getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
+		getMusicConnection().unregisterPlayQueueCallback(mCallback);
 	}
 	
 	public void scrollToPosition() {
@@ -157,7 +145,7 @@ public class PlayQueueFragment extends DialogFragment implements
 	@Override
 	public void remove(int which) {
 		mAdapter.remove(which);
-		mService.removeTrack(which);
+		getMusicConnection().removeTrack(which);
 		
 		if (mAdapter.getCount() == 0) {
 			getDialog().dismiss();
@@ -168,19 +156,19 @@ public class PlayQueueFragment extends DialogFragment implements
 	public void drop(int from, int to) {
 		if (from != to) {
 			mAdapter.move(from, to);
-			mService.moveQueueItem(from, to);
+			getMusicConnection().moveQueueItem(from, to);
 		}
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int which, long id) {
-		mService.setQueuePosition(which);
+		getMusicConnection().setQueuePosition(which);
 		getDialog().dismiss();
 	}
 
 	@Override
 	public void drag(int from, int to) {
-		mVibrator.vibrate(VIBE_DURATION);		
+		mDslv.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);		
 	}
 	
 	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
@@ -192,6 +180,7 @@ public class PlayQueueFragment extends DialogFragment implements
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					mAdapter.clear();
 					mAdapter.addAll(trackList);
 					mAdapter.setQueuePosition(position);
 					if (mSavedPosition != -1 && mSavedOffset != -1) {

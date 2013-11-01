@@ -3,14 +3,14 @@ package za.jamie.soundstage.adapters.abs;
 import java.util.LinkedList;
 import java.util.List;
 
-import za.jamie.soundstage.adapters.interfaces.TrackAdapter;
+import za.jamie.soundstage.adapters.interfaces.TrackListAdapter;
 import za.jamie.soundstage.models.Track;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
 
 public abstract class BasicTrackAdapter extends BasicCursorAdapter 
-		implements TrackAdapter {
+		implements TrackListAdapter {
 	
 	private int mIdColIdx;
 	private int mTitleColIdx;

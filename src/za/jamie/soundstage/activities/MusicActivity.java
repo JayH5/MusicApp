@@ -1,34 +1,24 @@
 package za.jamie.soundstage.activities;
 
-import java.util.List;
-
 import net.simonvt.menudrawer.MenuDrawer;
 import net.simonvt.menudrawer.MenuDrawer.Type;
 import net.simonvt.menudrawer.Position;
-import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
 import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
 import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.service.connections.MusicLibraryConnection;
-import za.jamie.soundstage.service.connections.MusicNotificationConnection;
-import za.jamie.soundstage.service.proxies.MusicLibraryProxy;
-import za.jamie.soundstage.service.proxies.MusicNotificationProxy;
-import za.jamie.soundstage.service.proxies.MusicPlaybackProxy;
-import za.jamie.soundstage.service.proxies.MusicQueueProxy;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.app.PendingIntent;
 import android.app.SearchManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
-import android.net.Uri;
+import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Vibrator;
+import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageButton;
@@ -36,72 +26,40 @@ import android.widget.SearchView;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 	
-	private static final String TAG_PLAYER = "player";
+	//private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
-	public static final String EXTRA_OPEN_DRAWER = "extra_open_drawer";
+	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
 	private ImageButton mPlayQueueButton;
 	
-	private Vibrator mVibrator;
-	private static final long VIBRATION_LENGTH = 15;
-	
-	private MenuDrawer mDrawer;
+	protected MenuDrawer mMenuDrawer;
 	
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 	
-	private MusicLibraryConnection mLibraryConnection;
-	private MusicNotificationConnection mNotificationConnection;
-	private ServiceConnection mConnection = new ServiceConnection() {
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			IMusicService musicService = IMusicService.Stub.asInterface(service);
-			
-			mLibraryConnection = new MusicLibraryProxy(musicService);
-			mNotificationConnection = new MusicNotificationProxy(musicService);
-			
-			mPlayer.setServiceConnection(new MusicPlaybackProxy(musicService));
-			mPlayQueue.setServiceConnection(new MusicQueueProxy(musicService));
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-			mLibraryConnection = null;
-			mNotificationConnection = null;
-			
-			mPlayer.setServiceConnection(null);
-			mPlayQueue.setServiceConnection(null);
-		}		
-	};
+	private final MusicConnection mConnection = new MusicConnection();
 	
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		// Set up the menu drawer to display the player
-		mDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		mDrawer.setMenuSize(getResources().getDimensionPixelSize(R.dimen.menu_drawer_width));
-		mDrawer.setMenuView(R.layout.slidingmenu_frame);
-		mDrawer.setDropShadow(R.drawable.slidingmenu_shadow);
-		mDrawer.setOnDrawerStateChangeListener(this);
+		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
 		
-		if (getIntent().getBooleanExtra(EXTRA_OPEN_DRAWER, false)) {
-			mDrawer.openMenu();
-		}
-
-		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+		// Have to set offset... kind of a pain
+		final Resources res = getResources();
+		int menuSize = res.getDisplayMetrics().widthPixels
+				- res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
+		mMenuDrawer.setMenuSize(menuSize);		
+		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
+		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
+		mMenuDrawer.setOnDrawerStateChangeListener(this);
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
-		mPlayer = (MusicPlayerFragment) fm.findFragmentByTag(TAG_PLAYER);
-		if (mPlayer == null) {
-			mPlayer = new MusicPlayerFragment();
-			fm.beginTransaction()
-				.add(R.id.menu_frame, mPlayer, TAG_PLAYER)
-				.commit();
-		}
+		mPlayer = (MusicPlayerFragment) fm.findFragmentById(R.id.player);
 		
 		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
 		if (mPlayQueue == null) {
@@ -117,19 +75,44 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 			}
 		});
 		
+		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
+			@Override
+			public void onConnected() {
+				if (!AppUtils.isApplicationSentToBackground(MusicActivity.this)) {
+					mConnection.hideNotification();
+				}
+			}
+
+			@Override
+			public void onDisconnected() { }			
+		});
+		
 		Intent serviceIntent = new Intent(this, MusicService.class);
 		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, Context.BIND_ABOVE_CLIENT);
+		bindService(serviceIntent, mConnection, 0);
 	}
 
+	/**
+	 * Set the content view for this activity. Use this instead of {@link Activity#setContentView(int)}
+	 * so that the {@link MenuDrawer} can manage content properly.
+	 * @param layoutResId
+	 */
 	public void setMainContentView(int layoutResId) {
-		mDrawer.setContentView(layoutResId);
+		mMenuDrawer.setContentView(layoutResId);
 	}
 	
 	@Override
-    protected void onResume() {
-        super.onResume();        
-        hideNotification();
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		if (ACTION_SHOW_PLAYER.equals(intent.getAction())) {
+			mMenuDrawer.openMenu();
+		}
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		mConnection.hideNotification();
 	}
 	
 	@Override
@@ -148,9 +131,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	@Override
     public void onBackPressed() {
-		final int drawerState = mDrawer.getDrawerState();
+		final int drawerState = mMenuDrawer.getDrawerState();
         if (drawerState == MenuDrawer.STATE_OPEN || drawerState == MenuDrawer.STATE_OPENING) {
-            mDrawer.closeMenu();
+            mMenuDrawer.closeMenu();
             return;
         }
 		super.onBackPressed();
@@ -159,13 +142,13 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	@Override
     protected void onRestoreInstanceState(Bundle inState) {
         super.onRestoreInstanceState(inState);
-        mDrawer.restoreState(inState.getParcelable(STATE_MENUDRAWER));
+        mMenuDrawer.restoreState(inState.getParcelable(STATE_MENUDRAWER));
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(STATE_MENUDRAWER, mDrawer.saveState());
+        outState.putParcelable(STATE_MENUDRAWER, mMenuDrawer.saveState());
     }
     
     @Override
@@ -181,8 +164,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
-			mVibrator.vibrate(VIBRATION_LENGTH);
+		if ((newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
+			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 		}
 	}
 	
@@ -191,46 +174,49 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		// Complete interface
 	}
 	
-	public MenuDrawer getDrawer() {
-		return mDrawer;
+	protected void showNotification() {
+		mConnection.showNotification(getNotificationIntent());
 	}
 	
+	/**
+	 * Gets the {@link MusicConnection} instance associated with this MusicActivity that can
+	 * be used to access the MusicService's controls.
+	 * @return The connection to the MusicService
+	 */
+	public MusicConnection getMusicConnection() {
+		return mConnection;
+	}
+	
+	/**
+	 * Open the drawer with the player in it
+	 */
+	public void showPlayer() {
+		mMenuDrawer.openMenu();
+	}
+	
+	/**
+	 * Close the drawer with the player in it
+	 */
+	public void hidePlayer() {
+		mMenuDrawer.closeMenu();
+	}
+	
+	/**
+	 * Check with the player if anything is currently playing.
+	 * @return true if something is playing
+	 */
 	public boolean isPlaying() {
 		return mPlayer.isPlaying();
 	}
 	
-	public void open(List<Track> tracks, int position) {
-		if (mLibraryConnection != null) {
-			mLibraryConnection.open(tracks, position);
-			mDrawer.openMenu();
-		}
-	}
-	
-	public void shuffle(List<Track> tracks) {
-		if (mLibraryConnection != null) {
-			mLibraryConnection.shuffle(tracks);
-			mDrawer.openMenu();
-		}
-	}
-
-	public void enqueue(List<Track> tracks, int action) {
-		if (mLibraryConnection != null) {
-			mLibraryConnection.enqueue(tracks, action);
-		}
-	}
-	
-	public void showNotification() {
-		if (mNotificationConnection != null) {
-			final ComponentName component = new ComponentName(this, this.getClass());
-			final Uri uri = getIntent().getData();
-			mNotificationConnection.showNotification(component, uri);
-		}
-	}
-	
-	public void hideNotification() {
-		if (mNotificationConnection != null) {
-			mNotificationConnection.hideNotification();
-		}
+	private PendingIntent getNotificationIntent() {
+		// Bring back activity as it was with player showing
+		Intent intent = new Intent(this, this.getClass());
+		intent.setAction(ACTION_SHOW_PLAYER)
+			.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		
+		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
 
 }

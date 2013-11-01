@@ -1,15 +1,14 @@
 package za.jamie.soundstage.service;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
-import za.jamie.soundstage.bitmapfun.DiskCache;
-import za.jamie.soundstage.bitmapfun.SingleBitmapCache;
+import za.jamie.soundstage.R;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.utils.ImageUtils;
-import android.app.NotificationManager;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -19,27 +18,22 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
-import android.media.RemoteControlClient;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.PowerManager;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
+
+import com.squareup.picasso.Picasso;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
-		GaplessPlayer.PlayerEventListener {
+		MusicPlayer.PlayerEventListener {
 
 	private static final String TAG = "MusicService";
-	
-	private static final int NOTIFICATION_ID = 1;
 	
 	// Intent actions for external control
 	public static final String ACTION_TOGGLE_PLAYBACK = 
@@ -96,25 +90,22 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     // Audio playback objects
     private AudioManager mAudioManager;
-    private GaplessPlayer mPlayer;
-    private PowerManager.WakeLock mWakeLock;
+    private MusicPlayer mPlayer;
     
-    // Handlers
-    private final Handler mDelayedStopHandler = new DelayedStopHandler(this);
-    // Delay before releasing the media player to ensure fast stop/start
+    // Use alarm manager to shut down service after time
+    private AlarmManager mAlarmManager;
+    private PendingIntent mShutdownIntent;
+    private boolean mShutdownScheduled;
+    private static final String SHUTDOWN = "za.jamie.soundstage.shutdown";
     private static final int IDLE_DELAY = 60000;
-
-    // Broadcast receivers
-    private final BroadcastReceiver mIntentReceiver = new IntentReceiver();
-    private final BroadcastReceiver mUnmountReceiver = new UnmountReceiver();
 
     // Queue of tracks to be played
     private PlayQueue mPlayQueue;
 
-    private MusicNotification mNotification; // Notifications 
-    private NotificationManager mNotificationManager;
-    private RemoteControlClient mRemoteControlClient; // Lockscreen controls
+    private MusicNotificationHelper mNotificationHelper; // Notifications
+    private MusicRCC mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
+    private long mLastAlbumId = -1;
 
     private final IBinder mBinder = new MusicServiceStub(this);
 
@@ -125,14 +116,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
     		new RemoteCallbackList<IPlayQueueCallback>();
     
-    // Image caches
-    private SingleBitmapCache mMemoryCache;
-    private DiskCache mDiskCache;
 
     @Override
     public IBinder onBind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
+    	cancelShutdown();
         mIsBound = true;
         return mBinder;
     }
@@ -142,21 +129,25 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	mIsBound = false;
 
     	Log.d(TAG, "Unbind!");
-    	if (!isPlaying() && !mPausedByTransientLossOfFocus) {
-    		stopSelf(mServiceStartId);
-    		return false;
-    	}
-    	if (mPlayQueue.isEmpty()) {
-    		sendDelayedStopMessage(false);
-    	}
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            // Something is currently playing, or will be playing once
+            // an in-progress action requesting audio focus ends, so don't stop
+            // the service now.
+            return true;
 
-    	return true;
+            // If there is a playlist but playback is paused, then wait a while
+            // before stopping the service, so that pause/resume isn't slow.
+        } else if (!mPlayQueue.isEmpty()) {
+            scheduleDelayedShutdown();
+            return true;
+        }
+        stopSelf(mServiceStartId);
+        return true;
     }
 
     @Override
     public void onRebind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
+        cancelShutdown();
         mIsBound = true;
     }
 
@@ -164,64 +155,38 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public void onCreate() {
         super.onCreate();
 
-        mNotification = new MusicNotification(this);
-        mNotificationManager = (NotificationManager) 
-        		getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Initialize the player and the fader
-        mPlayer = new GaplessPlayer(this);
+        // Initialize the player
+        mPlayer = new MusicPlayer(this);
         mPlayer.setPlayerEventListener(this);
         
-        mMemoryCache = ImageUtils.getBigMemoryCacheInstance();
-        mDiskCache = ImageUtils.getBigDiskCacheInstance(this);
-        
-        final PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass().getName());
-        mWakeLock.setReferenceCounted(false);
+        final Intent shutdownIntent = new Intent(this, MusicService.class);
+        shutdownIntent.setAction(SHUTDOWN);
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        mShutdownIntent = PendingIntent.getService(this, 0, shutdownIntent, 0);
         
         // Initialize the audio manager and register any headset controls for
         // playback... set up the lockscreen controls
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        initRemoteControlClient();
+        mMediaButtonReceiverComponent =	new ComponentName(this, MediaButtonReceiver.class);
+        mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
+        mRemoteControlClient = MusicRCC.createRemoteControlClient(getApplicationContext(),
+        		mMediaButtonReceiverComponent);
+        mAudioManager.registerRemoteControlClient(mRemoteControlClient);
+        
+        mNotificationHelper = new MusicNotificationHelper(this);
 
         // Register the broadcast receivers
         registerIntentReceiver();
         registerUnmountReceiver();
+        registerNoisyReceiver();
         
         // Restore previous state from shared preferences
         mPreferences = getSharedPreferences(PREFERENCES, 0);
         mCardId = getCardId();
         restoreState();
 
-        // In case of creation without binding
-        sendDelayedStopMessage(false);
-    }
-
-    /**
-     * Initializes the remote control client
-     */
-    private void initRemoteControlClient() {
-        if (mMediaButtonReceiverComponent == null || mRemoteControlClient == null) {
-        	mMediaButtonReceiverComponent = new ComponentName(this, MusicIntentReceiver.class);
-        	mAudioManager.registerMediaButtonEventReceiver(mMediaButtonReceiverComponent);
-        
-        	Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        	mediaButtonIntent.setComponent(mMediaButtonReceiverComponent);
-        	PendingIntent mediaPendingIntent = PendingIntent
-        			.getBroadcast(getApplicationContext(), 0, mediaButtonIntent, 0);
-        
-        	mRemoteControlClient = new RemoteControlClient(mediaPendingIntent);
-        	mAudioManager.registerRemoteControlClient(mRemoteControlClient);
-        }
-		
-		// Flags for the media transport control that this client supports.
-        final int flags = RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-        		| RemoteControlClient.FLAG_KEY_MEDIA_NEXT
-                | RemoteControlClient.FLAG_KEY_MEDIA_PLAY
-                | RemoteControlClient.FLAG_KEY_MEDIA_PAUSE
-                | RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE
-                | RemoteControlClient.FLAG_KEY_MEDIA_STOP;
-        mRemoteControlClient.setTransportControlFlags(flags);
+        // Listen for the idle state
+        scheduleDelayedShutdown();
     }
 
     private void registerIntentReceiver() {
@@ -242,6 +207,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
         filter.addDataScheme("file");
         registerReceiver(mUnmountReceiver, filter);
+    }
+    
+    private void registerNoisyReceiver() {
+    	final IntentFilter filter = new IntentFilter();
+    	filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+    	registerReceiver(mNoisyReceiver, filter);
     }
 
     /**
@@ -270,7 +241,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         Log.d(TAG, "Destroying service.");
 
         mPlayQueue.closeDb();
-        mDiskCache.close();
         
         setAudioEffectsEnabled(false);
 
@@ -290,20 +260,59 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         // Unregister the broadcast receivers
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
-
-        // Remove any callbacks from the handlers
-        mDelayedStopHandler.removeCallbacksAndMessages(null); 
+        unregisterReceiver(mNoisyReceiver);
         
-        mWakeLock.release();
+        Pablo.with(this).shutdown();
+
+        // Remove any pending alarms
+        mAlarmManager.cancel(mShutdownIntent);
+    }
+    
+    private void releaseServiceAndStop() {
+    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+            return;
+        }
+
+        Log.d(TAG, "Nothing is playing anymore, releasing notification");
+        hideNotification();
+        mAudioManager.abandonAudioFocus(this);
+
+        if (!mIsBound) {
+            stopSelf(mServiceStartId);
+        }
+    }
+    
+    private void scheduleDelayedShutdown() {
+        Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
+        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + IDLE_DELAY, mShutdownIntent);
+        mShutdownScheduled = true;
+    }
+
+    private void cancelShutdown() {
+        Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
+        if (mShutdownScheduled) {
+            mAlarmManager.cancel(mShutdownIntent);
+            mShutdownScheduled = false;
+        }
     }
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         mServiceStartId = startId;
         if (intent != null) {
+        	if (SHUTDOWN.equals(intent.getAction())) {
+                mShutdownScheduled = false;
+                releaseServiceAndStop();
+                return START_NOT_STICKY;
+            }
+        	
             mIntentReceiver.onReceive(this, intent);
         }
 
+        // Make sure the service will shut down on its own if it was
+        // just started but not bound to and nothing is playing
+        scheduleDelayedShutdown();
         return START_STICKY;
     }
 
@@ -319,14 +328,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         sendBroadcast(intent);
     }
 
-    private void sendDelayedStopMessage(boolean removeMessages) {
-    	if (removeMessages) {
-    		mDelayedStopHandler.removeCallbacksAndMessages(null);
-    	}
-    	final Message message = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(message, IDLE_DELAY);
-    }
-
     private void restoreState() {
     	int id = mCardId;
         if (mPreferences.contains(PREF_CARD_ID)) {
@@ -335,11 +336,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         if (id == mCardId) {
         	// Bring back the queue
         	mPlayQueue = PlayQueue.restore(this);
-        	
-        	//final int pos = mPreferences.getInt(PREF_QUEUE_POSITION, 0);
-    		//if (!mPlayQueue.moveToPosition(pos)) {
-    			//return;
-    		//}
 
     		// Try load the tracks
     		openCurrentAndNext();
@@ -347,6 +343,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             	Log.w(TAG, "Player not initialized while restoring state.");
                 return;
             }
+            onTrackChanged();
 
             // Get the saved seek position
             long seekPosition = mPreferences.getLong(PREF_SEEK_POSITION, 0);
@@ -362,12 +359,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             if (repeatMode != REPEAT_ALL && repeatMode != REPEAT_CURRENT) {
             	repeatMode = REPEAT_NONE;
             }
-            setRepeatMode(repeatMode);
-
-            // Get the saved shuffle mode
-            //mShuffleEnabled = mPreferences.getBoolean(PREF_SHUFFLE_ENABLED, false);
-            //mShuffleEnabled = mPlayQueue.isShuffled();
-            
+            setRepeatMode(repeatMode);            
         } else {
         	mPlayQueue = new PlayQueue(this);
         }
@@ -383,15 +375,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void gotoIdleState() {
     	Log.d(TAG, "Going to idle state.");
         // Post a delayed message to stop service
-    	sendDelayedStopMessage(true);
-        
-        mDelayedStopHandler.postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                hideNotification();
-            }
-        }, IDLE_DELAY);
+    	scheduleDelayedShutdown();
         
         // Update play state
         if (mIsSupposedToBePlaying) {
@@ -526,14 +510,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	onQueuePositionChanged();
     	
     	if (mShowNotification) {
-    		mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
-    		mNotificationManager.notify(NOTIFICATION_ID, mNotification.getNotification());
+    		mNotificationHelper.updateMetaData(currentTrack);
     	}
-    	updateRCCMetaData();
+    	mRemoteControlClient.updateTrack(currentTrack, mLastAlbumId != currentTrack.getAlbumId());
     	
-    	mPreferences.edit()
-				.putLong(PREF_SEEK_POSITION, position())
-				.apply();
+    	updateAlbumArt(currentTrack);
     }
     
     private void onQueueChanged() {
@@ -541,7 +522,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	setNextTrack();
     	
     	// Queue position may have changed
-    	onQueuePositionChanged();
+    	//onQueuePositionChanged();
     }
     
     private void onQueuePositionChanged() {
@@ -559,10 +540,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mPlayQueueCallbackList.finishBroadcast();
     	}
-
-    	//mPreferences.edit()
-    			//.putInt(PREF_QUEUE_POSITION, queuePosition)
-    			//.apply();
     }
     
     private void onPlayStateChanged() {
@@ -586,10 +563,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	}
     	
     	if (mShowNotification) {
-    		mNotification.updatePlayState(isPlaying);
-    		mNotificationManager.notify(NOTIFICATION_ID, mNotification.getNotification());
+    		mNotificationHelper.updatePlayState(isPlaying);
     	}
-    	updateRCCPlayState(isPlaying);
+    	mRemoteControlClient.updatePlayState(isPlaying);
     	
     	mPreferences.edit()
 				.putLong(PREF_SEEK_POSITION, position())
@@ -611,10 +587,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
-
-    	//mPreferences.edit()
-    			//.putBoolean(PREF_SHUFFLE_ENABLED, shuffleEnabled)
-    			//.apply();
     }
     
     private void onRepeatModeChanged() {
@@ -641,63 +613,40 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Register callbacks and deliver requested information
 	
-	public void deliverMusicStatus() {
-		final Track currentTrack = getCurrentTrack();
-		final boolean playState = isPlaying();
-		final boolean shuffleState = isShuffleEnabled();
-		final int repeatMode = getRepeatMode();
-		synchronized (mMusicStatusCallbackList) {
-			int i = mMusicStatusCallbackList.beginBroadcast();
-	    	while (i > 0) {
-	    		i--;
-				try {
-					final IMusicStatusCallback callback = 
-							mMusicStatusCallbackList.getBroadcastItem(i);
-					callback.onTrackChanged(currentTrack);
-					callback.onPlayStateChanged(playState);
-					callback.onShuffleStateChanged(shuffleState);
-					callback.onRepeatModeChanged(repeatMode);
-					callback.onPositionSync(position(), System.currentTimeMillis());
-				} catch (RemoteException e) {
-					Log.w(TAG, "Remote error while performing track changed callback.", e);
-				}
-			}
-			mMusicStatusCallbackList.finishBroadcast();
+	private void deliverMusicStatus(IMusicStatusCallback callback) {
+		try {
+			callback.onTrackChanged(getCurrentTrack());
+			callback.onPlayStateChanged(isPlaying());
+			callback.onShuffleStateChanged(isShuffleEnabled());
+			callback.onRepeatModeChanged(getRepeatMode());
+			callback.onPositionSync(position(), System.currentTimeMillis());
+		} catch (RemoteException e) {
+			Log.w(TAG, "deliverMusicStatus()", e);
 		}
 	}
 	
 	// Reckon this is threadsafe looking at source of RemoteCallbackList
 	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
 		mMusicStatusCallbackList.register(callback);
+		deliverMusicStatus(callback);
 	}
 	
 	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
 		mMusicStatusCallbackList.unregister(callback);
 	}
 	
-	public void deliverPlayQueue() {
-    	final List<Track> trackList = mPlayQueue.getTrackList();
-    	final boolean isShuffled = mPlayQueue.isShuffled();
-    	final int position = mPlayQueue.getPosition();
-    	
-    	synchronized(mPlayQueueCallbackList) {
-    		int i = mPlayQueueCallbackList.beginBroadcast();
-    		while (i > 0) {
-    			i--;
-    			try {
-	    			final IPlayQueueCallback callback = 
-	    					mPlayQueueCallbackList.getBroadcastItem(i);
-	    			callback.deliverTrackList(trackList, position, isShuffled);
-				} catch (RemoteException e) {
-					Log.w(TAG, "notifyQueueChanged()", e);
-				}
-    		}
-	    	mPlayQueueCallbackList.finishBroadcast();
-    	}
-    }
+	private void deliverPlayQueue(IPlayQueueCallback callback) {
+		try {
+			callback.deliverTrackList(mPlayQueue.getPlayQueue(), 
+					mPlayQueue.getPosition(), mPlayQueue.isShuffled());
+		} catch (RemoteException e) {
+			Log.w(TAG, "deliverPlayQueue()", e);
+		}
+	}
 	
 	public void registerPlayQueueCallback(IPlayQueueCallback callback) {
 		mPlayQueueCallbackList.register(callback);
+		deliverPlayQueue(callback);
 	}
 	
 	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) {
@@ -779,13 +728,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Stops playback
      * 
-     * @param removeStatusIcon True to go to the idle state, false otherwise
+     * @param gotoIdle True to go to the idle state, false otherwise
      */
-    private void stop(final boolean removeStatusIcon) {
+    private void stop(boolean gotoIdle) {
         if (mPlayer.isInitialized()) {
         	mPlayer.stop();
         }
-        if (removeStatusIcon) {
+        if (gotoIdle) {
             gotoIdleState();
         } else {
             stopForeground(false);
@@ -1085,47 +1034,63 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update notification/lock screen controls
     
-    public synchronized void showNotification(ComponentName componentName, Uri uri) {
+    public synchronized void showNotification(PendingIntent intent) {
     	mShowNotification = true;
-    	mNotification.newNotification(this, componentName, uri);
-    	final Track currentTrack = getCurrentTrack();
-    	mNotification.updateMeta(currentTrack, getAlbumArt(currentTrack));
-    	mNotification.updatePlayState(isPlaying());
-    	startForeground(NOTIFICATION_ID, mNotification.getNotification());
+    	mNotificationHelper.startForeground(this, intent);
+    	updateNotification();
+    }
+    
+    private void updateNotification() {
+    	Track currentTrack = getCurrentTrack();
+    	mNotificationHelper.updateMetaData(currentTrack);
+    	mNotificationHelper.updatePlayState(isPlaying());
+    	
+    	Uri albumArtUri = LastfmUris.getAlbumInfoUri(currentTrack);
+    	final int notificationDimen = R.dimen.notification_expanded_height;
+    	Pablo.with(this)
+    		.load(albumArtUri)
+    		.resizeDimen(notificationDimen, notificationDimen)
+    		.centerCrop()
+    		.into(mNotificationHelper);
     }
     
     public synchronized void hideNotification() {
     	mShowNotification = false;
     	stopForeground(true);
     }
-
-    private void updateRCCPlayState(boolean isPlaying) {
-    	initRemoteControlClient();
-    	mRemoteControlClient
-				.setPlaybackState(isPlaying ? RemoteControlClient.PLAYSTATE_PLAYING
-						: RemoteControlClient.PLAYSTATE_PAUSED);
-    }
     
-    private void updateRCCMetaData() {
-    	final Track track = getCurrentTrack();
-    	if (track != null) {
-    		mRemoteControlClient.editMetadata(true)
-				.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
-				.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())
-				.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
-				.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, track.getDuration())
-				.putBitmap(RemoteControlClient.MetadataEditor.BITMAP_KEY_ARTWORK,
-						getAlbumArt(track)).apply();    		
-    	}
-    }
+    /**
+     * Workaround for Android weirdness when headphones unplugged
+     */
+    /*private void resetRCC() {
+    	mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
+    	mRemoteControlClient = createRemoteControlClient(mMediaButtonReceiverComponent);
+    	mAudioManager.registerRemoteControlClient(mRemoteControlClient);
+    	updateRCCPlayState(isPlaying());
+    	updateRCCMetaData(getCurrentTrack());
+    }*/
     
-    private Bitmap getAlbumArt(Track track) {
-    	final String key = String.valueOf(track.getAlbumId());
-    	Bitmap albumArt = mMemoryCache.get(key);
-    	if (albumArt == null) {
-    		albumArt = mDiskCache.get(key);
+    private void updateAlbumArt(Track track) {
+    	if (mLastAlbumId == track.getAlbumId()) {
+    		return;
     	}
-    	return albumArt;
+    	
+    	Uri uri = LastfmUris.getAlbumInfoUri(track);
+    	Picasso pablo = Pablo.with(this);
+    	if (mShowNotification) {
+    		final int notificationDimen = R.dimen.notification_expanded_height;
+    		pablo.load(uri)
+    			.resizeDimen(notificationDimen, notificationDimen)
+    			.centerCrop()
+    			.into(mNotificationHelper);
+    	}
+    	final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+    	pablo.load(uri)
+    		.resize(screenWidth, screenWidth)
+    		.centerCrop()
+    		.into(mRemoteControlClient);
+    	
+    	mLastAlbumId = track.getAlbumId();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1148,7 +1113,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	@Override
 	public void onTrackEnded() {
 		Log.d(TAG, "Track ended");
-		mWakeLock.acquire(30000);
 		gotoIdleState();
 	}
 
@@ -1191,7 +1155,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Broadcast receivers
 
-    private class IntentReceiver extends BroadcastReceiver {
+    private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
 
     	@Override
         public void onReceive(final Context context, final Intent intent) {
@@ -1214,41 +1178,36 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 toggleShuffle();
             }
         }
-    }
+    };
 
-    private class UnmountReceiver extends BroadcastReceiver {
+    private final BroadcastReceiver mUnmountReceiver = new BroadcastReceiver() {
     	@Override
         public void onReceive(final Context context, final Intent intent) {
             final String action = intent.getAction();
-            if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
+            if (Intent.ACTION_MEDIA_EJECT.equals(action)) {
                 mMediaMounted = false;
                 stop(true);
 		        onTrackChanged();
-            } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
+		        onQueueChanged();
+            } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) {
                 mCardId = getCardId();
                 restoreState();
                 mMediaMounted = true;
                 onTrackChanged();
+                onQueueChanged();
             }
         }
-    }
-
-    private static class DelayedStopHandler extends Handler {
-
-        private final WeakReference<MusicService> mService;
-        
-        public DelayedStopHandler(MusicService service) {
-        	mService = new WeakReference<MusicService>(service);
-        }
-    	
-    	@Override
-        public void handleMessage(final Message msg) {
-            if (!mService.get().isPlaying() && !mService.get().mPausedByTransientLossOfFocus 
-            		&& !mService.get().mIsBound) {
-                
-                mService.get().stopSelf(mService.get().mServiceStartId);
-            }
-        }
-    }
+    };
+    
+    private final BroadcastReceiver mNoisyReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
+				pause();
+				//resetRCC();
+			}
+		}    	
+    };
 	
 }

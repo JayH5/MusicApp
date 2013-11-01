@@ -13,7 +13,7 @@
         android:layout_centerVertical="true"
         android:paddingLeft="8dp"
         style="@style/PlayerTheme.TextAppearance.ActionBar.Title"
-        android:text="Now Playing" />
+        android:text="@string/title_music_player" />
     
     <ImageButton
         android:id="@+id/play_queue_button"

@@ -2,19 +2,19 @@ package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
-import za.jamie.soundstage.adapters.wrappers.TrackHeaderFooterAdapterWrapper;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
+import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ListAdapter;
+import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -22,11 +22,10 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	
 	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
-	private long mArtistId;
-	
 	private BasicTrackAdapter mAdapter;
 	
 	private ArtistTrackListListener mCallback;
+	private View mSpacerView;
 	
 	public static ArtistTrackListFragment newInstance(long artistId) {
 		final Bundle args = new Bundle();
@@ -41,37 +40,42 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);
-		
 		mAdapter = new ArtistTrackListAdapter(getActivity(), 
-				R.layout.list_item_two_line, null, 0);
-		
-		ListAdapter listAdapter;
-		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			TrackHeaderFooterAdapterWrapper wrapper = 
-					new TrackHeaderFooterAdapterWrapper(getActivity(), mAdapter);
-        	wrapper.setHeaderViewResource(R.layout.list_item_spacer);
-        	wrapper.setFooterViewResource(R.layout.list_item_spacer);
-        	wrapper.setNumHeaders(1);
-        	wrapper.setNumFooters(1);
-        	listAdapter = wrapper;
-        } else {
-        	listAdapter = mAdapter;
-        }
-		
+				R.layout.list_item_two_line, null, 0);		
 		mAdapter.registerDataSetObserver(mDataSetObserver);
 		
-		setListAdapter(listAdapter);
-		
-		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				MusicStore.Tracks.getArtistTracks(mArtistId));
+		final long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
+		CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+				MusicStore.Tracks.getArtistTracks(artistId));
 		
 		getLoaderManager().initLoader(0, null, cm);
 	}
 	
 	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup parent,
+			Bundle savedInstanceState) {
+		View v = super.onCreateView(inflater, parent, savedInstanceState);
+		
+		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
+		
+		return v;
+	}
+	
+	@Override
+	public void onViewCreated(View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		setListAdapter(null);
+		final ListView lv = getListView();
+		lv.addHeaderView(mSpacerView);
+		if (AppUtils.isLandscape(getResources())) {
+			lv.addFooterView(mSpacerView);
+		}
+		setListAdapter(mAdapter);
+	}
+	
+	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		super.onListItemClick(l, v, position + 1, id);
+		super.onListItemClick(l, v, position - 1, id);
     }
 	
 	@Override
@@ -79,13 +83,7 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		super.onAttach(activity);
 		mCallback = (ArtistTrackListListener) activity;
 	}
-	
-	@Override
-	public void onDetach() {
-		super.onDetach();
-		mCallback = null;
-	}
-	
+
 	private long calculateDuration() {
 		final Cursor cursor = mAdapter.getCursor();
 		if (cursor != null && cursor.moveToFirst()) {

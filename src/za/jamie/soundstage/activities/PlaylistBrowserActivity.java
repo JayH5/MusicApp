@@ -19,7 +19,7 @@ public class PlaylistBrowserActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_browser);
+		setMainContentView(R.layout.activity_album_browser);
 		
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 		
@@ -32,7 +32,7 @@ public class PlaylistBrowserActivity extends MusicActivity {
 		final FragmentManager fm = getFragmentManager();
 		if (fm.findFragmentByTag(TAG_LIST_FRAGMENT) == null) {
 			fm.beginTransaction()
-				.add(R.id.listFrame, PlaylistTrackListFragment.newInstance(mPlaylistId), 
+				.add(R.id.list_frame, PlaylistTrackListFragment.newInstance(mPlaylistId), 
 						TAG_LIST_FRAGMENT)
 				.commit();
 		}

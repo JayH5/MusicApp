@@ -10,6 +10,8 @@ import android.app.ActivityManager.RunningTaskInfo;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Environment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -90,5 +92,15 @@ public class AppUtils {
 			public void onPageScrolled(int position, float positionOffset, 
 					int positionOffsetPixels) { }
 		});
+	}
+	
+	public static boolean isLandscape(Resources res) {
+		return res.getConfiguration().orientation
+				== Configuration.ORIENTATION_LANDSCAPE;
+	}
+	
+	public static boolean isPortrait(Resources res) {
+		return res.getConfiguration().orientation
+				== Configuration.ORIENTATION_PORTRAIT;
 	}
 }

@@ -7,7 +7,7 @@
 	<GridView android:id="@+id/grid"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
-	    android:columnWidth="@dimen/album_image_thumb_size"
+	    android:columnWidth="@dimen/image_thumb_album"
 	    android:horizontalSpacing="@dimen/grid_spacing"
 	    android:verticalSpacing="@dimen/grid_spacing"
 	    android:numColumns="auto_fit"

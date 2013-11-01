@@ -40,6 +40,22 @@
         
     </LinearLayout>
     
+    <za.jamie.soundstage.widgets.DurationTextView
+        android:id="@+id/elapsedTime"
+        style="@style/MusicPlayerDurationText"
+        android:layout_below="@id/music_player_album_art"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="16dp" />
+    
+    <za.jamie.soundstage.widgets.DurationTextView
+        android:id="@+id/totalTime"
+        style="@style/MusicPlayerDurationText"
+        android:layout_below="@id/music_player_album_art"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="16dp" />
+    
     <SeekBar
         android:id="@+id/seek_bar"
         android:layout_width="match_parent"
@@ -47,23 +63,10 @@
         android:layout_below="@+id/music_player_album_art"
         android:layout_alignParentLeft="true"
         android:max="1000"
-        android:thumb="@null"
+        android:thumb="@drawable/scrubber_control"
+        android:layout_marginTop="-8dp"
         android:paddingLeft="0dp"
         android:paddingRight="0dp" />
-    
-    <za.jamie.soundstage.widgets.DurationTextView
-        android:id="@+id/elapsedTime"
-        style="@style/MusicPlayerDurationText"
-        android:layout_below="@id/seek_bar"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="8dp" />
-    
-    <za.jamie.soundstage.widgets.DurationTextView
-        android:id="@+id/totalTime"
-        style="@style/MusicPlayerDurationText"
-        android:layout_below="@id/seek_bar"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="8dp" />
     
     <ImageButton
         android:id="@+id/action_button_shuffle"

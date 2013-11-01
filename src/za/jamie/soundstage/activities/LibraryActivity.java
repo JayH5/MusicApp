@@ -33,7 +33,6 @@ public class LibraryActivity extends MusicActivity {
 	public static final int SECTION_PLAYLISTS = 3;
 	
 	private ViewPager mViewPager;
-	private MenuDrawer mDrawer;
 	
 	private int mSelectedPage;	
 
@@ -43,9 +42,8 @@ public class LibraryActivity extends MusicActivity {
 		setMainContentView(R.layout.activity_library);
 		
 		// Enable drawer animated icon
-		mDrawer = getDrawer();
-		mDrawer.setSlideDrawable(R.drawable.ic_drawer);
-		mDrawer.setDrawerIndicatorEnabled(true);
+		mMenuDrawer.setSlideDrawable(R.drawable.ic_drawer);
+		mMenuDrawer.setDrawerIndicatorEnabled(true);
 		
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(new SectionsPagerAdapter(getFragmentManager()));
@@ -74,7 +72,7 @@ public class LibraryActivity extends MusicActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                mDrawer.toggleMenu();
+                mMenuDrawer.toggleMenu();
                 break;
         }
 
@@ -95,7 +93,7 @@ public class LibraryActivity extends MusicActivity {
 	
 	@Override
 	public void onBackPressed() {
-		final int drawerState = mDrawer.getDrawerState();
+		final int drawerState = mMenuDrawer.getDrawerState();
 		if (isPlaying() && drawerState != MenuDrawer.STATE_OPEN && 
 				drawerState != MenuDrawer.STATE_OPENING) {
 			showNotification();
@@ -143,13 +141,13 @@ public class LibraryActivity extends MusicActivity {
 		public CharSequence getPageTitle(int position) {
 			switch (position) {
 			case SECTION_ARTISTS:
-				return getString(R.string.title_artists).toUpperCase();
+				return getString(R.string.library_section_artists).toUpperCase();
 			case SECTION_ALBUMS:
-				return getString(R.string.title_albums).toUpperCase();
+				return getString(R.string.library_section_albums).toUpperCase();
 			case SECTION_SONGS:
-				return getString(R.string.title_songs).toUpperCase();
+				return getString(R.string.library_section_songs).toUpperCase();
 			case SECTION_PLAYLISTS:
-				return getString(R.string.title_playlists).toUpperCase();
+				return getString(R.string.library_section_playlists).toUpperCase();
 			}
 			return null;
 		}

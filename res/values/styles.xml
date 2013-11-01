@@ -22,13 +22,13 @@
   	</style>
   	
   	<style name="PagerSlidingTabStrip" >
-  	    <item name="android:layout_height">@dimen/button_bar_height</item>
+  	    <item name="android:layout_height">@dimen/tabstrip_height</item>
   	    <item name="android:fontFamily">sans-serif-condensed</item>
-  	    <item name="android:textSize">14sp</item>
+  	    <item name="android:textSize">@dimen/tabstrip_text_size</item>
   	    <item name="android:textColor">?android:attr/textColorSecondary</item>
   	    <item name="selectedTextColor">?android:attr/textColorPrimary</item>
   	    <item name="android:textStyle">bold</item>
-  	    <item name="underlineHeight">1dp</item>
+  	    <item name="underlineHeight">@dimen/tabstrip_underline_height</item>
   	    <item name="tabBackground">?android:selectableItemBackground</item>
   	</style>
 

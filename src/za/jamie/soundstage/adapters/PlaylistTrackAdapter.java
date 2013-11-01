@@ -36,9 +36,8 @@ public class PlaylistTrackAdapter extends BasicTrackAdapter {
 	public void getColumnIndices(Cursor cursor) {
 		super.getColumnIndices(cursor);
 		if (cursor != null) {
-			mIdColIdx = cursor
-					.getColumnIndexOrThrow(
-							MediaStore.Audio.Playlists.Members.AUDIO_ID);
+			mIdColIdx = cursor.getColumnIndexOrThrow(
+					MediaStore.Audio.Playlists.Members.AUDIO_ID);
 		}
 	}
 

@@ -1,21 +1,21 @@
 package za.jamie.soundstage.models;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class AlbumStatistics {
+	public final long id;
 	public final String title;
 	public final int numTracks;
 	public final long duration;
 	public final int firstYear;
 	public final int lastYear;
-	public final List<Artist> artists;
+	public final SortedMap<Artist, Integer> artists;
 	
-	public AlbumStatistics(String title, int numTracks, long duration, 
-			int firstYear, int lastYear, List<Artist> artists) {
+	public AlbumStatistics(long id, String title, int numTracks, long duration, 
+			int firstYear, int lastYear, SortedMap<Artist, Integer> artists) {
 		
+		this.id = id;
 		this.title = title;
 		this.numTracks = numTracks;
 		this.duration = duration;
@@ -29,14 +29,17 @@ public class AlbumStatistics {
 	}
 	
 	public static class Builder {
+		private final long id;
 		private String title;
 		private int numTracks;
 		private long duration = 0;
 		private int firstYear = Integer.MAX_VALUE;
 		private int lastYear = Integer.MIN_VALUE;
-		private final SortedSet<Artist> artists = new TreeSet<Artist>();
+		private final SortedMap<Artist, Integer> artists = new TreeMap<Artist, Integer>();
 		
-		public Builder() { }
+		public Builder(long albumId) {
+			id = albumId;
+		}
 		
 		public Builder setTitle(String title) {
 			this.title = title;
@@ -54,8 +57,13 @@ public class AlbumStatistics {
 			return this;
 		}
 		
-		public Builder addArtist(Artist artist) {
-			artists.add(artist);
+		public Builder addArtist(String key, long id, String name) {
+			final Artist artist = new Artist(key, id, name);
+			Integer count = artists.get(artist);
+			if (count == null) {
+				count = 0;
+			}
+			artists.put(artist, count + 1);
 			return this;
 		}
 		
@@ -70,13 +78,42 @@ public class AlbumStatistics {
 				lastYear = 0;
 			}
 			
-			List<Artist> artistList = new ArrayList<Artist>(artists.size());
-			for (Artist artist : artists) {
-				artistList.add(artist);
-			}
-			
-			return new AlbumStatistics(title, numTracks, duration, 
-					firstYear, lastYear, artistList);
+			return new AlbumStatistics(id, title, numTracks, duration, 
+					firstYear, lastYear, artists);
+		}
+	}
+	
+	public static class Artist implements Comparable<Artist> {	
+		private final String mArtistKey;
+		private final String mArtist;
+		private final long mArtistId;
+		
+		public Artist(String key, long artistId, String artist) {
+			mArtistKey = key;
+			mArtist = artist;
+			mArtistId = artistId;
+		}
+		
+		public String getKey() {
+			return mArtistKey;
+		}
+		
+		public long getId() {
+			return mArtistId;
+		}
+		
+		public String getName() {
+			return mArtist;
+		}
+
+		@Override
+		public int compareTo(Artist other) {
+			return mArtistKey.compareTo(other.getKey());
+		}
+		
+		@Override
+		public String toString() {
+			return mArtist;
 		}
 	}
 }

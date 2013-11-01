@@ -24,14 +24,16 @@
         android:layout_height="wrap_content"
         android:paddingLeft="8dip"
         android:paddingRight="8dip"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:max="1000" />
 
     <LinearLayout
         android:id="@+id/titleandbuttons"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone" >
+        android:visibility="gone"
+        android:baselineAligned="false" >
 
         <LinearLayout
             android:orientation="vertical"

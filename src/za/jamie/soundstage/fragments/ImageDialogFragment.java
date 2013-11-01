@@ -1,25 +1,27 @@
 package za.jamie.soundstage.fragments;
 
+import java.lang.ref.WeakReference;
+
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.bitmapfun.ImageWorker;
-import za.jamie.soundstage.utils.ImageUtils;
+import za.jamie.soundstage.pablo.Pablo;
 import android.app.DialogFragment;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.squareup.picasso.Callback;
+
 public class ImageDialogFragment extends DialogFragment {
 	private static final String EXTRA_IMAGE_KEY = "extra_image_key";
 	
-	private String mKey;
+	private Uri mUri;
 	
-	private ImageWorker mImageWorker;
-	
-	public static ImageDialogFragment newInstance(String key) {
+	public static ImageDialogFragment newInstance(Uri key) {
 		final Bundle args = new Bundle();
-		args.putString(EXTRA_IMAGE_KEY, key);
+		args.putParcelable(EXTRA_IMAGE_KEY, key);
 		
 		final ImageDialogFragment frag = new ImageDialogFragment();
 		frag.setArguments(args);
@@ -29,51 +31,25 @@ public class ImageDialogFragment extends DialogFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		final Bundle args = getArguments();
-		if (args.containsKey(EXTRA_IMAGE_KEY)) {
-			mKey = args.getString(EXTRA_IMAGE_KEY);
-		} else {
-			mKey = savedInstanceState.getString(EXTRA_IMAGE_KEY);
-		}
-		
-		mImageWorker = ImageUtils.getBigImageFetcher(getActivity());
-		
+		mUri = getArguments().getParcelable(EXTRA_IMAGE_KEY);
 		setStyle(DialogFragment.STYLE_NO_TITLE, 0);
-	}
-	
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		
-		outState.putString(EXTRA_IMAGE_KEY, mKey);
-	}
-	
-	@Override
-	public void onResume() {
-		super.onResume();
-		mImageWorker.setExitTasksEarly(false);
-	}
-	
-	@Override
-	public void onPause() {
-		super.onPause();
-		mImageWorker.setExitTasksEarly(true);
 	}
 	
 	@Override
 	public View onCreateView(
 			LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		final View v = inflater.inflate(R.layout.fragment_image_dialog, container,
-				false);
-		final ImageView imageView = (ImageView) v.findViewById(R.id.imageBig);
+		final View v = inflater.inflate(R.layout.fragment_image_dialog, container, false);
 		
-		mImageWorker.loadImage(mKey, imageView);
-			
+		final ImageView imageView = (ImageView) v.findViewById(R.id.imageBig);
+		int size = getResources().getDisplayMetrics().widthPixels;
+		Pablo.with(getActivity())
+			.load(mUri)
+			.resize(size, size)
+			.centerInside()
+			.into(imageView, new ImageCallback(v));			
 		
 		// Image will be dismissed when touched
-		v.setOnClickListener(new View.OnClickListener() {
-			
+		v.setOnClickListener(new View.OnClickListener() {			
 			@Override
 			public void onClick(View v) {
 				dismiss();				
@@ -81,6 +57,33 @@ public class ImageDialogFragment extends DialogFragment {
 		});
 		
 		return v;
+	}
+	
+	private static class ImageCallback implements Callback {
+
+		private final WeakReference<View> mView;
+		
+		public ImageCallback(View dialogView) {
+			mView = new WeakReference<View>(dialogView);
+		}
+		
+		@Override
+		public void onError() {
+			View view = mView.get();
+			if (view != null) {
+				view.findViewById(R.id.progress_spinner).setVisibility(View.GONE);
+				view.findViewById(R.id.empty).setVisibility(View.VISIBLE);
+			}
+		}
+
+		@Override
+		public void onSuccess() {
+			View view = mView.get();
+			if (view != null) {
+				view.findViewById(R.id.progress_spinner).setVisibility(View.GONE);
+			}
+		}
+		
 	}
 
 }

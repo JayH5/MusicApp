@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<View xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="8dp" >
+    android:layout_height="wrap_content" >
     
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/list_header_footer_spacing" />
+    
+</FrameLayout>
 
-</View>

@@ -20,9 +20,6 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		ArtistSummaryFragment.OnArtistFoundListener, 
 		ArtistTrackListFragment.ArtistTrackListListener {
 	
-	//public static final String EXTRA_ARTIST_ID = "extra_artist_id";
-	private static final String EXTRA_ARTIST_URI = "extra_artist_uri";
-	
 	private static final String TAG_SUMMARY_FRAG = "artist_summary";
 	
 	private long mArtistId;
@@ -53,11 +50,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 			indicator.setViewPager(mViewPager);
 		}		
 
-		if (savedInstanceState != null) {
-			mUri = savedInstanceState.getParcelable(EXTRA_ARTIST_URI);
-		} else {
-			mUri = getIntent().getData();
-		}
+		mUri = getIntent().getData();
 		mArtistId = Long.parseLong(mUri.getLastPathSegment());
 				
 		// Set up the summary fragment
@@ -69,14 +62,6 @@ public class ArtistBrowserActivity extends MusicActivity implements
 				.add(R.id.summaryFrame, mSummaryFragment, TAG_SUMMARY_FRAG)
 				.commit();
 		}
-	}
-	
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		
-		//outState.putLong(EXTRA_ARTIST_ID, mArtistId);
-		outState.putParcelable(EXTRA_ARTIST_URI, mUri);
 	}
 	
 	@Override
@@ -114,9 +99,9 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		public CharSequence getPageTitle(int position) {
 			switch(position) {
 			case 0:
-				return getResources().getString(R.string.title_albums);
+				return getResources().getString(R.string.library_section_albums);
 			case 1:
-				return getResources().getString(R.string.title_songs);
+				return getResources().getString(R.string.library_section_songs);
 			}
 			return null;
 		}
