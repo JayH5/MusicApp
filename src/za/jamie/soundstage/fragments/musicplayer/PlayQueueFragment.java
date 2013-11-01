@@ -9,10 +9,9 @@ import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicConnection;
 import android.app.Dialog;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.os.Vibrator;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,7 +28,6 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	private static final String STATE_LIST_POSITION = "state_list_position";
 	private static final String STATE_LIST_OFFSET = "state_list_offset";
 	
-	private static final long VIBE_DURATION = 15;
 	private static final int SCROLL_OFFSET = 35;
 	private static final int SCROLL_DURATION = 250; // 250ms
 	
@@ -37,8 +35,6 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 	private DragSortListView mDslv;
 	
 	private View mIsShuffledView;
-	
-	private Vibrator mVibrator;
 	
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
@@ -73,8 +69,6 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
 			mSavedOffset = savedInstanceState.getInt(STATE_LIST_OFFSET, -1);
 		}
-		
-		mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 	}
 	
 	@Override
@@ -174,7 +168,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 
 	@Override
 	public void drag(int from, int to) {
-		mVibrator.vibrate(VIBE_DURATION);		
+		mDslv.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);		
 	}
 	
 	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {

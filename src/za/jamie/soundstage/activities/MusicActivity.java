@@ -18,7 +18,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.Vibrator;
+import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageButton;
@@ -33,9 +33,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
 	private ImageButton mPlayQueueButton;
-	
-	private Vibrator mVibrator;
-	private static final long VIBRATION_LENGTH = 15;
 	
 	protected MenuDrawer mMenuDrawer;
 	
@@ -59,8 +56,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
 		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
 		mMenuDrawer.setOnDrawerStateChangeListener(this);
-
-		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
@@ -169,9 +164,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if (mVibrator != null && 
-				(newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
-			mVibrator.vibrate(VIBRATION_LENGTH);
+		if ((newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
+			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 		}
 	}
 	
