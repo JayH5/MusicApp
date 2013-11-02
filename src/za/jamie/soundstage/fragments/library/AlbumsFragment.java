@@ -2,8 +2,8 @@ package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.adapters.FlippingViewHelper;
 import za.jamie.soundstage.adapters.library.AlbumsAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;

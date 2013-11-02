@@ -1,4 +1,4 @@
-package za.jamie.soundstage.adapters;
+package za.jamie.soundstage.adapters.utils;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;

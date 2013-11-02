@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.FlippingViewHelper;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.interfaces.TrackListAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.utils.TextUtils;

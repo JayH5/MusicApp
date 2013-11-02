@@ -1,8 +1,8 @@
 package za.jamie.soundstage.adapters.library;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.FlippingViewHelper;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
