@@ -104,5 +104,13 @@ public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 			unflip();
 		}
 	}
+	
+	public int getFrontViewId() {
+		return mFrontRes;
+	}
+	
+	public int getBackViewId() {
+		return mBackRes;
+	}
 
 }

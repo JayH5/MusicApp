@@ -2,6 +2,7 @@ package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.FlippingViewHelper;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.models.MusicItem;
@@ -9,7 +10,6 @@ import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.TextUtils;
 import android.app.ActivityOptions;
 import android.app.Fragment;
@@ -30,7 +30,6 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
@@ -38,7 +37,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 	
 	//private static final String TAG = "AlbumGridFragment";
 	
-	private ViewFlipper mFlipper;
+	private FlippingViewHelper mFlipHelper;
     
     private AlbumsAdapter mAdapter;
     
@@ -60,36 +59,9 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         		R.layout.grid_item_two_line, R.layout.grid_item_header, null, 0);
         mAdapter.setMinSectionSize(5);
         
-        mFlipper = new ViewFlipper(R.id.grid_item, R.id.flipped_view);
-        mAdapter.setFlippedViewListener(new View.OnClickListener() {			
-			@Override
-			public void onClick(View v) {
-				MusicItem item = (MusicItem) v.getTag();
-				final MusicActivity activity = (MusicActivity) getActivity();
-				
-				int action = 0; 
-				switch(v.getId()) {
-				case R.id.flipped_view_now:
-					action = MusicService.NOW;
-					activity.showPlayer();
-					break;
-				case R.id.flipped_view_next:
-					action = MusicService.NEXT;
-					Toast.makeText(activity, "'" + item.title + "' will play next." , Toast.LENGTH_SHORT).show();
-					break;
-				case R.id.flipped_view_last:
-					action = MusicService.LAST;
-					Toast.makeText(activity, "'" + item.title + "' will play last." , Toast.LENGTH_SHORT).show();
-					break;
-				case R.id.flipped_view_more:
-					break;
-				}
-
-				activity.getMusicConnection().enqueue(item, action);
-				
-				mFlipper.unflip();
-			}
-		});
+        ViewFlipper flipper = new ViewFlipper(R.id.grid_item, R.id.flipped_view);
+        mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper); 
+        mAdapter.setFlippingViewHelper(mFlipHelper);
         
         // Load up the cursor
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
@@ -106,8 +78,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         
         gridView.setAdapter(mAdapter);        
         gridView.setOnItemClickListener(this);
-        gridView.setOnItemLongClickListener(mFlipper);
-        gridView.setOnScrollListener(mFlipper);
+        mFlipHelper.initFlipper(gridView);
         
         gridView.getViewTreeObserver().addOnGlobalLayoutListener(
         		new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -153,7 +124,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 		private int mAlbumColIdx;
 		private int mArtistColIdx;
 		
-		private View.OnClickListener mFlippedViewListener;
+		private FlippingViewHelper mFlipHelper;
 		
 		private int mItemHeight;
 		private GridView.LayoutParams mItemLayoutParams;
@@ -168,8 +139,8 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 					LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 		}
 		
-		public void setFlippedViewListener(View.OnClickListener listener) {
-			mFlippedViewListener = listener;
+		public void setFlippingViewHelper(FlippingViewHelper helper) {
+			mFlipHelper = helper;
 		}
 
 		@Override
@@ -208,19 +179,10 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 				.centerCrop()
 				.into(albumArtImage);
 			
-			final MusicItem tag = new MusicItem(id, album, MusicItem.TYPE_ALBUM);
-			TextView now = (TextView) view.findViewById(R.id.flipped_view_now);
-			now.setTag(tag);
-			now.setOnClickListener(mFlippedViewListener);
-			TextView next = (TextView) view.findViewById(R.id.flipped_view_next);
-			next.setTag(tag);
-			next.setOnClickListener(mFlippedViewListener);
-			TextView last = (TextView) view.findViewById(R.id.flipped_view_last);
-			last.setTag(tag);
-			last.setOnClickListener(mFlippedViewListener);
-			TextView more = (TextView) view.findViewById(R.id.flipped_view_more);
-			more.setTag(tag);
-			more.setOnClickListener(mFlippedViewListener);
+			if (mFlipHelper != null) {
+				MusicItem item = new MusicItem(id, album, MusicItem.TYPE_ALBUM);
+				mFlipHelper.bindFlippedViewButtons(view, item);
+			}
 		}
 		
 		public void setItemHeight(int height) {
