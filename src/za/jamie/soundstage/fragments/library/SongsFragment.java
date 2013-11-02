@@ -24,7 +24,7 @@ public class SongsFragment extends TrackListFragment {
         super.onCreate(savedInstanceState);
         
         mAdapter = new SongsAdapter(getActivity(),
-        		R.layout.list_item_two_line_flip, R.layout.list_item_header, null, 0);
+        		R.layout.list_item_two_line, R.layout.list_item_header, null, 0);
         setListAdapter(mAdapter);
         
         ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);

@@ -39,7 +39,7 @@ public class ArtistsFragment extends MusicListFragment {
         super.onCreate(savedInstanceState);
         
         final ArtistsAdapter adapter = new ArtistsAdapter(getActivity(), 
-        		R.layout.list_item_artist_flip, R.layout.list_item_header, null, 0);
+        		R.layout.list_item_artist, R.layout.list_item_header, null, 0);
         
         setListAdapter(adapter);
         

@@ -44,7 +44,7 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		super.onCreate(savedInstanceState);
 		
 		mAdapter = new ArtistTrackListAdapter(getActivity(), 
-				R.layout.list_item_two_line_flip, null, 0);		
+				R.layout.list_item_two_line, null, 0);		
 		mAdapter.registerDataSetObserver(new DataSetObserver() {
 			@Override
 			public void onChanged() {
