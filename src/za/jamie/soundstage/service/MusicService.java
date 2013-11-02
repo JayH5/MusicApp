@@ -60,8 +60,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String REPEATMODE_CHANGED = "za.jamie.soundstage.repeatmodechanged";
     public static final String SHUFFLESTATE_CHANGED = "za.jamie.soundstage.shufflemodechanged";
     
-    private static final Uri BASE_URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-    private static final String[] TRACK_PROJECTION = new String[] {
+    private static final Uri URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+    private static final String[] PROJECTION = new String[] {
     	MediaStore.Audio.Media._ID,
     	MediaStore.Audio.Media.TITLE,
     	MediaStore.Audio.Media.ARTIST_ID,
@@ -69,26 +69,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	MediaStore.Audio.Media.ALBUM_ID,
     	MediaStore.Audio.Media.ALBUM,
     	MediaStore.Audio.Media.DURATION
-    };
-    private static final String[] ARTIST_PROJECTION = new String[] {
-    	MediaStore.Audio.Media._ID,
-    	MediaStore.Audio.Media.TITLE,
-    	MediaStore.Audio.Media.ARTIST_ID,
-    	MediaStore.Audio.Media.ARTIST,
-    	MediaStore.Audio.Media.ALBUM_ID,
-    	MediaStore.Audio.Media.ALBUM,
-    	MediaStore.Audio.Media.DURATION,
-    	MediaStore.Audio.Media.TITLE_KEY
-    };
-    private static final String[] ALBUM_PROJECTION = new String[] {
-    	MediaStore.Audio.Media._ID,
-    	MediaStore.Audio.Media.TITLE,
-    	MediaStore.Audio.Media.ARTIST_ID,
-    	MediaStore.Audio.Media.ARTIST,
-    	MediaStore.Audio.Media.ALBUM_ID,
-    	MediaStore.Audio.Media.ALBUM,
-    	MediaStore.Audio.Media.DURATION,
-    	MediaStore.Audio.Media.TRACK
     };
     
     private static final String TRACK_SELECTION = MediaStore.Audio.Media._ID + "=?";
@@ -1037,23 +1017,23 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     public synchronized void enqueue(MusicItem item, int action) {
-    	final Uri uri = BASE_URI;
+    	final Uri uri = URI;
     	final String[] projection;
     	final String selection;
     	final String sortOrder;
     	switch (item.type) {
     	case MusicItem.TYPE_TRACK:
-    		projection = TRACK_PROJECTION;
+    		projection = PROJECTION;
     		selection = TRACK_SELECTION;
     		sortOrder = null;
     		break;
     	case MusicItem.TYPE_ARTIST:
-    		projection = ARTIST_PROJECTION;
+    		projection = PROJECTION;
     		selection = ARTIST_SELECTION;
     		sortOrder = ARTIST_SORT_ORDER;
     		break;
     	case MusicItem.TYPE_ALBUM:
-    		projection = ALBUM_PROJECTION;
+    		projection = PROJECTION;
     		selection = ALBUM_SELECTION;
     		sortOrder = ALBUM_SORT_ORDER;
     		break;
