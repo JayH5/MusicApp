@@ -183,5 +183,13 @@
         <item name="android:background">@drawable/ab_hairline</item>
 
     </style>
+    
+    <style name="FlippedViewText">
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textStyle">italic</item>
+        <item name="android:background">?android:selectableItemBackground</item>
+        <item name="android:gravity">center</item>
+    </style>
 
 </resources>

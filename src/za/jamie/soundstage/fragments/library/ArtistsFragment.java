@@ -1,19 +1,23 @@
 package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
-import za.jamie.soundstage.adapters.utils.OneTimeDataSetObserver;
+import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.fragments.MusicListFragment;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -23,10 +27,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class ArtistsFragment extends MusicListFragment {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
+	
+	private ViewFlipper mFlipper;
 	
 	public static ArtistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
@@ -42,16 +49,49 @@ public class ArtistsFragment extends MusicListFragment {
         super.onCreate(savedInstanceState);
         
         final ArtistsAdapter adapter = new ArtistsAdapter(getActivity(), 
-        		R.layout.list_item_artist, R.layout.list_item_header, null, 0);
+        		R.layout.list_item_artist_flip, R.layout.list_item_header, null, 0);
         
         setListAdapter(adapter);
         
+        mFlipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
+        final View.OnClickListener listener = new View.OnClickListener() {			
+			@Override
+			public void onClick(View v) {
+				MusicItem item = (MusicItem) v.getTag();
+				final MusicActivity activity = (MusicActivity) getActivity();
+				
+				int action = 0; 
+				switch(v.getId()) {
+				case R.id.flipped_view_now:
+					action = MusicService.NOW;
+					activity.showPlayer();
+					break;
+				case R.id.flipped_view_next:
+					action = MusicService.NEXT;
+					Toast.makeText(activity, "'" + item.title + "' will play next." , Toast.LENGTH_SHORT).show();
+					break;
+				case R.id.flipped_view_last:
+					action = MusicService.LAST;
+					Toast.makeText(activity, "'" + item.title + "' will play last." , Toast.LENGTH_SHORT).show();
+					break;
+				case R.id.flipped_view_more:
+					break;
+				}
+
+				activity.getMusicConnection().enqueue(item, action);
+				
+				mFlipper.unflip();
+			}
+		};
+		adapter.setFlippedViewOnClickListener(listener);
+        
         final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
         if (itemId > 0) {
-	        new OneTimeDataSetObserver(adapter) {
+	        new DataSetObserver() {
 				@Override
-				public void onFirstChange() {
+				public void onChanged() {
 					setSelection(adapter.getItemPosition(itemId));
+					adapter.unregisterDataSetObserver(this);
 				}
 	        };
         }
@@ -78,12 +118,21 @@ public class ArtistsFragment extends MusicListFragment {
 		startActivity(intent);
     }
     
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+    	super.onViewCreated(view, savedInstanceState);
+    	final ListView lv = getListView();
+    	lv.setOnItemLongClickListener(mFlipper);
+    	lv.setOnScrollListener(mFlipper);
+    }
+    
     private static class ArtistsAdapter extends LibraryAdapter {
 
     	private int mArtistColIdx;
-    	//private int mArtistIdColIdx;
+    	private int mArtistIdColIdx;
     	private int mNumAlbumsIdx;
     	private int mNumTracksIdx;
+    	private View.OnClickListener mFlippedViewListener;
     	
     	private final Context mContext;
     	
@@ -92,15 +141,17 @@ public class ArtistsFragment extends MusicListFragment {
 			super(context, layout, headerLayout, c, flags);
 			mContext = context;
 		}
+    	
+    	public void setFlippedViewOnClickListener(View.OnClickListener flippedViewListener) {
+			mFlippedViewListener = flippedViewListener;
+		}
 
 		@Override
 		protected void getColumnIndices(Cursor cursor) {
 			mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST);
-			//mArtistIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
-			mNumAlbumsIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);
-			mNumTracksIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_TRACKS);
+			mArtistIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID);
+			mNumAlbumsIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS);
+			mNumTracksIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_TRACKS);
 		}
 
 		@Override
@@ -128,6 +179,20 @@ public class ArtistsFragment extends MusicListFragment {
 				.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
 				.centerCrop()
 				.into(artistImage);
+			
+			final MusicItem tag = new MusicItem(cursor.getLong(mArtistIdColIdx), artist, MusicItem.TYPE_ARTIST);
+			TextView now = (TextView) view.findViewById(R.id.flipped_view_now);
+			now.setTag(tag);
+			now.setOnClickListener(mFlippedViewListener);
+			TextView next = (TextView) view.findViewById(R.id.flipped_view_next);
+			next.setTag(tag);
+			next.setOnClickListener(mFlippedViewListener);
+			TextView last = (TextView) view.findViewById(R.id.flipped_view_last);
+			last.setTag(tag);
+			last.setOnClickListener(mFlippedViewListener);
+			TextView more = (TextView) view.findViewById(R.id.flipped_view_more);
+			more.setTag(tag);
+			more.setOnClickListener(mFlippedViewListener);
 		}
     	
     }

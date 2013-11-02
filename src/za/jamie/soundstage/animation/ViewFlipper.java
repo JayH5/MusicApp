@@ -16,11 +16,11 @@ import android.widget.AdapterView.OnItemLongClickListener;
 
 public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 	
-	private static final String TAG = "ViewFlipper";
+	//private static final String TAG = "ViewFlipper";
 
 	private static final long DURATION_MILLIS = 250;
 
-	private WeakReference<View> mLastFlip;
+	private WeakReference<View> mLastFlip = null;
 	
 	private final Interpolator mAccelerator = new AccelerateInterpolator();
 	private final Interpolator mDecelerator = new DecelerateInterpolator();
@@ -40,24 +40,32 @@ public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 		View lastFlip = mLastFlip.get();
 		if (lastFlip != null) {
 			flip(lastFlip.findViewById(mBackRes), lastFlip.findViewById(mFrontRes));
+			mLastFlip.clear();
 		}
-		mLastFlip.clear();
 		mLastFlip = null;
 	}
 	
 	public void flip(View root) {
+		// First unflip the previously flipped view
 		if (mLastFlip != null) {
-			if(mLastFlip.get() == root) {
-				unflip();
+			final View lastFlip = mLastFlip.get();
+			unflip();
+			// If we unflipped the view we were going to flip then we're done
+			if (lastFlip == root) {
 				return;
 			}
-			unflip();
 		}
 		
+		// Actually flip the view and keep a reference to it
 		flip(root.findViewById(mFrontRes), root.findViewById(mBackRes));
 		mLastFlip = new WeakReference<View>(root);
 	}
 	
+	/**
+	 * Performs a flip animation from one view to the other
+	 * @param from
+	 * @param to
+	 */
 	private void flip(final View from, final View to) {
 		ObjectAnimator visToInvis = ObjectAnimator.ofFloat(from, "rotationX", 0f, 90f);
 		visToInvis.setDuration(DURATION_MILLIS);
