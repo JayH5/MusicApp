@@ -1081,6 +1081,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     					cursor.getLong(6))); // Duration
     		} while (cursor.moveToNext());
     	}
+    	cursor.close();
     	return trackList;
     }
 
