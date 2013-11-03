@@ -10,6 +10,7 @@ import android.os.Bundle;
 
 public class PlaylistTrackListFragment extends TrackListFragment {
 
+	//private static final String TAG = "TrackListFragment";
 	private static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
 	
 	public static PlaylistTrackListFragment newInstance(long playlistId) {		
@@ -25,7 +26,7 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		BasicTrackAdapter adapter = new PlaylistTrackAdapter(getActivity(), 
+		final BasicTrackAdapter adapter = new PlaylistTrackAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
 		setListAdapter(adapter);
