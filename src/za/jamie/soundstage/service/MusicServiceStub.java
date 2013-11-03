@@ -33,6 +33,11 @@ public class MusicServiceStub extends IMusicService.Stub {
 	public void removeTrack(int position) throws RemoteException {
 		mService.get().removeTrack(position);			
 	}
+	
+	@Override
+	public void savePlayQueueAsPlaylist(String playlistName) throws RemoteException {
+		mService.get().savePlayQueueAsPlaylist(playlistName);
+	}
 
 	@Override
 	public void registerMusicStatusCallback(IMusicStatusCallback callback)

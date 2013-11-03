@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#E9E9E9" >
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        
+        <ImageView
+	       	android:id="@+id/image"
+	       	android:layout_width="match_parent"
+	       	android:layout_height="196dp" />
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="96dp"
+            android:layout_gravity="bottom"
+            android:gravity="bottom"
+            android:background="@drawable/gradient_background_fade"
+            android:padding="8dp"
+            android:orientation="vertical" >
+            
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:textColorPrimary"
+                android:fontFamily="sans-serif-light"
+                android:textSize="24sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:shadowColor="#E9E9E9"
+                android:shadowDy="2"
+                android:shadowRadius="2.0" />
+            
+            <TextView
+                android:id="@+id/subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:textColorSecondary"
+                android:textSize="16sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:shadowColor="#E9E9E9"
+                android:shadowDy="2"
+                android:shadowRadius="2.0" />
+            
+        </LinearLayout>
+        
+    </FrameLayout>
+    
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:divider="@drawable/list_divider_play_store"
+	    android:dividerHeight="2dp"
+	    android:scrollbarStyle="outsideOverlay"
+	    android:clipToPadding="false" />
+
+</LinearLayout>

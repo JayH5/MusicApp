@@ -3,6 +3,7 @@ package za.jamie.soundstage.adapters.utils;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.animation.ViewFlipper;
+import za.jamie.soundstage.fragments.MoreDialogFragment;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.service.MusicService;
 import android.view.View;
@@ -11,6 +12,8 @@ import android.widget.Toast;
 
 public class FlippingViewHelper implements View.OnClickListener, View.OnLongClickListener {
 
+	private static final String TAG_MORE_DIALOG = "tag_more_dialog";
+	
 	private ViewFlipper mFlipper;
 	private MusicActivity mActivity;
 	
@@ -64,6 +67,8 @@ public class FlippingViewHelper implements View.OnClickListener, View.OnLongClic
 			Toast.makeText(mActivity, "'" + item.title + "' will play last." , Toast.LENGTH_SHORT).show();
 			break;
 		case R.id.flipped_view_more:
+			MoreDialogFragment frag = MoreDialogFragment.newInstance(item);
+			frag.show(mActivity.getFragmentManager(), TAG_MORE_DIALOG);
 			break;
 		}
 

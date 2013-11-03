@@ -91,6 +91,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final int NOW = 1;
     public static final int NEXT = 2;
     public static final int LAST = 3;
+    public static final int PLAY = 4;
     
     // Shared preference keys
     private static final String PREFERENCES = "Service";
@@ -1008,6 +1009,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	case LAST:
     		mPlayQueue.addAll(list);
     		break;
+    	case PLAY:
+    		open(list, 0);
+    		return;
     	}
    		
    		onQueueChanged();
@@ -1103,6 +1107,43 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
    			setNextTrack();
    		}
         onQueueChanged();
+    }
+    
+    public synchronized void savePlayQueueAsPlaylist(String playlistName) {
+    	// TODO: WIP
+    	/*if (!TextUtils.isEmpty(playlistName)) {
+    		final ContentResolver resolver = getContentResolver();
+    		final Uri playlistsUri = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI;
+    		
+    		// First check if a playlist of the same name already exists
+    		final Cursor cursor = resolver.query(
+    				playlistsUri, // Uri
+    				new String[] { MediaStore.Audio.Playlists.NAME }, // Projection
+    				MediaStore.Audio.Playlists.NAME + "=?", // Selection
+    				new String[] { playlistName }, // Selection args
+    				null); // Sort order
+    		
+    		long playlistId = 0;
+    		if (cursor.getCount() == 0) {
+    			ContentValues values = new ContentValues(1);
+    			values.put(MediaStore.Audio.Playlists.NAME, playlistName);
+    			Uri uri = resolver.insert(playlistsUri, values);
+    			playlistId = Long.parseLong(uri.getLastPathSegment());
+    		}
+    		cursor.close();
+    		
+    		if (playlistId > 0) {
+    			Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
+    			List<Track> tracks = mPlayQueue.getPlayQueue();
+    			final int len = tracks.size();
+    			ContentValues[] values = new ContentValues[len];
+    			for (int i = 0; i < len; i++) {
+    				values[i] = new ContentValues();
+    				tracks.get(i).writeToContentValues(values[i]);
+    			}
+    			resolver.bulkInsert(uri, values);
+    		}
+    	}*/
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

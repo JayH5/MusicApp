@@ -98,6 +98,18 @@ public class MusicConnection implements ServiceConnection {
 		return false;
 	}
 	
+	public boolean savePlayQueueAsPlaylist(String playlistName) {
+		if (mService != null) {
+			try {
+				mService.savePlayQueueAsPlaylist(playlistName);
+				return true;
+			} catch (RemoteException e) {
+				Log.w(TAG, "savePlayQueueAsPlaylist(String)", e);
+			}
+		}
+		return false;
+	}
+	
 	public boolean registerPlayQueueCallback(IPlayQueueCallback callback) {
 		if (mService != null) {
 			try {
