@@ -25,6 +25,8 @@ public class ArtistsFragment extends MusicListFragment {
 	
 	private FlippingViewHelper mFlipHelper;
 	
+	private ArtistsAdapter mAdapter;
+	
 	public static ArtistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
 		args.putLong(EXTRA_ITEM_ID, itemId);
@@ -38,27 +40,31 @@ public class ArtistsFragment extends MusicListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        final ArtistsAdapter adapter = new ArtistsAdapter(getActivity(), 
+        mAdapter = new ArtistsAdapter(getActivity(), 
         		R.layout.list_item_artist, R.layout.list_item_header, null, 0);
         
-        setListAdapter(adapter);
+        setListAdapter(mAdapter);
         
         ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
-        adapter.setFlippingViewHelper(mFlipHelper);
+        mAdapter.setFlippingViewHelper(mFlipHelper);
         
         final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
         if (itemId > 0) {
 	        new DataSetObserver() {
 				@Override
 				public void onChanged() {
-					setSelection(adapter.getItemPosition(itemId));
-					adapter.unregisterDataSetObserver(this);
+					setSelection(mAdapter.getItemPosition(itemId));
+					mAdapter.unregisterDataSetObserver(this);
 				}
 	        };
         }
-        
-        CursorManager cm = new CursorManager(getActivity(), adapter, 
+    }
+    
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+    	super.onActivityCreated(savedInstanceState);
+    	CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Artists.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
     }

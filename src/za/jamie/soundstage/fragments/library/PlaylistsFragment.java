@@ -17,6 +17,8 @@ public class PlaylistsFragment extends MusicListFragment {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
+	private PlaylistsAdapter mAdapter;
+	
 	public static PlaylistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
 		args.putLong(EXTRA_ITEM_ID, itemId);
@@ -30,14 +32,18 @@ public class PlaylistsFragment extends MusicListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        PlaylistsAdapter adapter = new PlaylistsAdapter(getActivity(), 
+        mAdapter = new PlaylistsAdapter(getActivity(), 
         		R.layout.list_item_one_line, R.layout.list_item_header, null, 0);
         
-        setListAdapter(adapter);
-        
-        CursorManager cm = new CursorManager(getActivity(), adapter, 
+        setListAdapter(mAdapter);
+    }
+    
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+    	super.onActivityCreated(savedInstanceState);
+        final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Playlists.REQUEST);
-        getLoaderManager().initLoader(2, null, cm);
+        getLoaderManager().initLoader(0, null, cm);
     }
     
     @Override

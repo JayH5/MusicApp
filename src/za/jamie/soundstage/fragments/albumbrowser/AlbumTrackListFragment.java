@@ -66,10 +66,13 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
 		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
 		mAdapter.setFlippingViewHelper(mFlipHelper);
-		
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				MusicStore.Tracks.getAlbumTracks(mAlbumId));
-		
+				MusicStore.Tracks.getAlbumTracks(mAlbumId));		
 		getLoaderManager().initLoader(0, null, cm);
 	}
 	

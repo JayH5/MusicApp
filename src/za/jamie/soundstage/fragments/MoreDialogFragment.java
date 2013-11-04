@@ -78,7 +78,11 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		
 		mMenuAdapter =
 				new ArrayAdapter<MenuEntry>(getActivity(), R.layout.list_item_one_line_dialog, R.id.title);
-		
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		if (mItem.type != MusicItem.TYPE_ARTIST) {
 			getLoaderManager().initLoader(0, null, this);
 		}

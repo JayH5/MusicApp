@@ -2,7 +2,6 @@ package za.jamie.soundstage.fragments.playlistbrowser;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlaylistTrackAdapter;
-import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
@@ -12,6 +11,9 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 
 	//private static final String TAG = "TrackListFragment";
 	private static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
+	
+	private PlaylistTrackAdapter mAdapter;
+	private long mPlaylistId;
 	
 	public static PlaylistTrackListFragment newInstance(long playlistId) {		
 		final Bundle args = new Bundle();
@@ -26,15 +28,19 @@ public class PlaylistTrackListFragment extends TrackListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		final BasicTrackAdapter adapter = new PlaylistTrackAdapter(getActivity(), 
+		mAdapter = new PlaylistTrackAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);
 		
-		setListAdapter(adapter);
+		setListAdapter(mAdapter);
 		
-		long playlistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
-		
-		CursorManager cm = new CursorManager(getActivity(), adapter, 
-				MusicStore.Tracks.getPlaylistTracks(playlistId));
+		mPlaylistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+				MusicStore.Tracks.getPlaylistTracks(mPlaylistId));
 		
 		getLoaderManager().initLoader(0, null, cm);
 	}

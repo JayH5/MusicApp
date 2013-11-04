@@ -28,6 +28,8 @@ public class ArtistTrackListFragment extends TrackListFragment {
 	private ArtistTrackListListener mCallback;
 	private View mSpacerView;
 	
+	private long mArtistId;
+	
 	private FlippingViewHelper mFlipHelper;
 	
 	public static ArtistTrackListFragment newInstance(long artistId) {
@@ -58,10 +60,14 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
 		mAdapter.setFlippingViewHelper(mFlipHelper);
 		
-		final long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
-		CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				MusicStore.Tracks.getArtistTracks(artistId));
-		
+		mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);		
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+				MusicStore.Tracks.getArtistTracks(mArtistId));		
 		getLoaderManager().initLoader(0, null, cm);
 	}
 	

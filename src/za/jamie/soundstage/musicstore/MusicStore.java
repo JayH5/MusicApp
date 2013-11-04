@@ -79,7 +79,7 @@ public final class MusicStore {
 		public static final String[] SELECTION_ARGS = new String[] { "1" };
 		public static final String SORT_ORDER = MediaStore.Audio.Media.DEFAULT_SORT_ORDER;
 		
-		public static final CursorRequest CURSOR = new CursorRequest(URI, PROJECTION,
+		public static final CursorRequest REQUEST = new CursorRequest(URI, PROJECTION,
 				SELECTION, SELECTION_ARGS, SORT_ORDER);
 		
 		public static CursorRequest getAlbumTracks(long albumId) {
