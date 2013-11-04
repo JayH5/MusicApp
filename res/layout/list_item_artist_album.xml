@@ -1,46 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="128dp"
-    android:orientation="horizontal"
-    android:paddingRight="8dp" >
-    
-    <ImageView
-        android:id="@+id/albumThumb"
-        android:layout_width="128dp"
-        android:layout_height="128dp"
-        android:padding="@dimen/image_thumb_padding" />
-    
-    <RelativeLayout
-    	android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_vertical"
-        android:paddingLeft="8dp" >
-            
-        <TextView
-        	android:id="@+id/albumName"
-        	style="@style/ListItemText.Title"
-        	android:layout_alignParentTop="true"
-        	android:layout_marginTop="8dp"
-        	android:maxLines="3" />
-        
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="24dp"
-            android:layout_alignParentBottom="true"
-            android:orientation="horizontal" >
-            
-        	<TextView
-           		android:id="@+id/albumTracks"
-           		style="@style/ListItemText.Subtitle"
-           		android:paddingRight="16dp" />
-        	
-        	<TextView
-        		android:id="@+id/albumYear"
-        		style="@style/ListItemText.Subtitle" />
-            
-        </LinearLayout>
-        
-	</RelativeLayout>
-   
-</LinearLayout>
+    android:layout_height="@dimen/list_item_height_large" >
+
+	<LinearLayout
+	    android:id="@+id/list_item"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="horizontal"
+	    android:paddingRight="8dp" >
+	    
+	    <za.jamie.soundstage.widgets.HeightSquaredImageView
+	        android:id="@+id/albumThumb"
+	        android:layout_width="wrap_content"
+	        android:layout_height="match_parent"
+	        android:padding="@dimen/image_thumb_padding"
+	        android:scaleType="centerCrop" />
+	    
+	    <RelativeLayout
+	    	android:layout_width="match_parent"
+	        android:layout_height="match_parent"
+	        android:gravity="center_vertical"
+	        android:paddingLeft="8dp" >
+	            
+	        <TextView
+	        	android:id="@+id/albumName"
+	        	style="@style/ListItemText.Title"
+	        	android:layout_alignParentTop="true"
+	        	android:layout_marginTop="8dp"
+	        	android:maxLines="3" />
+	        
+	        <LinearLayout
+	            android:layout_width="match_parent"
+	            android:layout_height="24dp"
+	            android:layout_alignParentBottom="true"
+	            android:orientation="horizontal" >
+	            
+	        	<TextView
+	           		android:id="@+id/albumTracks"
+	           		style="@style/ListItemText.Subtitle"
+	           		android:paddingRight="16dp" />
+	        	
+	        	<TextView
+	        		android:id="@+id/albumYear"
+	        		style="@style/ListItemText.Subtitle" />
+	            
+	        </LinearLayout>
+	        
+		</RelativeLayout>
+	   
+	</LinearLayout>
+	
+	<include layout="@layout/list_item_flipped"
+	    android:visibility="gone" />
+	
+</FrameLayout>

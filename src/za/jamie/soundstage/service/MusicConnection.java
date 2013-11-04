@@ -6,6 +6,7 @@ import java.util.List;
 import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -92,6 +93,18 @@ public class MusicConnection implements ServiceConnection {
 				return true;
 			} catch (RemoteException e) {
 				Log.w(TAG, "removeTrack(int)", e);
+			}
+		}
+		return false;
+	}
+	
+	public boolean savePlayQueueAsPlaylist(String playlistName) {
+		if (mService != null) {
+			try {
+				mService.savePlayQueueAsPlaylist(playlistName);
+				return true;
+			} catch (RemoteException e) {
+				Log.w(TAG, "savePlayQueueAsPlaylist(String)", e);
 			}
 		}
 		return false;
@@ -241,18 +254,18 @@ public class MusicConnection implements ServiceConnection {
 		return false;
 	}
 	
-	public boolean enqueue(List<Track> tracks, int action) {
+	public boolean enqueue(MusicItem item, int action) {
 		if (mService != null) {
 			try {
-				mService.enqueue(tracks, action);
+				mService.enqueue(item, action);
 				return true;
 			} catch (RemoteException e) {
-				Log.w(TAG, "enqueue(List<Track>, int)", e);
+				Log.w(TAG, "queueTrack(long, int)", e);
 			}
 		}
 		return false;
 	}
-	
+
 	public boolean showNotification(PendingIntent intent) {
 		if (mService != null) {
 			try {

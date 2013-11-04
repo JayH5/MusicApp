@@ -96,7 +96,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		saveButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				// TODO				
+				getMusicConnection().savePlayQueueAsPlaylist("Test");	
 			}
 		});
 		

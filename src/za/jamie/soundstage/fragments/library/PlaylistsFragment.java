@@ -1,19 +1,19 @@
 package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.PlaylistBrowserActivity;
-import za.jamie.soundstage.adapters.PlaylistsAdapter;
+import za.jamie.soundstage.adapters.library.PlaylistsAdapter;
+import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
-import android.app.ListFragment;
+import android.content.ContentUris;
 import android.content.Intent;
-import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ListView;
 
-public class PlaylistsFragment extends ListFragment {
+public class PlaylistsFragment extends MusicListFragment {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
@@ -31,28 +31,24 @@ public class PlaylistsFragment extends ListFragment {
         super.onCreate(savedInstanceState);
         
         PlaylistsAdapter adapter = new PlaylistsAdapter(getActivity(), 
-        		R.layout.list_item_one_line, null, 0);
+        		R.layout.list_item_one_line, R.layout.list_item_header, null, 0);
         
         setListAdapter(adapter);
         
         CursorManager cm = new CursorManager(getActivity(), adapter, 
         		MusicStore.Playlists.REQUEST);
-        getLoaderManager().initLoader(0, null, cm);
+        getLoaderManager().initLoader(2, null, cm);
     }
     
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-    	Cursor cursor = (Cursor) getListAdapter().getItem(position);
+    	Uri data = ContentUris.withAppendedId(
+				MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, id);
+    	
+    	Intent intent = new Intent(Intent.ACTION_VIEW);
+		intent.setDataAndType(data, MediaStore.Audio.Playlists.ENTRY_CONTENT_TYPE);
 		
-		int playlistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Playlists.NAME);
-		
-		String playlist = cursor.getString(playlistIdx);
-		
-		Intent i = new Intent(getActivity(), PlaylistBrowserActivity.class);
-		i.putExtra(PlaylistBrowserActivity.EXTRA_PLAYLIST_ID, id);
-		i.putExtra(PlaylistBrowserActivity.EXTRA_NAME, playlist);
-		
-		startActivity(i);
+		startActivity(intent);
     }
 
 }

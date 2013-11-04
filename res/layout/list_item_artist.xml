@@ -1,37 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/image_thumb_artist"
-    android:paddingLeft="8dip" >
+    android:layout_height="@dimen/image_thumb_artist" >
     
-    <LinearLayout 
-        android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_toLeftOf="@+id/artistImage"
-        android:orientation="vertical"
-        android:gravity="center_vertical" >
-        
-        <TextView 
-        	android:id="@+id/artistName"
-        	style="@style/ListItemText.Title" />
-        
-        <TextView 
-            android:id="@+id/artistAlbums"
-            style="@style/ListItemText.Subtitle" />
-        
-        <TextView 
-            android:id="@+id/artistTracks" 
-            style="@style/ListItemText.Subtitle" />
-                
-    </LinearLayout>
-    
-    
-    <ImageView
-        android:id="@+id/artistImage"
-        android:layout_width="@dimen/image_thumb_artist"
-        android:layout_height="@dimen/image_thumb_artist"
-        android:layout_alignParentRight="true"
-        android:scaleType="centerCrop" />
-                    
-</RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/list_item"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" >
+	    
+	    <LinearLayout 
+	        android:layout_height="match_parent"
+	        android:layout_width="match_parent"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/artistImage"
+	        android:orientation="vertical"
+	        android:gravity="center_vertical"
+		    android:paddingLeft="8dp"
+		    android:paddingRight="8dp" >
+	        
+	        <TextView 
+	        	android:id="@+id/artistName"
+	        	style="@style/ListItemText.Title" />
+	        
+	        <TextView 
+	            android:id="@+id/artistAlbums"
+	            style="@style/ListItemText.Subtitle" />
+	        
+	        <TextView 
+	            android:id="@+id/artistTracks" 
+	            style="@style/ListItemText.Subtitle" />
+	                
+	    </LinearLayout>
+	    
+	    
+	    <ImageView
+	        android:id="@+id/artistImage"
+	        android:layout_width="@dimen/image_thumb_artist"
+	        android:layout_height="@dimen/image_thumb_artist"
+	        android:layout_alignParentRight="true"
+	        android:scaleType="centerCrop" />
+	                    
+	</RelativeLayout>
+	
+    <include
+        layout="@layout/list_item_flipped"
+        android:visibility="gone" />
+
+</FrameLayout>

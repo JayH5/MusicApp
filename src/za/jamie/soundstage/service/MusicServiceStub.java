@@ -6,6 +6,7 @@ import java.util.List;
 import za.jamie.soundstage.IMusicService;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import android.app.PendingIntent;
 import android.os.RemoteException;
@@ -31,6 +32,11 @@ public class MusicServiceStub extends IMusicService.Stub {
 	@Override
 	public void removeTrack(int position) throws RemoteException {
 		mService.get().removeTrack(position);			
+	}
+	
+	@Override
+	public void savePlayQueueAsPlaylist(String playlistName) throws RemoteException {
+		mService.get().savePlayQueueAsPlaylist(playlistName);
 	}
 
 	@Override
@@ -60,10 +66,10 @@ public class MusicServiceStub extends IMusicService.Stub {
 	}
 
 	@Override
-	public void enqueue(List<Track> tracks, int action) 
+	public void enqueue(MusicItem item, int action) 
 			throws RemoteException {
 
-		mService.get().enqueue(tracks, action);
+		mService.get().enqueue(item, action);
 	}
 
 	@Override

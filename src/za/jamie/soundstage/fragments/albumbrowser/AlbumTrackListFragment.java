@@ -1,15 +1,16 @@
 package za.jamie.soundstage.fragments.albumbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.albumbrowser.AlbumTrackListAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.utils.TextUtils;
 import android.app.Activity;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
@@ -18,7 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import android.widget.TextView;
 
 public class AlbumTrackListFragment extends TrackListFragment {
 
@@ -30,7 +30,10 @@ public class AlbumTrackListFragment extends TrackListFragment {
 	
 	private AlbumStatisticsCallback mCallback;
 	
+	// Header view (the album stats fragment) is the list header in landscape
 	private View mStatsHeader;
+	
+	private FlippingViewHelper mFlipHelper;
 	
 	public static AlbumTrackListFragment newInstance(long albumId) {
 		final Bundle args = new Bundle();
@@ -50,7 +53,19 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		mAdapter = new AlbumTrackListAdapter(getActivity(), 
 				R.layout.list_item_track, null, 0);
 		
-		mAdapter.registerDataSetObserver(mDataSetObserver);
+		// Add observer to trigger collection of album stats
+		mAdapter.registerDataSetObserver(new DataSetObserver() {
+			@Override
+			public void onChanged() {
+				if (mCallback != null) {
+					mCallback.deliverAlbumStatistics(getAlbumStatistics());
+				}
+			}
+		});
+		
+		ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
+		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
+		mAdapter.setFlippingViewHelper(mFlipHelper);
 		
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
 				MusicStore.Tracks.getAlbumTracks(mAlbumId));
@@ -73,11 +88,13 @@ public class AlbumTrackListFragment extends TrackListFragment {
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		final ListView lv = getListView();
 		if (mStatsHeader != null) {
 			setListAdapter(null);
-			getListView().addHeaderView(mStatsHeader);
+			lv.addHeaderView(mStatsHeader);
 		}
 		setListAdapter(mAdapter);
+		mFlipHelper.initFlipper(lv);
 	}
 	
 	@Override
@@ -125,66 +142,13 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		return null;
 	}
 	
+	/**
+	 * Interface for delivery of collected album statistics. The Activity that adds this fragment
+	 * must implement this interface.
+	 *
+	 */
 	public interface AlbumStatisticsCallback {
-		public void deliverAlbumStatistics(AlbumStatistics stats);
+		void deliverAlbumStatistics(AlbumStatistics stats);
 	}
-	
-	private DataSetObserver mDataSetObserver = new DataSetObserver() {		
-		@Override
-		public void onChanged() {
-			if (mCallback != null) {
-				mCallback.deliverAlbumStatistics(getAlbumStatistics());
-			}
-		}
-	};
-	
-	private static class AlbumTrackListAdapter extends BasicTrackAdapter {
 
-		private int mTrackNumColIdx;
-		private boolean mIsCompilation = false;
-		
-		public AlbumTrackListAdapter(Context context, int layout, Cursor c,
-				int flags) {
-			
-			super(context, layout, c, flags);
-		}
-
-		@Override
-		protected void getColumnIndices(Cursor cursor) {
-			super.getColumnIndices(cursor);
-			mTrackNumColIdx = cursor
-					.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK);
-			
-			// Search to determine if there is more than one artist
-			if (cursor.moveToFirst()) {
-				final long artistId = cursor.getLong(getArtistIdColIdx());
-				while (cursor.moveToNext()) {
-					if (artistId != cursor.getLong(getArtistIdColIdx())) {
-						mIsCompilation = true;
-						break;
-					}
-				}
-			}
-		}
-		
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {			
-			TextView titleText = (TextView) view.findViewById(R.id.title);
-			TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
-			TextView trackNumText = (TextView) view.findViewById(R.id.trackNumber);
-			
-			titleText.setText(cursor.getString(getTitleColIdx()));
-			
-			if (mIsCompilation) {
-				subtitleText.setText(cursor.getString(getArtistColIdx()));
-			} else {
-				long duration = cursor.getLong(getDurationColIdx());
-				subtitleText.setText(TextUtils.getTrackDurationText(duration));
-			}
-			
-			int trackNum = cursor.getInt(mTrackNumColIdx);
-			trackNumText.setText(TextUtils.getTrackNumText(trackNum));
-		}
-		
-	}
 }

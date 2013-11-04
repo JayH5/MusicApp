@@ -2,6 +2,7 @@ package za.jamie.soundstage;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import android.content.ComponentName;
 import android.net.Uri;
@@ -11,6 +12,7 @@ oneway interface IMusicService {
 	void setQueuePosition(int position);	
 	void moveQueueItem(int from, int to);
 	void removeTrack(int position);
+	void savePlayQueueAsPlaylist(in String playlistName);
 	
 	// QueueStatusCallback
 	void registerPlayQueueCallback(IPlayQueueCallback callback);
@@ -30,8 +32,8 @@ oneway interface IMusicService {
 	
 	// Opening new music/enqueueing music for the library
 	void open(in List<Track> tracks, int position);
-	void shuffle(in List<Track> tracks);
-	void enqueue(in List<Track> tracks, int action);
+	void shuffle(in List<Track> tracks);	
+	void enqueue(in MusicItem item, int action);
 	
 	// Tell the service to show/remove notification
 	void showNotification(in PendingIntent intent);

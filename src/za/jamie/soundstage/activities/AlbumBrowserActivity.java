@@ -33,7 +33,6 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	
 	private long mAlbumId;
 	
-	
 	private TrackListFragment mTrackListFragment;
 	
 	private SortedMap<Artist, Integer> mArtists;
@@ -43,11 +42,9 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		super.onCreate(savedInstanceState);
 		setMainContentView(R.layout.activity_album_browser);
 		
-		getActionBar().setDisplayOptions(0, 
-				ActionBar.DISPLAY_SHOW_HOME);
+		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 
-		mAlbumId = Long.parseLong(getIntent().getData().getLastPathSegment());
-		
+		mAlbumId = Long.parseLong(getIntent().getData().getLastPathSegment());		
 
 		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);

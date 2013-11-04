@@ -1,13 +1,15 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.artistbrowser.ArtistTrackListAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
 import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
@@ -16,16 +18,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import android.widget.TextView;
 
 public class ArtistTrackListFragment extends TrackListFragment {
 	
 	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
 	
-	private BasicTrackAdapter mAdapter;
+	private ArtistTrackListAdapter mAdapter;
 	
 	private ArtistTrackListListener mCallback;
 	private View mSpacerView;
+	
+	private FlippingViewHelper mFlipHelper;
 	
 	public static ArtistTrackListFragment newInstance(long artistId) {
 		final Bundle args = new Bundle();
@@ -42,7 +45,18 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		
 		mAdapter = new ArtistTrackListAdapter(getActivity(), 
 				R.layout.list_item_two_line, null, 0);		
-		mAdapter.registerDataSetObserver(mDataSetObserver);
+		mAdapter.registerDataSetObserver(new DataSetObserver() {
+			@Override
+			public void onChanged() {
+				if (mCallback != null) {
+					mCallback.onDurationCalculated(calculateDuration());
+				}
+			}
+		});
+		
+		ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
+		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
+		mAdapter.setFlippingViewHelper(mFlipHelper);
 		
 		final long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
 		CursorManager cm = new CursorManager(getActivity(), mAdapter, 
@@ -71,6 +85,7 @@ public class ArtistTrackListFragment extends TrackListFragment {
 			lv.addFooterView(mSpacerView);
 		}
 		setListAdapter(mAdapter);
+		mFlipHelper.initFlipper(lv);
 	}
 	
 	@Override
@@ -100,33 +115,8 @@ public class ArtistTrackListFragment extends TrackListFragment {
 		return -1;
 	}
 	
-	private DataSetObserver mDataSetObserver = new DataSetObserver() {
-		@Override
-		public void onChanged() {
-			if (mCallback != null) {
-				mCallback.onDurationCalculated(calculateDuration());
-			}
-		}
-	};
-	
 	public interface ArtistTrackListListener {
-		public void onDurationCalculated(long duration);
+		void onDurationCalculated(long duration);
 	}
-	
-	private static class ArtistTrackListAdapter extends BasicTrackAdapter {
-		
-		public ArtistTrackListAdapter(Context context, int layout, Cursor c, int flags) {
-			super(context, layout, c, flags);
-		}
 
-		@Override
-		public void bindView(View view, Context context, Cursor cursor) {
-			TextView titleText = (TextView) view.findViewById(R.id.title);
-			TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
-			
-			titleText.setText(cursor.getString(getTitleColIdx()));
-			subtitleText.setText(cursor.getString(getAlbumColIdx()));
-		}
-
-	}
 }

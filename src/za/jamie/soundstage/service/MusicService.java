@@ -1,10 +1,12 @@
 package za.jamie.soundstage.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
@@ -25,6 +27,7 @@ import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import com.squareup.picasso.Picasso;
@@ -56,6 +59,24 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String QUEUE_CHANGED = "za.jamie.soundstage.queuechanged";
     public static final String REPEATMODE_CHANGED = "za.jamie.soundstage.repeatmodechanged";
     public static final String SHUFFLESTATE_CHANGED = "za.jamie.soundstage.shufflemodechanged";
+    
+    private static final Uri URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+    private static final String[] PROJECTION = new String[] {
+    	MediaStore.Audio.Media._ID,
+    	MediaStore.Audio.Media.TITLE,
+    	MediaStore.Audio.Media.ARTIST_ID,
+    	MediaStore.Audio.Media.ARTIST,
+    	MediaStore.Audio.Media.ALBUM_ID,
+    	MediaStore.Audio.Media.ALBUM,
+    	MediaStore.Audio.Media.DURATION
+    };
+    
+    private static final String TRACK_SELECTION = MediaStore.Audio.Media._ID + "=?";
+    private static final String ALBUM_SELECTION = MediaStore.Audio.Media.ALBUM_ID + "=?";
+    private static final String ARTIST_SELECTION = MediaStore.Audio.Media.ARTIST_ID + "=?";
+    
+    private static final String ARTIST_SORT_ORDER = MediaStore.Audio.Media.TITLE_KEY;
+    private static final String ALBUM_SORT_ORDER = MediaStore.Audio.Media.TRACK;
 
     // Shuffle modes
     //private boolean mShuffleEnabled = false;
@@ -70,6 +91,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final int NOW = 1;
     public static final int NEXT = 2;
     public static final int LAST = 3;
+    public static final int PLAY = 4;
     
     // Shared preference keys
     private static final String PREFERENCES = "Service";
@@ -964,9 +986,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	}
     	
     	boolean playQueueWasEmpty = mPlayQueue.isEmpty();
+    	final int playPosition = mPlayQueue.getPosition();
     	switch(action) {
     	case NEXT:
-    		final int playPosition = mPlayQueue.getPosition();
     		if (!isShuffleEnabled() && playPosition + 1 < mPlayQueue.size()) {
     			mPlayQueue.addAll(playPosition + 1, list);
     		} else {
@@ -974,21 +996,77 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		}
     		break;
     	case NOW:
-    		// TODO: This makes no sense
-    		mPlayQueue.addAll(list);
-    		mPlayQueue.moveToNext();
-    		openCurrentAndNext();
-    		play();
+    		if (!isShuffleEnabled() && playPosition + 1 < mPlayQueue.size()) {
+    			mPlayQueue.addAll(playPosition + 1, list);
+    		} else {
+    			mPlayQueue.addAll(list);
+    		}
+    		if (mPlayQueue.moveToNext()) {
+    			openCurrentAndNext();
+    			play();
+    		}
     		break;
     	case LAST:
     		mPlayQueue.addAll(list);
     		break;
+    	case PLAY:
+    		open(list, 0);
+    		return;
     	}
    		
    		onQueueChanged();
-    	if (playQueueWasEmpty) {
+    	if (playQueueWasEmpty || action == NOW) {
 			onTrackChanged();
 		}
+    }
+    
+    public synchronized void enqueue(MusicItem item, int action) {
+    	final Uri uri = URI;
+    	final String[] projection;
+    	final String selection;
+    	final String sortOrder;
+    	switch (item.type) {
+    	case MusicItem.TYPE_TRACK:
+    		projection = PROJECTION;
+    		selection = TRACK_SELECTION;
+    		sortOrder = null;
+    		break;
+    	case MusicItem.TYPE_ARTIST:
+    		projection = PROJECTION;
+    		selection = ARTIST_SELECTION;
+    		sortOrder = ARTIST_SORT_ORDER;
+    		break;
+    	case MusicItem.TYPE_ALBUM:
+    		projection = PROJECTION;
+    		selection = ALBUM_SELECTION;
+    		sortOrder = ALBUM_SORT_ORDER;
+    		break;
+    	default:
+    		return;
+    	}
+    	final String[] selectionArgs = new String[] { String.valueOf(item.id) };
+    	final Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+    	
+    	enqueue(buildTrackList(cursor), action);
+    }
+    
+    private static List<Track> buildTrackList(Cursor cursor) {
+    	List<Track> trackList = null;
+    	if (cursor.moveToFirst()) {
+    		trackList = new ArrayList<Track>();
+    		do {
+    			trackList.add(new Track(
+    					cursor.getLong(0), // Track id
+    					cursor.getString(1), // Title
+    					cursor.getLong(2), // Artist id
+    					cursor.getString(3), // Artist
+    					cursor.getLong(4), // Album id
+    					cursor.getString(5), // Album
+    					cursor.getLong(6))); // Duration
+    		} while (cursor.moveToNext());
+    	}
+    	cursor.close();
+    	return trackList;
     }
 
      /**
@@ -1029,6 +1107,43 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
    			setNextTrack();
    		}
         onQueueChanged();
+    }
+    
+    public synchronized void savePlayQueueAsPlaylist(String playlistName) {
+    	// TODO: WIP
+    	/*if (!TextUtils.isEmpty(playlistName)) {
+    		final ContentResolver resolver = getContentResolver();
+    		final Uri playlistsUri = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI;
+    		
+    		// First check if a playlist of the same name already exists
+    		final Cursor cursor = resolver.query(
+    				playlistsUri, // Uri
+    				new String[] { MediaStore.Audio.Playlists.NAME }, // Projection
+    				MediaStore.Audio.Playlists.NAME + "=?", // Selection
+    				new String[] { playlistName }, // Selection args
+    				null); // Sort order
+    		
+    		long playlistId = 0;
+    		if (cursor.getCount() == 0) {
+    			ContentValues values = new ContentValues(1);
+    			values.put(MediaStore.Audio.Playlists.NAME, playlistName);
+    			Uri uri = resolver.insert(playlistsUri, values);
+    			playlistId = Long.parseLong(uri.getLastPathSegment());
+    		}
+    		cursor.close();
+    		
+    		if (playlistId > 0) {
+    			Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
+    			List<Track> tracks = mPlayQueue.getPlayQueue();
+    			final int len = tracks.size();
+    			ContentValues[] values = new ContentValues[len];
+    			for (int i = 0; i < len; i++) {
+    				values[i] = new ContentValues();
+    				tracks.get(i).writeToContentValues(values[i]);
+    			}
+    			resolver.bulkInsert(uri, values);
+    		}
+    	}*/
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
