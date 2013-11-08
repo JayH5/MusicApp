@@ -92,8 +92,7 @@ public final class MusicStore {
 					MediaStore.Audio.Media.ALBUM,
 					MediaStore.Audio.Media.DURATION,
 					MediaStore.Audio.Media.TRACK,
-					MediaStore.Audio.Media.YEAR,
-					MediaStore.Audio.Media.ARTIST_KEY
+					MediaStore.Audio.Media.YEAR
 			};
 			final String selection = MediaStore.Audio.Media.ALBUM_ID + "=(?)";
 			final String[] selectionArgs = new String[] { String.valueOf(albumId) };

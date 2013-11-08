@@ -38,7 +38,7 @@ public class AlbumSummaryFragment extends Fragment {
 			TextView year = (TextView) v.findViewById(R.id.albumYear);
 			
 			final Uri uri = LastfmUris.getAlbumInfoUri(stats.title,
-					stats.artists.firstKey().getName(), stats.id);
+					stats.artists.firstKey().getTitle(), stats.id);
 			Pablo.with(getActivity())
 				.load(uri)
 				.resizeDimen(R.dimen.image_thumb_album, R.dimen.image_thumb_album)

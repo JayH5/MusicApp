@@ -60,11 +60,11 @@ public class FlippingViewHelper implements View.OnClickListener, View.OnLongClic
 			break;
 		case R.id.flipped_view_next:
 			action = MusicService.NEXT;
-			Toast.makeText(mActivity, "'" + item.title + "' will play next." , Toast.LENGTH_SHORT).show();
+			Toast.makeText(mActivity, "'" + item.getTitle() + "' will play next." , Toast.LENGTH_SHORT).show();
 			break;
 		case R.id.flipped_view_last:
 			action = MusicService.LAST;
-			Toast.makeText(mActivity, "'" + item.title + "' will play last." , Toast.LENGTH_SHORT).show();
+			Toast.makeText(mActivity, "'" + item.getTitle() + "' will play last." , Toast.LENGTH_SHORT).show();
 			break;
 		case R.id.flipped_view_more:
 			MoreDialogFragment frag = MoreDialogFragment.newInstance(item);

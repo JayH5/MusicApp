@@ -1023,32 +1023,32 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     public synchronized void enqueue(MusicItem item, int action) {
     	final Uri uri;
-    	final String selection;
-    	final String sortOrder;
-    	switch (item.type) {
+    	String selection = null;
+    	String[] selectionArgs = null;
+    	String sortOrder = null;
+    	switch (item.getType()) {
     	case MusicItem.TYPE_TRACK:
-    		uri = ContentUris.withAppendedId(URI, item.id);
-    		selection = null;
-    		sortOrder = null;
+    		uri = ContentUris.withAppendedId(URI, item.getId());
     		break;
     	case MusicItem.TYPE_ARTIST:
     		uri = URI;
     		selection = ARTIST_SELECTION;
+    		selectionArgs = new String[] { String.valueOf(item.getId()) };
     		sortOrder = ARTIST_SORT_ORDER;
     		break;
     	case MusicItem.TYPE_ALBUM:
     		uri = URI;
     		selection = ALBUM_SELECTION;
+    		selectionArgs = new String[] { String.valueOf(item.getId()) };
     		sortOrder = ALBUM_SORT_ORDER;
     		break;
     	case MusicItem.TYPE_PLAYLIST:
-    		uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.id);
-    		selection = null;
+    		uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
     		sortOrder = PLAYLIST_SORT_ORDER;
+    		break;
     	default:
     		return;
     	}
-    	final String[] selectionArgs = new String[] { String.valueOf(item.id) };
     	final Cursor cursor =
     			getContentResolver().query(uri, PROJECTION, selection, selectionArgs, sortOrder);
     	
