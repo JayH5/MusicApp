@@ -140,7 +140,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	
 	private AlertDialog buildArtistListDialog(List<Artist> artists) {
 		final ListAdapter adapter = new ArrayAdapter<Artist>(this, 
-				R.layout.list_item_one_line, R.id.title, artists) {		
+				R.layout.list_item_one_line_basic, R.id.title, artists) {		
 			@Override
 			public long getItemId(int position) {
 				return getItem(position).getId();

@@ -351,7 +351,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	
 	private AlertDialog buildArtistListDialog(List<Artist> artists) {
 		final ListAdapter adapter = new ArrayAdapter<Artist>(getActivity(), 
-				R.layout.list_item_one_line, R.id.title, artists) {		
+				R.layout.list_item_one_line_basic, R.id.title, artists) {		
 			@Override
 			public long getItemId(int position) {
 				return getItem(position).getId();

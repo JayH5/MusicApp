@@ -1,7 +1,10 @@
 package za.jamie.soundstage.fragments.library;
 
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.library.PlaylistsAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.fragments.MusicListFragment;
 import za.jamie.soundstage.musicstore.CursorManager;
 import za.jamie.soundstage.musicstore.MusicStore;
@@ -18,6 +21,7 @@ public class PlaylistsFragment extends MusicListFragment {
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
 	private PlaylistsAdapter mAdapter;
+	private FlippingViewHelper mFlipHelper;
 	
 	public static PlaylistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
@@ -35,15 +39,25 @@ public class PlaylistsFragment extends MusicListFragment {
         mAdapter = new PlaylistsAdapter(getActivity(), 
         		R.layout.list_item_one_line, R.layout.list_item_header, null, 0);
         
+        ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
+        mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
+        mAdapter.setFlippingViewHelper(mFlipHelper);
+        
         setListAdapter(mAdapter);
     }
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-    	super.onActivityCreated(savedInstanceState);
+    	super.onActivityCreated(savedInstanceState);        
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Playlists.REQUEST);
         getLoaderManager().initLoader(0, null, cm);
+    }
+    
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+    	super.onViewCreated(view, savedInstanceState);
+    	mFlipHelper.initFlipper(getListView());
     }
     
     @Override

@@ -8,6 +8,7 @@ public final class MusicItem implements Parcelable {
 	public static final int TYPE_TRACK = 1;
 	public static final int TYPE_ARTIST = 2;
 	public static final int TYPE_ALBUM = 3;
+	public static final int TYPE_PLAYLIST = 4;
 	
 	public final long id;
 	public final String title;
