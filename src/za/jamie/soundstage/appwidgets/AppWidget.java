@@ -34,15 +34,21 @@ public class AppWidget extends AppWidgetProvider {
     }
     
     private static void linkButtons(Context context, RemoteViews views) {
-		views.setOnClickPendingIntent(R.id.app_widget_info_container, buildActivityIntent(context));
-        views.setOnClickPendingIntent(R.id.app_widget_previous,
+		PendingIntent activityIntent = buildActivityIntent(context);
+    	views.setOnClickPendingIntent(R.id.app_widget_info_container, activityIntent);
+    	int layoutId = views.getLayoutId();
+    	if (layoutId != R.layout.app_widget_4x1) {
+    		views.setOnClickPendingIntent(R.id.app_widget_album_art, activityIntent);
+    	}
+        
+    	views.setOnClickPendingIntent(R.id.app_widget_previous,
         		buildActionIntent(context, MusicService.ACTION_PREVIOUS));
         views.setOnClickPendingIntent(R.id.app_widget_play,
         		buildActionIntent(context, MusicService.ACTION_TOGGLE_PLAYBACK));
         views.setOnClickPendingIntent(R.id.app_widget_next,
         		buildActionIntent(context, MusicService.ACTION_NEXT));
         
-        int layoutId = views.getLayoutId();
+        
         if (layoutId == R.layout.app_widget_4x3 || layoutId == R.layout.app_widget_4x4) {
         	views.setOnClickPendingIntent(R.id.app_widget_shuffle,
         			buildActionIntent(context, MusicService.ACTION_SHUFFLE));
