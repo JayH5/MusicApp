@@ -30,7 +30,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
 	
-	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
+	public static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
 	private ImageButton mPlayQueueButton;
 	

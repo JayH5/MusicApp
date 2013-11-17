@@ -75,7 +75,7 @@ public class MusicNotificationHelper implements Target {
 	
 	private void initCollapsedLayout(String track, String artist) {
 	    mBaseView.setTextViewText(R.id.notification_base_line_one, track);
-	    mBaseView.setTextViewText(R.id.notification_base_line_two, artist);	    
+	    mBaseView.setTextViewText(R.id.notification_base_line_two, artist);
 	}
 	
 	private void initExpandedLayout(String track, String artist, String album) {

@@ -5,12 +5,14 @@ import java.util.List;
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.appwidgets.AppWidgetHelper;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -46,6 +48,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String ACTION_PREVIOUS = "za.jamie.soundstage.action.PREVIOUS";
     public static final String ACTION_REPEAT = "za.jamie.soundstage.action.REPEAT";
     public static final String ACTION_SHUFFLE = "za.jamie.soundstage.action.SHUFFLE";
+    public static final String ACTION_UPDATE_WIDGETS = "za.jamie.soundstage.action.UPDATE_WIDGETS";
     
     public static final String KILL_FOREGROUND = "za.jamie.soundstage.killforeground";
     public static final String START_BACKGROUND = "za.jamie.soundstage.startbackground";
@@ -105,6 +108,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private MusicNotificationHelper mNotificationHelper; // Notifications
     private MusicRCC mRemoteControlClient; // Lockscreen controls
     private ComponentName mMediaButtonReceiverComponent; // Media buttons
+    private AppWidgetHelper mAppWidgetHelper; // Widgets
     private long mLastAlbumId = -1;
 
     private final IBinder mBinder = new MusicServiceStub(this);
@@ -114,7 +118,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		new RemoteCallbackList<IMusicStatusCallback>();
     
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
-    		new RemoteCallbackList<IPlayQueueCallback>();
+    		new RemoteCallbackList<IPlayQueueCallback>();   
     
 
     @Override
@@ -174,6 +178,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mAudioManager.registerRemoteControlClient(mRemoteControlClient);
         
         mNotificationHelper = new MusicNotificationHelper(this);
+        
+        mAppWidgetHelper = new AppWidgetHelper(this);
 
         // Register the broadcast receivers
         registerIntentReceiver();
@@ -512,7 +518,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	if (mShowNotification) {
     		mNotificationHelper.updateMetaData(currentTrack);
     	}
-    	mRemoteControlClient.updateTrack(currentTrack, mLastAlbumId != currentTrack.getAlbumId());
+    	mRemoteControlClient.updateTrack(currentTrack, mLastAlbumId != currentTrack.getAlbumId());    	
+    	mAppWidgetHelper.updateTrack(currentTrack);
     	
     	updateAlbumArt(currentTrack);
     }
@@ -567,6 +574,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	}
     	mRemoteControlClient.updatePlayState(isPlaying);
     	
+    	mAppWidgetHelper.updatePlayState(isPlaying);
+    	
     	mPreferences.edit()
 				.putLong(PREF_SEEK_POSITION, position())
 				.apply();
@@ -587,6 +596,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
+    	
+    	mAppWidgetHelper.updateShuffleState(shuffleEnabled);
     }
     
     private void onRepeatModeChanged() {
@@ -604,6 +615,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
+    	
+    	mAppWidgetHelper.updateRepeatMode(repeatMode);
 
     	mPreferences.edit()
     			.putInt(PREF_REPEAT_MODE, repeatMode)
@@ -1090,7 +1103,24 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		.centerCrop()
     		.into(mRemoteControlClient);
     	
+    	pablo.load(uri)
+    		.resize(screenWidth, screenWidth)
+    		.centerCrop()
+    		.into(mAppWidgetHelper);
+    	
     	mLastAlbumId = track.getAlbumId();
+    }
+    
+    private void updateWidgets(int appWidgetId) {
+    	mAppWidgetHelper.update(getCurrentTrack(), isPlaying(), isShuffleEnabled(), getRepeatMode(),
+    			appWidgetId);
+    	
+    	final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+    	Pablo.with(this)
+    		.load(LastfmUris.getAlbumInfoUri(getCurrentTrack()))
+    		.resize(screenWidth, screenWidth)
+    		.centerCrop()
+    		.into(mAppWidgetHelper);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1176,6 +1206,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 cycleRepeat();
             } else if (ACTION_SHUFFLE.equals(action)) {
                 toggleShuffle();
+            } else if (ACTION_UPDATE_WIDGETS.equals(action)) {
+            	updateWidgets(intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0));
             }
         }
     };
