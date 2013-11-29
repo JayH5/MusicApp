@@ -286,7 +286,7 @@ public class AudioPreviewActivity extends Activity implements OnPreparedListener
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final String scheme = mUri.getScheme();
 		if (scheme.equals(ContentResolver.SCHEME_CONTENT)) {
-            if (mUri.getAuthority() == MediaStore.AUTHORITY) {
+            if (mUri.getAuthority().equals(MediaStore.AUTHORITY)) {
             	// try to get title and artist from the media content provider
             	return new CursorLoader(this, mUri, new String [] {
                         	MediaStore.Audio.Media.TITLE, 

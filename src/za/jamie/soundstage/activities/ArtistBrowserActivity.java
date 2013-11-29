@@ -23,9 +23,6 @@ public class ArtistBrowserActivity extends MusicActivity implements
 	private static final String TAG_SUMMARY_FRAG = "artist_summary";
 	
 	private long mArtistId;
-	private Uri mUri;
-	
-	private ViewPager mViewPager;
 	
 	private ArtistSummaryFragment mSummaryFragment;
 	
@@ -38,26 +35,26 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 		
 		// Set up the view pager and its indicator
-		mViewPager = (ViewPager) findViewById(R.id.pager);
-		mViewPager.setAdapter(new SectionsPagerAdapter(
+		ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
+		viewPager.setAdapter(new SectionsPagerAdapter(
 				getFragmentManager()));
 		
 		int orientation = getResources().getConfiguration().orientation;
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			AppUtils.loadActionBarTabs(actionBar, mViewPager);
+			AppUtils.loadActionBarTabs(actionBar, viewPager);
 		} else {
 			PagerSlidingTabStrip indicator = (PagerSlidingTabStrip) findViewById(R.id.tabStrip);
-			indicator.setViewPager(mViewPager);
+			indicator.setViewPager(viewPager);
 		}		
 
-		mUri = getIntent().getData();
-		mArtistId = Long.parseLong(mUri.getLastPathSegment());
+		Uri uri = getIntent().getData();
+		mArtistId = Long.parseLong(uri.getLastPathSegment());
 				
 		// Set up the summary fragment
 		final FragmentManager fm = getFragmentManager();
 		mSummaryFragment = (ArtistSummaryFragment) fm.findFragmentByTag(TAG_SUMMARY_FRAG);
 		if (mSummaryFragment == null) {
-			mSummaryFragment = ArtistSummaryFragment.newInstance(mUri);
+			mSummaryFragment = ArtistSummaryFragment.newInstance(uri);
 			fm.beginTransaction()
 				.add(R.id.summaryFrame, mSummaryFragment, TAG_SUMMARY_FRAG)
 				.commit();

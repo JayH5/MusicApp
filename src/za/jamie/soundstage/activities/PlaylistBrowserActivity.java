@@ -14,7 +14,6 @@ public class PlaylistBrowserActivity extends MusicActivity {
 	private static final String TAG_LIST_FRAGMENT = "playlist_track_list";
 	
 	private long mPlaylistId;
-	private String mName;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -25,9 +24,9 @@ public class PlaylistBrowserActivity extends MusicActivity {
 		
 		final Intent intent = getIntent();
 		mPlaylistId = intent.getLongExtra(EXTRA_PLAYLIST_ID, -1);
-		mName = intent.getStringExtra(EXTRA_NAME);
+		String name = intent.getStringExtra(EXTRA_NAME);
 		
-		getActionBar().setTitle(mName);
+		getActionBar().setTitle(name);
 		
 		final FragmentManager fm = getFragmentManager();
 		if (fm.findFragmentByTag(TAG_LIST_FRAGMENT) == null) {

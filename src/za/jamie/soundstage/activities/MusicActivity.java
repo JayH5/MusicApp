@@ -32,8 +32,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
-	private ImageButton mPlayQueueButton;
-	
 	protected MenuDrawer mMenuDrawer;
 	
 	private MusicPlayerFragment mPlayer;
@@ -67,8 +65,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		}
 		
 		
-		mPlayQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
-		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {			
+		ImageButton playQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
+		playQueueButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
