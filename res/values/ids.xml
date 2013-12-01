@@ -1,0 +1,4 @@
+<resources>
+    <!-- The ID of the drawer. -->
+    <item name="md2__drawer" type="id" />
+</resources>

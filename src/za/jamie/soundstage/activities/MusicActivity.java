@@ -1,15 +1,5 @@
 package za.jamie.soundstage.activities;
 
-import net.simonvt.menudrawer.MenuDrawer;
-import net.simonvt.menudrawer.MenuDrawer.Type;
-import net.simonvt.menudrawer.Position;
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
-import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.service.MusicConnection;
-import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
-import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
@@ -18,21 +8,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.support.v4.widget.SlidingPaneLayout;
 import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 
-public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
-	
-	//private static final String TAG_PLAYER = "player";
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
+import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
+import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
+import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.widgets.MenuDrawer2;
+
+public class MusicActivity extends Activity implements SlidingPaneLayout.PanelSlideListener {
+
 	private static final String TAG_PLAY_QUEUE = "play_queue";
-	private static final String STATE_MENUDRAWER = "menudrawer";
 	
 	private static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
-	
-	protected MenuDrawer mMenuDrawer;
+
+    private MenuDrawer2 mMenuDrawer;
+    private boolean mPanelClosed = true;
 	
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
@@ -42,18 +41,20 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		// Set up the menu drawer to display the player
-		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		
-		// Have to set offset... kind of a pain
-		final Resources res = getResources();
-		int menuSize = res.getDisplayMetrics().widthPixels
-				- res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
-		mMenuDrawer.setMenuSize(menuSize);		
-		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
-		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
-		mMenuDrawer.setOnDrawerStateChangeListener(this);
+
+        mMenuDrawer = MenuDrawer2.attach(this);
+        mMenuDrawer.setShadowResource(R.drawable.menudrawer_shadow);
+        mMenuDrawer.setPanelSlideListener(this);
+
+        final Resources res = getResources();
+        mMenuDrawer.setParallaxDistance(res.getDimensionPixelOffset(R.dimen.menudrawer_parallax));
+        mMenuDrawer.setCoveredFadeColor(res.getColor(R.color.blackish));
+        mMenuDrawer.setSliderFadeColor(res.getColor(android.R.color.transparent));
+
+        int paneWidth = res.getDisplayMetrics().widthPixels
+                - res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
+        mMenuDrawer.setMenuWidth(paneWidth);
+        mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
 		
 		// Initialize the music player fragment
 		final FragmentManager fm = getFragmentManager();
@@ -63,7 +64,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		if (mPlayQueue == null) {
 			mPlayQueue = PlayQueueFragment.newInstance();
 		}
-		
 		
 		ImageButton playQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
 		playQueueButton.setOnClickListener(new View.OnClickListener() {
@@ -89,21 +89,13 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		startService(serviceIntent);
 		bindService(serviceIntent, mConnection, 0);
 	}
-
-	/**
-	 * Set the content view for this activity. Use this instead of {@link Activity#setContentView(int)}
-	 * so that the {@link MenuDrawer} can manage content properly.
-	 * @param layoutResId
-	 */
-	public void setMainContentView(int layoutResId) {
-		mMenuDrawer.setContentView(layoutResId);
-	}
 	
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		if (ACTION_SHOW_PLAYER.equals(intent.getAction())) {
-			mMenuDrawer.openMenu();
+			//mMenuDrawer.openMenu();
+            mMenuDrawer.openPane();
 		}
 	}
 	
@@ -129,24 +121,11 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	@Override
     public void onBackPressed() {
-		final int drawerState = mMenuDrawer.getDrawerState();
-        if (drawerState == MenuDrawer.STATE_OPEN || drawerState == MenuDrawer.STATE_OPENING) {
-            mMenuDrawer.closeMenu();
+        if (!mPanelClosed) {
+            mMenuDrawer.closePane();
             return;
         }
 		super.onBackPressed();
-    }
-	
-	@Override
-    protected void onRestoreInstanceState(Bundle inState) {
-        super.onRestoreInstanceState(inState);
-        mMenuDrawer.restoreState(inState.getParcelable(STATE_MENUDRAWER));
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable(STATE_MENUDRAWER, mMenuDrawer.saveState());
     }
     
     @Override
@@ -159,18 +138,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         
         return true;
     }
-
-	@Override
-	public void onDrawerStateChange(int oldState, int newState) {		
-		if ((newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
-			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-		}
-	}
-	
-	@Override
-	public void onDrawerSlide(float openRatio, int offsetPixels) {
-		// Complete interface
-	}
 	
 	protected void showNotification() {
 		mConnection.showNotification(getNotificationIntent());
@@ -184,19 +151,23 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	public MusicConnection getMusicConnection() {
 		return mConnection;
 	}
+
+    public boolean playerHidden() {
+        return mPanelClosed;
+    }
 	
 	/**
 	 * Open the drawer with the player in it
 	 */
 	public void showPlayer() {
-		mMenuDrawer.openMenu();
+        mMenuDrawer.openPane();
 	}
 	
 	/**
 	 * Close the drawer with the player in it
 	 */
 	public void hidePlayer() {
-		mMenuDrawer.closeMenu();
+        mMenuDrawer.closePane();
 	}
 	
 	/**
@@ -217,4 +188,22 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
 
+    @Override
+    public void onPanelSlide(View view, float v) {
+        if (mPanelClosed) {
+            mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            mPanelClosed = false;
+        }
+    }
+
+    @Override
+    public void onPanelOpened(View view) {
+        // Nothing to do...
+    }
+
+    @Override
+    public void onPanelClosed(View view) {
+        mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        mPanelClosed = true;
+    }
 }

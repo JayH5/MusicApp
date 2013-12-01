@@ -39,11 +39,11 @@ public class LibraryActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_library);
+		setContentView(R.layout.activity_library);
 		
 		// Enable drawer animated icon
-		mMenuDrawer.setSlideDrawable(R.drawable.ic_drawer);
-		mMenuDrawer.setDrawerIndicatorEnabled(true);
+		//mMenuDrawer.setSlideDrawable(R.drawable.ic_drawer);
+		//mMenuDrawer.setDrawerIndicatorEnabled(true);
 		
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(new SectionsPagerAdapter(getFragmentManager()));
@@ -72,7 +72,8 @@ public class LibraryActivity extends MusicActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                mMenuDrawer.toggleMenu();
+                //mMenuDrawer.toggleMenu();
+                hidePlayer();
                 break;
         }
 
@@ -93,11 +94,9 @@ public class LibraryActivity extends MusicActivity {
 	
 	@Override
 	public void onBackPressed() {
-		final int drawerState = mMenuDrawer.getDrawerState();
-		if (isPlaying() && drawerState != MenuDrawer.STATE_OPEN && 
-				drawerState != MenuDrawer.STATE_OPENING) {
-			showNotification();
-		}
+        if (isPlaying() && playerHidden()) {
+            showNotification();
+        }
 		super.onBackPressed();
 	}
 	

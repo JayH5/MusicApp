@@ -59,6 +59,5 @@ android {
 dependencies {
     compile fileTree('libs')
     compile project(':drag-sort-listview:library')
-    compile project(':android-menudrawer:menudrawer')
     compile 'com.android.support:support-v13:19.0.+'
 }

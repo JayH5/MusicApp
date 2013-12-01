@@ -51,6 +51,7 @@
     <dimen name="menudrawer_offset">60dp</dimen>
     <dimen name="menudrawer_shadow_width">15dp</dimen>
     <dimen name="menudrawer_width">280dp</dimen>
+    <dimen name="menudrawer_parallax">60dp</dimen>
     
     <!-- Button bars -->
     <dimen name="button_bar_height">48dp</dimen>
