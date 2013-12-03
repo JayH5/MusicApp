@@ -14,6 +14,7 @@
 		android:drawSelectorOnTop="false"
 		android:fastScrollEnabled="true"
 		android:fastScrollAlwaysVisible="true"
+        android:scrollbarStyle="outsideOverlay"
 		android:scrollbars="none" />
 
 	<TextView android:id="@id/android:empty"
