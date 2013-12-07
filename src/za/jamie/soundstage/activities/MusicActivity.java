@@ -14,6 +14,7 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -36,6 +37,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
+
+    private boolean mUserLeaveHint = false;
 	
 	private final MusicConnection mConnection = new MusicConnection();
 	
@@ -76,7 +79,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
 			@Override
 			public void onConnected() {
-				if (!AppUtils.isApplicationSentToBackground(MusicActivity.this)) {
+				if (!mUserLeaveHint) {
 					mConnection.hideNotification();
 				}
 			}
@@ -103,22 +106,30 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		if (ACTION_SHOW_PLAYER.equals(intent.getAction())) {
-			mMenuDrawer.openMenu();
+			showPlayer();
 		}
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mConnection.hideNotification();
+        mConnection.hideNotification();
+        mUserLeaveHint = false;
 	}
-	
-	@Override
-    protected void onPause() {
-        super.onPause();        
-        if (isPlaying() && AppUtils.isApplicationSentToBackground(this)) {
-        	showNotification();
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        // Bit of a hack to detect when app goes to background
+        if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && isPlaying()) {
+            showNotification();
         }
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        mUserLeaveHint = true;
     }
 	
 	@Override
@@ -162,7 +173,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if ((newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
+		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
 			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 		}
 	}

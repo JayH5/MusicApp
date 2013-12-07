@@ -18,19 +18,6 @@ import android.support.v4.view.ViewPager;
 
 public class AppUtils {
 	
-	public static final boolean isApplicationSentToBackground(final Context context) {
-        final ActivityManager activityManager = (ActivityManager)context
-                .getSystemService(Context.ACTIVITY_SERVICE);
-        final List<RunningTaskInfo> tasks = activityManager.getRunningTasks(1);
-        if (!tasks.isEmpty()) {
-            final ComponentName topActivity = tasks.get(0).topActivity;
-            if (!topActivity.getPackageName().equals(context.getPackageName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-	
 	/**
      * Get a usable cache directory (external if available, internal otherwise)
      * 
@@ -47,13 +34,8 @@ public class AppUtils {
         return new File(cachePath + File.separator + uniqueName);
 	}
 	
-	public static final int calculateMemCacheSize(Context context, float memoryDivider) {
-		int memoryClass = ((ActivityManager) context.getSystemService(
-                Context.ACTIVITY_SERVICE)).getMemoryClass();
-    	return (int) (1024 * 1024 * memoryClass * memoryDivider);
-	}
-	
-	public static final void loadActionBarTabs(final ActionBar actionBar, final ViewPager viewPager) {
+	public static final void loadActionBarTabs(final ActionBar actionBar,
+                                               final ViewPager viewPager) {
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 		
 		// Create a simple listener for the tabs
@@ -95,12 +77,10 @@ public class AppUtils {
 	}
 	
 	public static boolean isLandscape(Resources res) {
-		return res.getConfiguration().orientation
-				== Configuration.ORIENTATION_LANDSCAPE;
+		return res.getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 	}
 	
 	public static boolean isPortrait(Resources res) {
-		return res.getConfiguration().orientation
-				== Configuration.ORIENTATION_PORTRAIT;
+		return res.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 	}
 }
