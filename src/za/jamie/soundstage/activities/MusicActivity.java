@@ -9,7 +9,7 @@ import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
 import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.utils.AppUtils;
+
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
@@ -38,7 +38,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 
-    private boolean mUserLeaveHint = false;
+    private boolean mIsInBackground = false;
 	
 	private final MusicConnection mConnection = new MusicConnection();
 	
@@ -79,7 +79,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
 			@Override
 			public void onConnected() {
-				if (!mUserLeaveHint) {
+				if (!mIsInBackground) {
 					mConnection.hideNotification();
 				}
 			}
@@ -114,7 +114,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	protected void onResume() {
 		super.onResume();
         mConnection.hideNotification();
-        mUserLeaveHint = false;
+        mIsInBackground = false;
 	}
 
     @Override
@@ -123,13 +123,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         // Bit of a hack to detect when app goes to background
         if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && isPlaying()) {
             showNotification();
+            mIsInBackground = true;
         }
-    }
-
-    @Override
-    public void onUserLeaveHint() {
-        super.onUserLeaveHint();
-        mUserLeaveHint = true;
     }
 	
 	@Override
