@@ -57,7 +57,6 @@ public class MusicPlayerFragment extends MusicFragment {
 	private ImageView mAlbumArt;
 	
 	// UI elements for seeking
-	private SeekBar mSeekBar;
 	private DurationTextView mElapsedTime;
 	private DurationTextView mTotalTime;
 	private long mDuration;
@@ -158,9 +157,9 @@ public class MusicPlayerFragment extends MusicFragment {
         mArtistText.setOnClickListener(mMetaListener);
         mAlbumArt = (ImageView) v.findViewById(R.id.music_player_album_art);
         
-        mSeekBar = (SeekBar) v.findViewById(R.id.seek_bar);
-        mSeekBar.setOnSeekBarChangeListener(mSeekListener);
-        mSeekBarAnimator = ObjectAnimator.ofInt(mSeekBar, "progress", 0, 1000);        
+        SeekBar seekBar = (SeekBar) v.findViewById(R.id.seek_bar);
+        seekBar.setOnSeekBarChangeListener(mSeekListener);
+        mSeekBarAnimator = ObjectAnimator.ofInt(seekBar, "progress", 0, 1000);
         
         mElapsedTime = (DurationTextView) v.findViewById(R.id.elapsedTime);
         mTotalTime = (DurationTextView) v.findViewById(R.id.totalTime);
@@ -228,7 +227,6 @@ public class MusicPlayerFragment extends MusicFragment {
      * Used to scan backwards in time through the current track
      * 
      * @param repeatCount The repeat count
-     * @param delta The long press duration
      */
     private void scan(long duration, int repeatCount, boolean backward) {
         if (repeatCount == 0) {

@@ -149,7 +149,6 @@
 
     <style name="NotificationAction.Previous" parent="@style/NotificationAction">
         <item name="android:src">@drawable/btn_playback_previous</item>
-        <item name="android:visibility">gone</item>
     </style>
 
     <style name="NotificationAction.Play" parent="@style/NotificationAction">
@@ -162,6 +161,7 @@
 
     <style name="NotificationAction.Remove" parent="@style/NotificationAction">
         <item name="android:src">@drawable/btn_notification_remove</item>
+        <item name="android:visibility">gone</item>
     </style>
     
     <style name="TransparentImageButton">
