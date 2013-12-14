@@ -2,21 +2,35 @@ package za.jamie.soundstage.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.MediaStore;
 
-public final class MusicItem implements Parcelable {
+public final class MusicItem implements Parcelable, Comparable<MusicItem> {
 
 	public static final int TYPE_TRACK = 1;
 	public static final int TYPE_ARTIST = 2;
 	public static final int TYPE_ALBUM = 3;
+	public static final int TYPE_PLAYLIST = 4;
 	
-	public final long id;
-	public final String title;
-	public final int type;
+	private final long mId;
+	private final String mTitle;
+	private final int mType;
 	
 	public MusicItem(long id, String title, int type) {
-		this.id = id;
-		this.title = title;
-		this.type = type;
+		mId = id;
+		mTitle = title;
+		mType = type;
+	}
+	
+	public long getId() {
+		return mId;
+	}
+	
+	public String getTitle() {
+		return mTitle;
+	}
+	
+	public int getType() {
+		return mType;
 	}
 
 	@Override
@@ -26,9 +40,9 @@ public final class MusicItem implements Parcelable {
 
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeLong(id);
-		dest.writeString(title);
-		dest.writeInt(type);
+		dest.writeLong(mId);
+		dest.writeString(mTitle);
+		dest.writeInt(mType);
 	}
 	
 	public static final Parcelable.Creator<MusicItem> CREATOR
@@ -49,8 +63,36 @@ public final class MusicItem implements Parcelable {
 	};
 	
 	private MusicItem(Parcel in) {
-		id = in.readLong();
-		title = in.readString();
-		type = in.readInt();
+		mId = in.readLong();
+		mTitle = in.readString();
+		mType = in.readInt();
+	}
+
+	@Override
+	public int compareTo(MusicItem another) {
+		final String thisKey = MediaStore.Audio.keyFor(mTitle);
+		final String anotherKey = MediaStore.Audio.keyFor(another.mTitle);
+		return thisKey.compareTo(anotherKey);
+	}
+	
+	@Override
+	public String toString() {
+		return mTitle;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		boolean equal = false;
+		if (o instanceof MusicItem) {
+			MusicItem item = (MusicItem) o;
+			equal = (item.mType == mType && item.mId == mId);
+		}	
+		
+		return equal;		
+	}
+	
+	@Override
+	public int hashCode() {
+		return ((Long) mId).hashCode();
 	}
 }

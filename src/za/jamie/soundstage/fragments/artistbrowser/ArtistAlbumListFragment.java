@@ -27,6 +27,8 @@ public class ArtistAlbumListFragment extends MusicListFragment {
 	private View mSpacerView;
 	
 	private FlippingViewHelper mFlipHelper;
+	
+	private long mArtistId;
 
 	public static ArtistAlbumListFragment newInstance(long artistId) {
 		Bundle args = new Bundle();
@@ -48,11 +50,15 @@ public class ArtistAlbumListFragment extends MusicListFragment {
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
         mAdapter.setFlippingViewHelper(mFlipHelper);
         
-        final long artistId = getArguments().getLong(EXTRA_ARTIST_ID);
-        CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		MusicStore.Albums.getArtistAlbums(artistId));
-        
-        getLoaderManager().initLoader(1, null, cm);
+        mArtistId = getArguments().getLong(EXTRA_ARTIST_ID);
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+        		MusicStore.Albums.getArtistAlbums(mArtistId));        
+        getLoaderManager().initLoader(0, null, cm);
 	}
 	
 	@Override

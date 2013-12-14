@@ -10,10 +10,10 @@ public class AlbumStatistics {
 	public final long duration;
 	public final int firstYear;
 	public final int lastYear;
-	public final SortedMap<Artist, Integer> artists;
+	public final SortedMap<MusicItem, Integer> artists;
 	
 	public AlbumStatistics(long id, String title, int numTracks, long duration, 
-			int firstYear, int lastYear, SortedMap<Artist, Integer> artists) {
+			int firstYear, int lastYear, SortedMap<MusicItem, Integer> artists) {
 		
 		this.id = id;
 		this.title = title;
@@ -35,7 +35,7 @@ public class AlbumStatistics {
 		private long duration = 0;
 		private int firstYear = Integer.MAX_VALUE;
 		private int lastYear = Integer.MIN_VALUE;
-		private final SortedMap<Artist, Integer> artists = new TreeMap<Artist, Integer>();
+		private final SortedMap<MusicItem, Integer> artists = new TreeMap<MusicItem, Integer>();
 		
 		public Builder(long albumId) {
 			id = albumId;
@@ -57,8 +57,8 @@ public class AlbumStatistics {
 			return this;
 		}
 		
-		public Builder addArtist(String key, long id, String name) {
-			final Artist artist = new Artist(key, id, name);
+		public Builder addArtist(long id, String name) {
+			final MusicItem artist = new MusicItem(id, name, MusicItem.TYPE_ARTIST);
 			Integer count = artists.get(artist);
 			if (count == null) {
 				count = 0;
@@ -82,38 +82,5 @@ public class AlbumStatistics {
 					firstYear, lastYear, artists);
 		}
 	}
-	
-	public static class Artist implements Comparable<Artist> {	
-		private final String mArtistKey;
-		private final String mArtist;
-		private final long mArtistId;
-		
-		public Artist(String key, long artistId, String artist) {
-			mArtistKey = key;
-			mArtist = artist;
-			mArtistId = artistId;
-		}
-		
-		public String getKey() {
-			return mArtistKey;
-		}
-		
-		public long getId() {
-			return mArtistId;
-		}
-		
-		public String getName() {
-			return mArtist;
-		}
 
-		@Override
-		public int compareTo(Artist other) {
-			return mArtistKey.compareTo(other.getKey());
-		}
-		
-		@Override
-		public String toString() {
-			return mArtist;
-		}
-	}
 }

@@ -66,10 +66,13 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
 		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
 		mAdapter.setFlippingViewHelper(mFlipHelper);
-		
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				MusicStore.Tracks.getAlbumTracks(mAlbumId));
-		
+				MusicStore.Tracks.getAlbumTracks(mAlbumId));		
 		getLoaderManager().initLoader(0, null, cm);
 	}
 	
@@ -116,7 +119,6 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		final Cursor cursor = mAdapter.getCursor();
 		if (cursor != null && cursor.moveToFirst()) {			
 			// Get all the column indexes we need
-			int artistKeyColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_KEY);
 			int yearColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR);
 			int artistIdColIdx = mAdapter.getArtistIdColIdx();
 			int artistColIdx = mAdapter.getArtistColIdx();
@@ -129,8 +131,7 @@ public class AlbumTrackListFragment extends TrackListFragment {
 			
 			// Iterate through the cursor collecting artists, duration and year
 			do {
-				builder.addArtist(cursor.getString(artistKeyColIdx),
-							cursor.getLong(artistIdColIdx),
+				builder.addArtist(cursor.getLong(artistIdColIdx),
 							cursor.getString(artistColIdx))
 						.addDuration(cursor.getLong(durationColIdx))
 						.addYear(cursor.getInt(yearColIdx));

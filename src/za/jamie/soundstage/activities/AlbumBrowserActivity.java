@@ -9,7 +9,7 @@ import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.models.AlbumStatistics.Artist;
+import za.jamie.soundstage.models.MusicItem;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
@@ -33,21 +33,18 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	
 	private long mAlbumId;
 	
-	
 	private TrackListFragment mTrackListFragment;
 	
-	private SortedMap<Artist, Integer> mArtists;
+	private SortedMap<MusicItem, Integer> mArtists;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setMainContentView(R.layout.activity_album_browser);
 		
-		getActionBar().setDisplayOptions(0, 
-				ActionBar.DISPLAY_SHOW_HOME);
+		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 
-		mAlbumId = Long.parseLong(getIntent().getData().getLastPathSegment());
-		
+		mAlbumId = Long.parseLong(getIntent().getData().getLastPathSegment());		
 
 		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
@@ -102,7 +99,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		final ActionBar actionBar = getActionBar();
 		actionBar.setTitle(album.title);
 		String subtitle = album.isCompilation() ? getString(R.string.various_artists) : 
-				album.artists.firstKey().getName();
+				album.artists.firstKey().getTitle();
 		actionBar.setSubtitle(subtitle);
 		
 		mArtists = album.artists;
@@ -120,7 +117,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			if (mArtists.size() == 1) {
 				launchArtistBrowser(mArtists.firstKey().getId());
 			} else {
-				buildArtistListDialog(new ArrayList<Artist>(mArtists.keySet())).show();
+				buildArtistListDialog(new ArrayList<MusicItem>(mArtists.keySet())).show();
 			}
 		}
 	}
@@ -141,9 +138,9 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		startActivity(intent);
 	}
 	
-	private AlertDialog buildArtistListDialog(List<Artist> artists) {
-		final ListAdapter adapter = new ArrayAdapter<Artist>(this, 
-				R.layout.list_item_one_line, R.id.title, artists) {		
+	private AlertDialog buildArtistListDialog(List<MusicItem> artists) {
+		final ListAdapter adapter = new ArrayAdapter<MusicItem>(this, 
+				R.layout.list_item_one_line_basic, R.id.title, artists) {		
 			@Override
 			public long getItemId(int position) {
 				return getItem(position).getId();

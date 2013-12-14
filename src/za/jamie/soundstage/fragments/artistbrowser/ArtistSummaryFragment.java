@@ -69,7 +69,11 @@ public class ArtistSummaryFragment extends Fragment implements
 		mArtistUri = getArguments().getParcelable(EXTRA_ARTIST_URI);
 		
 		mAdapter = new ArtistSummaryAdapter(getActivity(), null);
-		
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 		getLoaderManager().initLoader(0, null, this);
 	}
 	

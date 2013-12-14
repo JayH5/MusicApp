@@ -53,8 +53,11 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         ViewFlipper flipper = new ViewFlipper(R.id.grid_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper); 
         mAdapter.setFlippingViewHelper(mFlipHelper);
-        
-        // Load up the cursor
+    }
+    
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+    	super.onActivityCreated(savedInstanceState);
         final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
         		MusicStore.Albums.REQUEST);
         getLoaderManager().initLoader(0, null, cm);

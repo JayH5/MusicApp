@@ -40,7 +40,7 @@ public final class LastfmUris {
 	}
 	
 	public static Uri getAlbumInfoUri(AlbumStatistics stats) {
-		return getAlbumInfoUri(stats.title, stats.artists.firstKey().getName(), stats.id);
+		return getAlbumInfoUri(stats.title, stats.artists.firstKey().getTitle(), stats.id);
 	}
 
 }

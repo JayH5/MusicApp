@@ -17,6 +17,7 @@ import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -64,12 +65,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	MediaStore.Audio.Media.DURATION
     };
     
-    private static final String TRACK_SELECTION = MediaStore.Audio.Media._ID + "=?";
     private static final String ALBUM_SELECTION = MediaStore.Audio.Media.ALBUM_ID + "=?";
     private static final String ARTIST_SELECTION = MediaStore.Audio.Media.ARTIST_ID + "=?";
     
     private static final String ARTIST_SORT_ORDER = MediaStore.Audio.Media.TITLE_KEY;
     private static final String ALBUM_SORT_ORDER = MediaStore.Audio.Media.TRACK;
+    private static final String PLAYLIST_SORT_ORDER = MediaStore.Audio.Playlists.Members.PLAY_ORDER;
 
     // Repeat modes
     public static final int REPEAT_NONE = 0;
@@ -1020,31 +1021,35 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     public synchronized void enqueue(MusicItem item, int action) {
-    	final Uri uri = URI;
-    	final String[] projection;
-    	final String selection;
-    	final String sortOrder;
-    	switch (item.type) {
+    	final Uri uri;
+    	String selection = null;
+    	String[] selectionArgs = null;
+    	String sortOrder = null;
+    	switch (item.getType()) {
     	case MusicItem.TYPE_TRACK:
-    		projection = PROJECTION;
-    		selection = TRACK_SELECTION;
-    		sortOrder = null;
+    		uri = ContentUris.withAppendedId(URI, item.getId());
     		break;
     	case MusicItem.TYPE_ARTIST:
-    		projection = PROJECTION;
+    		uri = URI;
     		selection = ARTIST_SELECTION;
+    		selectionArgs = new String[] { String.valueOf(item.getId()) };
     		sortOrder = ARTIST_SORT_ORDER;
     		break;
     	case MusicItem.TYPE_ALBUM:
-    		projection = PROJECTION;
+    		uri = URI;
     		selection = ALBUM_SELECTION;
+    		selectionArgs = new String[] { String.valueOf(item.getId()) };
     		sortOrder = ALBUM_SORT_ORDER;
+    		break;
+    	case MusicItem.TYPE_PLAYLIST:
+    		uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
+    		sortOrder = PLAYLIST_SORT_ORDER;
     		break;
     	default:
     		return;
     	}
-    	final String[] selectionArgs = new String[] { String.valueOf(item.id) };
-    	final Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+    	final Cursor cursor =
+    			getContentResolver().query(uri, PROJECTION, selection, selectionArgs, sortOrder);
     	
     	enqueue(buildTrackList(cursor), action);
     }

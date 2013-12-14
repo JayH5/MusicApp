@@ -5,8 +5,6 @@ import java.util.List;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.models.AlbumStatistics.Artist;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
@@ -47,10 +45,15 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	};
 	
 	private static final String[] PROJECTION_ALBUM = new String[] {
-		MediaStore.Audio.Media.ALBUM_ID,
 		MediaStore.Audio.Media.ARTIST_ID,
-		MediaStore.Audio.Media.ARTIST,
-		MediaStore.Audio.Media.ARTIST_KEY
+		MediaStore.Audio.Media.ARTIST
+	};
+	
+	private static final String[] PROJECTION_PLAYLIST = new String[] {
+		MediaStore.Audio.Media.ALBUM_ID,
+		MediaStore.Audio.Media.ALBUM,
+		MediaStore.Audio.Media.ARTIST_ID,
+		MediaStore.Audio.Media.ARTIST
 	};
 	
 	private static final String SELECTION_ALBUM = MediaStore.Audio.Media.ALBUM_ID + "=?";
@@ -78,8 +81,12 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		
 		mMenuAdapter =
 				new ArrayAdapter<MenuEntry>(getActivity(), R.layout.list_item_one_line_dialog, R.id.title);
-		
-		if (mItem.type != MusicItem.TYPE_ARTIST) {
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		if (mItem.getType() != MusicItem.TYPE_ARTIST) {
 			getLoaderManager().initLoader(0, null, this);
 		}
 	}
@@ -89,7 +96,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		final View v = inflater.inflate(R.layout.fragment_more_dialog, container, false);
 		
 		TextView title = (TextView) v.findViewById(R.id.title);
-		title.setText(mItem.title);
+		title.setText(mItem.getTitle());
 		mSubtitle = (TextView) v.findViewById(R.id.subtitle);
 		mImage = (ImageView) v.findViewById(R.id.image);
 		
@@ -97,7 +104,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		lv.setAdapter(mMenuAdapter);
 		lv.setOnItemClickListener(this);
 		
-		if (mItem.type == MusicItem.TYPE_ARTIST) {
+		if (mItem.getType() == MusicItem.TYPE_ARTIST) {
 			loadArtist();
 		}
 		
@@ -118,23 +125,28 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		final MusicItem item = mItem;
-		Uri uri = null;
+		final long itemId = mItem.getId();
+		final Uri uri;
 		String[] projection = null;
 		String selection = null;
 		String[] selectionArgs = null;
 		String sortOrder = null;
-		switch (item.type) {
+		switch (mItem.getType()) {
 		case MusicItem.TYPE_TRACK:
-			uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mItem.id);
+			uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, itemId);
 			projection = PROJECTION_TRACK;
 			break;
 		case MusicItem.TYPE_ALBUM:
 			uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 			projection = PROJECTION_ALBUM;
 			selection = SELECTION_ALBUM;
-			selectionArgs = new String[] { String.valueOf(item.id) };
+			selectionArgs = new String[] { String.valueOf(itemId) };
 			sortOrder = MediaStore.Audio.Media.ARTIST_KEY;
+			break;
+		case MusicItem.TYPE_PLAYLIST:
+			uri = MediaStore.Audio.Playlists.Members.getContentUri("external", itemId);
+			projection = PROJECTION_PLAYLIST;
+			sortOrder = MediaStore.Audio.Playlists.Members.PLAY_ORDER;
 			break;
 		default:
 			return null;
@@ -148,12 +160,15 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			return;
 		}
 		
-		switch(mItem.type) {
+		switch(mItem.getType()) {
 		case MusicItem.TYPE_TRACK:
 			loadTrack(data);
 			break;
 		case MusicItem.TYPE_ALBUM:
 			loadAlbum(data);	
+			break;
+		case MusicItem.TYPE_PLAYLIST:
+			loadPlaylist(data);
 			break;
 		default:
 			break;
@@ -233,31 +248,28 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			// Get the column indexes in the cursor of the data we need
 			final int artistIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID);
 			final int artistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-			final int artistKeyColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_KEY);
 			
 			// Collect the set of artists for the album
-			final List<AlbumStatistics.Artist> artists = new ArrayList<AlbumStatistics.Artist>();
+			final List<MusicItem> artists = new ArrayList<MusicItem>();
 			long lastArtistId = 0;			
 			do {
 				final long artistId = cursor.getLong(artistIdColIdx);
 				if (artistId != lastArtistId) {
-					artists.add(new AlbumStatistics.Artist(
-							cursor.getString(artistKeyColIdx), 
-							artistId,
-							cursor.getString(artistColIdx)));
+					artists.add(new MusicItem(
+							artistId,	cursor.getString(artistColIdx), MusicItem.TYPE_ARTIST));
 					lastArtistId = artistId;
 				}
 			} while (cursor.moveToNext());
 			
 			// Set the subtitle
 			if (artists.size() == 1) {
-				mSubtitle.setText(artists.get(0).getName());
+				mSubtitle.setText(artists.get(0).getTitle());
 			} else if (artists.size() > 1) {
 				mSubtitle.setText(R.string.various_artists);
 			}
 			
 			// Load the image for the album
-			Uri uri = LastfmUris.getAlbumInfoUri(mItem.title, artists.get(0).getName(), mItem.id);
+			Uri uri = LastfmUris.getAlbumInfoUri(mItem.getTitle(), artists.get(0).getTitle(), mItem.getId());
 			Pablo.with(getActivity())
 				.load(uri)
 				.fit()
@@ -304,7 +316,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	
 	private void loadArtist() {
 		// Load the image
-		Uri uri = LastfmUris.getArtistInfoUri(mItem.title);
+		Uri uri = LastfmUris.getArtistInfoUri(mItem.getTitle());
 		Pablo.with(getActivity())
 			.load(uri)
 			.fit()
@@ -338,6 +350,10 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		});
 	}
 	
+	private void loadPlaylist(Cursor cursor) {
+		
+	}
+	
 	private void playItem() {
 		final MusicActivity activity = (MusicActivity) getActivity();
 		activity.getMusicConnection().enqueue(mItem, MusicService.PLAY);
@@ -345,9 +361,9 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		activity.showPlayer();
 	}
 	
-	private AlertDialog buildArtistListDialog(List<Artist> artists) {
-		final ListAdapter adapter = new ArrayAdapter<Artist>(getActivity(), 
-				R.layout.list_item_one_line, R.id.title, artists) {		
+	private AlertDialog buildArtistListDialog(List<MusicItem> artists) {
+		final ListAdapter adapter = new ArrayAdapter<MusicItem>(getActivity(), 
+				R.layout.list_item_one_line_basic, R.id.title, artists) {		
 			@Override
 			public long getItemId(int position) {
 				return getItem(position).getId();
@@ -397,18 +413,18 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	private void showDeleteDialog() {
 		String title = null;
 		String message = null;
-		switch (mItem.type) {
+		switch (mItem.getType()) {
 		case MusicItem.TYPE_TRACK:
 			title = "Delete track";
-			message = "Are you sure you want to delete the track '" + mItem.title + "' from your music collection?";
+			message = "Are you sure you want to delete the track '" + mItem.getTitle() + "' from your music collection?";
 			break;
 		case MusicItem.TYPE_ALBUM:
 			title = "Delete album";
-			message = "Are you sure you want to delete the album '" + mItem.title + "' from your music collection?";
+			message = "Are you sure you want to delete the album '" + mItem.getTitle() + "' from your music collection?";
 			break;
 		case MusicItem.TYPE_ARTIST:
 			title = "Delete artist";
-			message = "Are you sure you want to delete all tracks by the artist '" + mItem.title + "' from your music collection?";
+			message = "Are you sure you want to delete all tracks by the artist '" + mItem.getTitle() + "' from your music collection?";
 			break;
 		}
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());

@@ -30,12 +30,15 @@ public class SongsFragment extends TrackListFragment {
         ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
         mAdapter.setFlippingViewHelper(mFlipHelper);
-        
-        
-        CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		MusicStore.Tracks.CURSOR);
-        getLoaderManager().initLoader(0, null, cm);
     }
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
+        		MusicStore.Tracks.REQUEST);
+        getLoaderManager().initLoader(0, null, cm);
+	}
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
