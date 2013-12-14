@@ -17,6 +17,7 @@
 	    android:paddingRight="@dimen/list_padding_fastscroll"
 	    android:fastScrollEnabled="true"
 	    android:fastScrollAlwaysVisible="true"
+        android:scrollbarStyle="outsideOverlay"
 	    android:scrollbars="none" />
 	
 	<TextView android:id="@+id/empty"

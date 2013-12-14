@@ -51,16 +51,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public static final String ACTION_REPEAT = "za.jamie.soundstage.action.REPEAT";
     public static final String ACTION_SHUFFLE = "za.jamie.soundstage.action.SHUFFLE";
     
-    public static final String KILL_FOREGROUND = "za.jamie.soundstage.killforeground";
-    public static final String START_BACKGROUND = "za.jamie.soundstage.startbackground";
-    
-    // Status change flags
- 	public static final String PLAYSTATE_CHANGED = "za.jamie.soundstage.playstatechanged"; 	
- 	public static final String META_CHANGED = "za.jamie.soundstage.metachanged"; 	
-    public static final String QUEUE_CHANGED = "za.jamie.soundstage.queuechanged";
-    public static final String REPEATMODE_CHANGED = "za.jamie.soundstage.repeatmodechanged";
-    public static final String SHUFFLESTATE_CHANGED = "za.jamie.soundstage.shufflemodechanged";
-    
     private static final Uri URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     private static final String[] PROJECTION = new String[] {
     	MediaStore.Audio.Media._ID,
@@ -252,7 +242,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             	cardId = cursor.getInt(0);
             }
             cursor.close();
-            cursor = null;
         }
         return cardId;
     }
@@ -871,7 +860,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Sets the shuffle mode
      * 
-     * @param shufflemode The shuffle mode to use
+     * @param shuffleEnabled Whether to enable shuffle
      */
     private void setShuffleEnabled(boolean shuffleEnabled) {
         if (isShuffleEnabled() == shuffleEnabled) {
@@ -1088,7 +1077,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     /**
      * Removes the track in the specified position in the play queue
      * 
-     * @param position
+     * @param position Position in queue of track to remove
      */
     public synchronized void removeTrack(int position) {
     	int playPosition = mPlayQueue.getPosition();
@@ -1249,7 +1238,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	public void onAudioFocusChange(int focusChange) {
 		switch (focusChange) {
         case AudioManager.AUDIOFOCUS_LOSS:
-            boolean focusLoss = isPlaying() ? false : mPausedByTransientLossOfFocus;
+            boolean focusLoss = !isPlaying() && mPausedByTransientLossOfFocus;
             pause(focusLoss);            
             break;
         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:

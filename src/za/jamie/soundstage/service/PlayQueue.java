@@ -57,7 +57,7 @@ public class PlayQueue {
 	 * Clears the current play queue and loads the specified tracks. Sets the
 	 * queue position to the one specified and shuffles if requested.
 	 *
-	 * @param tracks The tracks to be added to the queue
+	 * @param trackList The tracks to be added to the queue
 	 * @param position The position to set the queue
 	 * @param shuffle True to shuffle the queue, false to use the ordering 
 	 * 	described by the collection of tracks.
@@ -97,7 +97,7 @@ public class PlayQueue {
 	 * Shuffles the queue using the Collections.Shuffle() algorithm. The queue
 	 * is set to have its first item be the item specified by shuffleOn.
 	 *
-	 * @param The position of the Track that should be placed at the head of the
+	 * @param shuffleOn The position of the Track that should be placed at the head of the
 	 *  queue.
 	 */
 	public void shuffle(int shuffleOn) {
@@ -323,10 +323,7 @@ public class PlayQueue {
 	 * @return True if the queue is at the first position.
 	 */
 	public boolean isFirst() {
-		if (!mTrackList.isEmpty() && mPosition == 0) {
-			return true;
-		}
-		return false;
+		return !mTrackList.isEmpty() && mPosition == 0;
 	}
 
 	/**
@@ -335,10 +332,7 @@ public class PlayQueue {
 	 * @return True if the queue is at the last position.
 	 */
 	public boolean isLast() {
-		if (!mTrackList.isEmpty() && mPosition == mTrackList.size() - 1) {
-			return true;
-		}
-		return false;
+		return !mTrackList.isEmpty() && mPosition == mTrackList.size() - 1;
 	}
 	
 	private int end() {
@@ -396,7 +390,7 @@ public class PlayQueue {
 	/**
 	 * Adds the specified collection of Tracks to the end of the queue.
 	 *
-	 * @param c The Collection of Tracks to add to the queue.
+	 * @param tracks The Collection of Tracks to add to the queue.
 	 */
 	public void addAll(List<Track> tracks) {
 		if (mShuffled) {
@@ -422,7 +416,7 @@ public class PlayQueue {
 	 * queue.
 	 *
 	 * @param position The position to add the Tracks.
-	 * @param c The Collection of Tracks to add to the queue.
+	 * @param tracks The Collection of Tracks to add to the queue.
 	 */
 	public void addAll(int position, List<Track> tracks) {
 		if (mShuffled) {

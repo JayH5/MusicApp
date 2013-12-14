@@ -87,19 +87,19 @@ public class MusicNotificationHelper implements Target {
 	private void initPlaybackActions(Context context) {
 	    // Play and pause
 		mBaseView.setOnClickPendingIntent(R.id.notification_base_play,
-				retreivePlaybackActions(context, 1));
+				retrievePlaybackActions(context, 1));
 
 	    // Skip tracks
 	    mBaseView.setOnClickPendingIntent(R.id.notification_base_next,
-	            retreivePlaybackActions(context, 2));
+	            retrievePlaybackActions(context, 2));
 
 	    // Previous tracks
 	    mBaseView.setOnClickPendingIntent(R.id.notification_base_previous,
-	            retreivePlaybackActions(context, 3));
+	            retrievePlaybackActions(context, 3));
 
 	    // Stop and collapse the notification
 	    mBaseView.setOnClickPendingIntent(R.id.notification_base_collapse,
-	            retreivePlaybackActions(context, 4));
+	            retrievePlaybackActions(context, 4));
 
 	    // Update the play button image
 	    mBaseView.setImageViewResource(R.id.notification_base_play,
@@ -109,26 +109,26 @@ public class MusicNotificationHelper implements Target {
 	private void initExpandedPlaybackActions(Context context) {
 		// Play and pause
         mExpandedView.setOnClickPendingIntent(R.id.notification_expanded_play,
-                retreivePlaybackActions(context, 1));
+                retrievePlaybackActions(context, 1));
 
         // Skip tracks
         mExpandedView.setOnClickPendingIntent(R.id.notification_expanded_next,
-                retreivePlaybackActions(context, 2));
+                retrievePlaybackActions(context, 2));
 
         // Previous tracks
         mExpandedView.setOnClickPendingIntent(R.id.notification_expanded_previous,
-                retreivePlaybackActions(context, 3));
+                retrievePlaybackActions(context, 3));
 
         // Stop and collapse the notification
         mExpandedView.setOnClickPendingIntent(R.id.notification_expanded_remove,
-                retreivePlaybackActions(context, 4));
+                retrievePlaybackActions(context, 4));
 
         // Update the play button image
         mExpandedView.setImageViewResource(R.id.notification_expanded_play,
                 R.drawable.btn_playback_pause);
     }
 	 
-	private final PendingIntent retreivePlaybackActions(Context context, int which) {
+	private PendingIntent retrievePlaybackActions(Context context, int which) {
 		Intent action;
 	    PendingIntent pendingIntent;
 	    final ComponentName serviceName = new ComponentName(context, MusicService.class);
