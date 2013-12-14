@@ -50,20 +50,30 @@
 
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/notification_base_previous"
-        style="@style/NotificationAction.Previous" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:divider="?android:listDivider"
+        android:dividerPadding="12dp"
+        android:showDividers="middle">
 
-    <ImageButton
-        android:id="@+id/notification_base_play"
-        style="@style/NotificationAction.Play" />
+        <ImageButton
+            android:id="@+id/notification_base_previous"
+            style="@style/NotificationAction.Previous" />
 
-    <ImageButton
-        android:id="@+id/notification_base_next"
-        style="@style/NotificationAction.Next" />
+        <ImageButton
+            android:id="@+id/notification_base_play"
+            style="@style/NotificationAction.Play" />
 
-    <ImageButton
-        android:id="@+id/notification_base_collapse"
-        style="@style/NotificationAction.Remove" />
+        <ImageButton
+            android:id="@+id/notification_base_next"
+            style="@style/NotificationAction.Next" />
+
+        <ImageButton
+            android:id="@+id/notification_base_collapse"
+            style="@style/NotificationAction.Remove" />
+
+    </LinearLayout>
 
 </LinearLayout>

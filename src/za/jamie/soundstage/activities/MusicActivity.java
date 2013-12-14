@@ -9,11 +9,12 @@ import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
 import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.utils.AppUtils;
+
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -32,12 +33,12 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	public static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
 	
-	private ImageButton mPlayQueueButton;
-	
 	protected MenuDrawer mMenuDrawer;
 	
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
+
+    private boolean mIsInBackground = false;
 	
 	private final MusicConnection mConnection = new MusicConnection();
 	
@@ -67,8 +68,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		}
 		
 		
-		mPlayQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
-		mPlayQueueButton.setOnClickListener(new View.OnClickListener() {			
+		ImageButton playQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
+		playQueueButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
@@ -78,7 +79,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
 			@Override
 			public void onConnected() {
-				if (!AppUtils.isApplicationSentToBackground(MusicActivity.this)) {
+				if (!mIsInBackground) {
 					mConnection.hideNotification();
 				}
 			}
@@ -105,21 +106,24 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		if (ACTION_SHOW_PLAYER.equals(intent.getAction())) {
-			mMenuDrawer.openMenu();
+			showPlayer();
 		}
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mConnection.hideNotification();
+        mConnection.hideNotification();
+        mIsInBackground = false;
 	}
-	
-	@Override
-    protected void onPause() {
-        super.onPause();        
-        if (isPlaying() && AppUtils.isApplicationSentToBackground(this)) {
-        	showNotification();
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        // Bit of a hack to detect when app goes to background
+        if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && isPlaying()) {
+            showNotification();
+            mIsInBackground = true;
         }
     }
 	
@@ -164,7 +168,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
 	@Override
 	public void onDrawerStateChange(int oldState, int newState) {		
-		if ((newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED)) {
+		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
 			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 		}
 	}
