@@ -18,6 +18,7 @@
     <dimen name="track_number_width">48dp</dimen>
     <dimen name="track_number_text_size">24sp</dimen>
     <dimen name="list_item_height">64dp</dimen>
+    <dimen name="list_item_height_large">128dp</dimen>
     <dimen name="list_item_padding_horizontal">12dp</dimen>
     <dimen name="grid_info_holder_height">64dp</dimen>
     <dimen name="grid_spacing">1dp</dimen>

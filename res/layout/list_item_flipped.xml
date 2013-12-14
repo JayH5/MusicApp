@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flipped_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/now_grey_border_upper"
+  	android:divider="@android:drawable/divider_horizontal_bright"
+  	android:dividerPadding="8dp"
+  	android:showDividers="middle"
+  	android:orientation="horizontal"
+  	android:gravity="center" >
+
+    <TextView
+        android:id="@+id/flipped_view_now"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        style="@style/FlippedViewText"
+        android:text="Now"
+        android:textSize="24sp" />
+    
+    <TextView
+        android:id="@+id/flipped_view_next"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        style="@style/FlippedViewText"
+        android:text="Next"
+        android:textSize="24sp" />
+    
+    <TextView
+        android:id="@+id/flipped_view_last"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        style="@style/FlippedViewText"
+        android:text="Last"
+        android:textSize="24sp" />
+    
+    <TextView
+        android:id="@+id/flipped_view_more"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        style="@style/FlippedViewText"
+        android:text="More"
+        android:textSize="24sp" />
+
+</LinearLayout>
