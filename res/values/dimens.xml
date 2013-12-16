@@ -58,5 +58,7 @@
     <dimen name="button_bar_divider_padding">8dp</dimen>
     
     <dimen name="actionbar_title_font_size">18sp</dimen>
+
+    <dimen name="spacer_album_grid">8dp</dimen>
     
 </resources>

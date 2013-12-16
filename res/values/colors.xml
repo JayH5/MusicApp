@@ -6,9 +6,6 @@
     <color name="now_grey_border_lower">#D6D6D6</color>
     <color name="transparent_black">#99000000</color>
     
-    <color name="google_keep_grey">#DCE1E3</color>
-    <color name="google_now_grey">#E5E5E5</color>
-    
     <!-- From 4.2 DeskClock -->
     <color name="clock_red">#ff4444</color>
     <color name="blackish">#ff1c1e20</color>
@@ -16,9 +13,12 @@
     <color name="transparent_white">#66ffffff</color>
     <color name="hairline">#28ffffff</color>
     
-    <!-- From Play Store 4.0 -->
-    <color name="dialog_title">#333333</color>
-    <color name="dialog_subtitle">#8D8D8D</color>
+    <!-- Primary theme colors -->
+    <color name="text_color_primary">#333333</color>
+    <color name="text_color_secondary">#8D8D8D</color>
+    <color name="window_background">#E5E5E5</color>
+
+    <!-- Play Store styled button colours -->
     <color name="button_border_outer">#D0D0D0</color>
     <color name="button_border_inner">#D9D9D9</color>
     <color name="button_border_text">#737373</color>

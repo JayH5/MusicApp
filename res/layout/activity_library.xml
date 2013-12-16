@@ -8,9 +8,21 @@
         android:layout_width="match_parent"
         style="@style/PagerSlidingTabStrip" />
     
-    <android.support.v4.view.ViewPager
-        android:id="@+id/pager"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />    
+        android:layout_height="wrap_content">
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_gravity="top"
+            android:background="@drawable/gradient_navbar_shadow" />
+
+    </FrameLayout>
     
 </LinearLayout>

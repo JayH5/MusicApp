@@ -21,7 +21,6 @@
 	        android:paddingLeft="8dp"
 	        android:paddingRight="8dp"
 	        android:layout_gravity="bottom"
-	        android:background="@drawable/gradient_drop_shadow"
 	        android:gravity="center_vertical"
 	        android:orientation="vertical" >
 	

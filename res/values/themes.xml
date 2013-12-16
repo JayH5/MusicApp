@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:textColorPrimary">@color/text_color_primary</item>
+        <item name="android:textColorSecondary">@color/text_color_secondary</item>
+        <item name="android:actionBarStyle">@style/AppTheme.ActionBar</item>
+        <item name="android:actionBarTabStyle">@style/AppTheme.ActionBar.TabView</item>
+        <item name="android:actionBarTabTextStyle">@style/AppTheme.ActionBar.TabText</item>
+        <item name="android:seekBarStyle">@style/SeekBarHoloDarkBlue</item>
+        <item name="android:fastScrollThumbDrawable">@drawable/holodarkblue_fastscroll_thumb_holo</item>
+        <item name="android:activatedBackgroundIndicator">@drawable/holodarkblue_activated_background_holo_light</item>
+    </style>
+
+    <!-- ActionBar styles -->
+    <style name="AppTheme.ActionBar"
+        parent="@android:style/Widget.Holo.Light.ActionBar.Solid.Inverse">
+        <item name="android:titleTextStyle">@style/AppTheme.ActionBar.TitleText</item>
+    </style>
+
+    <!-- ActionBar tabs styles -->
+    <style name="AppTheme.ActionBar.TabView"
+        parent="@android:style/Widget.Holo.Light.ActionBar.TabView.Inverse">
+        <!-- tab indicator -->
+        <item name="android:background">@drawable/bg_actionbar_tab</item>
+    </style>
+
+    <!-- ActionBar tabs text styles -->
+    <style name="AppTheme.ActionBar.TabText"
+        parent="@android:style/Widget.Holo.Light.ActionBar.TabText.Inverse">
+        <!-- tab text -->
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- ActionBar title text styles -->
+    <style name="AppTheme.ActionBar.TitleText"
+        parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title.Inverse">
+        <!-- Title text style -->
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

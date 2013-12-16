@@ -22,7 +22,7 @@
         android:layout_alignParentRight="true"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        android:src="@drawable/btn_play_queue"
+        android:src="@drawable/icn_hamburger"
         android:background="?android:selectableItemBackground" />
 
 </RelativeLayout>

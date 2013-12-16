@@ -23,7 +23,7 @@
 	        android:text="@string/title_play_queue"
 	        android:textSize="22sp"
 	        android:fontFamily="sans-serif-light"
-	        android:textColor="@color/dialog_title" />
+	        android:textColor="@color/text_color_primary" />
         
         <TextView
 	        android:layout_width="wrap_content"
@@ -33,7 +33,7 @@
 	        android:id="@+id/play_queue_is_shuffled"
 	        android:text="@string/play_queue_is_shuffled"
 	        android:textSize="14sp"
-	        android:textColor="@color/dialog_subtitle"
+	        android:textColor="@color/text_color_secondary"
 	        android:visibility="gone" />
         
         <ImageButton

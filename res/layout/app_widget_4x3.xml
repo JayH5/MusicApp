@@ -60,7 +60,7 @@
         android:layout_height="48dp"
         android:layout_gravity="fill_horizontal"
         android:divider="?android:listDivider"
-        android:dividerPadding="8dp"
+        android:dividerPadding="12dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:showDividers="middle"

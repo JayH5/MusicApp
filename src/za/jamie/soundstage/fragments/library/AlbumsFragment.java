@@ -1,12 +1,5 @@
 package za.jamie.soundstage.fragments.library;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.adapters.library.AlbumsAdapter;
-import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
-import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.musicstore.CursorManager;
-import za.jamie.soundstage.musicstore.MusicStore;
 import android.app.ActivityOptions;
 import android.app.Fragment;
 import android.content.ContentUris;
@@ -21,6 +14,14 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.GridView;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.library.AlbumsAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
+import za.jamie.soundstage.musicstore.CursorManager;
+import za.jamie.soundstage.musicstore.MusicStore;
 
 public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
 	
@@ -78,12 +79,15 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         		new ViewTreeObserver.OnGlobalLayoutListener() {
 			@Override
 			public void onGlobalLayout() {
-				final int numColumns = gridView.getNumColumns();
-				if (numColumns > 0) {
-					final int columnWidth = gridView.getColumnWidth();
-					mAdapter.setItemHeight(columnWidth);
-					gridView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-				}					
+                if (mAdapter.getNumColumns() == 0) {
+                    final int numColumns = gridView.getNumColumns();
+                    if (numColumns > 0) {
+                        final int columnWidth = gridView.getColumnWidth();
+                        mAdapter.setNumColumns(numColumns);
+                        mAdapter.setItemHeight(columnWidth);
+                        gridView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    }
+                }
 			}        			
 		});
         

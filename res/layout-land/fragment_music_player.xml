@@ -89,7 +89,7 @@
 		        android:id="@+id/seek_bar"
 		        android:layout_width="match_parent"
 		        android:layout_height="wrap_content"
-		        android:thumb="@drawable/scrubber_control"
+                style="@style/SeekBarHoloDarkBlue"
 		        android:max="1000"
 		        android:paddingLeft="8dp"
 		        android:paddingRight="8dp" />

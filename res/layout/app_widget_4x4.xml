@@ -25,7 +25,7 @@
 	        android:orientation="vertical"
 	        android:paddingLeft="8dp"
 	        android:paddingRight="8dp"
-	        android:background="@drawable/gradient_drop_shadow_2" >
+	        android:background="@drawable/gradient_drop_shadow" >
 	
 	        <TextView
 	            android:id="@+id/app_widget_track"
@@ -75,7 +75,7 @@
         android:layout_height="48dp"
         android:layout_gravity="fill_horizontal"
         android:divider="?android:listDivider"
-        android:dividerPadding="8dp"
+        android:dividerPadding="12dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:showDividers="middle" >

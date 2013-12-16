@@ -4,6 +4,7 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.models.MusicItem;
+import za.jamie.soundstage.pablo.AlbumGridGradient;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.utils.TextUtils;
@@ -12,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -24,8 +26,11 @@ public class AlbumsAdapter extends LibraryAdapter {
 	private int mArtistColIdx;
 	
 	private FlippingViewHelper mFlipHelper;
+    private AlbumGridGradient mGradient;
 	
-	private int mItemHeight;
+	private int mNumColumns;
+    private int mHeaderHeight;
+    private int mItemHeight;
 	private GridView.LayoutParams mItemLayoutParams;
 	
 	private final Context mContext;
@@ -36,6 +41,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 		mContext = context;
 		mItemLayoutParams = new GridView.LayoutParams(
 				LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        mHeaderHeight = mContext.getResources().getDimensionPixelSize(R.dimen.spacer_album_grid);
 	}
 	
 	public void setFlippingViewHelper(FlippingViewHelper helper) {
@@ -72,11 +78,18 @@ public class AlbumsAdapter extends LibraryAdapter {
 		long id = cursor.getLong(mIdColIdx);
 		Uri uri = LastfmUris.getAlbumInfoUri(album, artist, id);
 
-		Pablo.with(mContext)
-			.load(uri)
-			.fit()
-			.centerCrop()
-			.into(albumArtImage);
+        if (mItemHeight > 0) {
+            if (mGradient == null) {
+                mGradient = new AlbumGridGradient(mContext.getResources(), mItemHeight, mItemHeight);
+            }
+
+            Pablo.with(mContext)
+                    .load(uri)
+                    .fit()
+                    .centerCrop()
+                    .transform(mGradient)
+                    .into(albumArtImage);
+        }
 		
 		if (mFlipHelper != null) {
 			MusicItem item = new MusicItem(id, album, MusicItem.TYPE_ALBUM);
@@ -96,5 +109,71 @@ public class AlbumsAdapter extends LibraryAdapter {
 	public int getItemHeight() {
 		return mItemHeight;
 	}
+
+    public void setNumColumns(int numColumns) {
+        mNumColumns = numColumns;
+    }
+
+    public int getNumColumns() {
+        return mNumColumns;
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return super.getViewTypeCount() + 1;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position < mNumColumns ?
+                getViewTypeCount() - 1 : super.getItemViewType(position - mNumColumns);
+    }
+
+    @Override
+    public int getCount() {
+        if (mNumColumns == 0) {
+            return 0;
+        }
+
+        return super.getCount() + mNumColumns;
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return position < mNumColumns ? null : super.getItem(position - mNumColumns);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position < mNumColumns ? 0 : super.getItemId(position - mNumColumns);
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View v;
+        if (position < mNumColumns) {
+            v = convertView != null ? convertView : new View(mContext);
+            v.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mHeaderHeight));
+        } else {
+            v = super.getView(position - mNumColumns, convertView, parent);
+        }
+
+        return v;
+    }
+
+    @Override
+    public int getSectionForPosition(int position) {
+        return position < mNumColumns ? 0 : super.getSectionForPosition(position - mNumColumns);
+    }
+
+    @Override
+    public int getPositionForSection(int section) {
+        return section == 0 ? 0 : super.getPositionForSection(section) + mNumColumns;
+    }
+
+    @Override
+    public boolean isEnabled(int position) {
+        return position < mNumColumns ? false : super.isEnabled(position - mNumColumns);
+    }
 	
 }
