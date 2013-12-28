@@ -4,11 +4,8 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import com.squareup.picasso.OkHttpDownloader;
-
-import org.json.JSONException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -48,7 +45,11 @@ public class LastfmDownloader extends OkHttpDownloader {
 
         // Now check lastfm. First query the service.
 		Response lastfmQuery = super.load(uri, localCacheOnly);
-        Uri lastfmImage = getLastfmUri(lastfmQuery, uri);
+
+        // TODO: Intelligently pick size to download
+        String method = uri.getQueryParameter("method");
+        String size = "album.getinfo".equals(method) ? "mega" : "extralarge";
+        Uri lastfmImage = getLastfmUri(lastfmQuery, size);
 
         // Then actually download the image.
         if (lastfmImage != null) {
@@ -57,28 +58,16 @@ public class LastfmDownloader extends OkHttpDownloader {
         return null;
 	}
 	
-	private Uri getLastfmUri(Response lastfmQuery, Uri uri) throws IOException {
-		Map<String, Uri> uris = null;
+	private static Uri getLastfmUri(Response lastfmQuery, String size) throws IOException {
+		Uri uri = null;
         InputStream in = lastfmQuery.getInputStream();
         if (in != null) {
-            try {
-                uris = LastfmJsonParser.parseImages(in);
-            } catch (JSONException e) {
-                Log.w(TAG, "Error parsing JSON.", e);
+            Map<String, Uri> uris = LastfmJsonParser.parseImages(in);
+            if (uris != null) {
+                uri = uris.get(size);
             }
         }
-	    
-	    Uri imageUri = null;
-	    if (uris != null) {
-			String method = uri.getQueryParameter("method");
-			if ("artist.getinfo".equals(method)) {
-				imageUri = uris.get("extralarge");
-			} else if ("album.getinfo".equals(method)) {
-				imageUri = uris.get("mega");
-			}
-		}
-	    Log.d(TAG, "Image uri from lastfm= " + imageUri);
-		return imageUri;
+		return uri;
 	}
 
 }
