@@ -13,9 +13,6 @@ bin/
 gen/
 target/
 
-# external libraries
-libs/
-
 # gradle files
 .gradle/
 build/
