@@ -1,97 +1,87 @@
 package za.jamie.soundstage.pablo;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
+import com.squareup.okhttp.HttpResponseCache;
+import com.squareup.okhttp.OkHttpClient;
 import com.squareup.picasso.Downloader;
+import com.squareup.picasso.OkHttpDownloader;
 
-public class LastfmDownloader implements Downloader {
+import za.jamie.soundstage.utils.AppUtils;
+
+public class LastfmDownloader extends OkHttpDownloader {
 	
 	private static final String TAG = "LastfmDownloader";
 	
 	private static final Uri ALBUM_ART_BASE_URI = 
 			Uri.parse("content://media/external/audio/albumart");
-	
-	private static final int DEFAULT_READ_TIMEOUT = 20 * 1000; // 20s
-	private static final int DEFAULT_CONNECT_TIMEOUT = 15 * 1000; // 15s
-	private final Context mContext;
-	
+
+    private final ContentResolver mContentResolver;
+
 	public LastfmDownloader(Context context) {
-		mContext = context;
-	}
-	
-	protected HttpURLConnection openConnection(Uri uri) throws IOException {
-	    HttpURLConnection connection = (HttpURLConnection) new URL(uri.toString()).openConnection();
-	    connection.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
-	    connection.setReadTimeout(DEFAULT_READ_TIMEOUT);
-	    return connection;
+        super(context);
+		mContentResolver = context.getContentResolver();
 	}
 
 	@Override
 	public Response load(Uri uri, boolean localCacheOnly) throws IOException {
-		InputStream in = null;
-		final String id = uri.getQueryParameter("_id");
+		// First check local album art
+        final String id = uri.getQueryParameter("_id");
 		if (id != null) {
 			Uri albumArtUri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, Long.parseLong(id));
-			
+
+            InputStream in = null;
 			try {
-				in = mContext.getContentResolver().openInputStream(albumArtUri);
+				in = mContentResolver.openInputStream(albumArtUri);
 			} catch (FileNotFoundException ignored) { }
 			
 			if (in != null) {
 				return new Response(in, true);
 			}
 		}
-		
-		if (!localCacheOnly) {
-			in = getImageDownload(uri.toString(), getLastfmUri(uri));
-			if (in != null) {
-				return new Response(in, false);
-			}
-		}		
-		
-		return null;
-	}
-	
-	private InputStream getImageDownload(String key, Uri uri) throws IOException {
-		HttpURLConnection connection = openConnection(uri);
-		int responseCode = connection.getResponseCode();
-	    if (responseCode < 300) {
-	    	return connection.getInputStream();
-	    }
-	    return null;
-	}
-	
-	private Uri getLastfmUri(Uri request) throws IOException {
 
+        // Now check lastfm. First query the service.
+		Response lastfmQuery = super.load(uri, localCacheOnly);
+        Uri lastfmImage = getLastfmUri(lastfmQuery, uri);
+
+        // Then actually download the image.
+        if (lastfmImage != null) {
+		    return super.load(lastfmImage, localCacheOnly);
+        }
+        return null;
+	}
+	
+	private Uri getLastfmUri(Response lastfmQuery, Uri uri) throws IOException {
 		Map<String, Uri> uris = null;
-		HttpURLConnection connection = openConnection(request);
-		int responseCode = connection.getResponseCode();
-	    if (responseCode < 300) {
-			InputStream in = connection.getInputStream();
-			if (in != null) {
-				try {			
-					uris = LastfmXmlParser.parseImages(in);
-				} catch (XmlPullParserException e) {
-					Log.w(TAG, "Error parsing xml!", e);
-				}
-			}
-	    }
+        InputStream in = lastfmQuery.getInputStream();
+        if (in != null) {
+            try {
+                uris = LastfmXmlParser.parseImages(in);
+            } catch (XmlPullParserException e) {
+                Log.w(TAG, "Error parsing xml!", e);
+            }
+        }
 	    
 	    Uri imageUri = null;
 	    if (uris != null) {
-			String method = request.getQueryParameter("method");
+			String method = uri.getQueryParameter("method");
 			if ("artist.getinfo".equals(method)) {
 				imageUri = uris.get("extralarge");
 			} else if ("album.getinfo".equals(method)) {

@@ -31,7 +31,7 @@ public class AppUtils {
                 .getExternalStorageState()) || !Environment.isExternalStorageRemovable()
                 ? context.getExternalCacheDir().getPath() : context.getCacheDir().getPath();
 
-        return new File(cachePath + File.separator + uniqueName);
+        return new File(cachePath, uniqueName);
 	}
 	
 	public static final void loadActionBarTabs(final ActionBar actionBar,
