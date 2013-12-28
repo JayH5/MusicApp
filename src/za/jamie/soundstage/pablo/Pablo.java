@@ -14,7 +14,6 @@ import com.squareup.picasso.Picasso;
 
 public class Pablo {
 
-	private static final int MAX_CACHE_SIZE = 1024 * 1024 * 30; // 30MB
 	private static final float CACHE_PORTION = 0.2f;
 	private static final float SERVICE_CACHE_PORTION = 0.05f;
 	
@@ -80,8 +79,7 @@ public class Pablo {
 		boolean largeHeap = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_LARGE_HEAP) != 0;
 		int memoryClass = largeHeap ? am.getLargeMemoryClass() : am.getMemoryClass();
 		
-		int size = (int) (1024 * 1024 * memoryClass * portion);
-		return Math.min(size, MAX_CACHE_SIZE);
+		return (int) (1024 * 1024 * memoryClass * portion);
 	}
 
 }
