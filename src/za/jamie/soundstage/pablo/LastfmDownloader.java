@@ -1,30 +1,19 @@
 package za.jamie.soundstage.pablo;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-import org.xmlpull.v1.XmlPullParserException;
-
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import com.squareup.okhttp.HttpResponseCache;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.picasso.Downloader;
 import com.squareup.picasso.OkHttpDownloader;
 
-import za.jamie.soundstage.utils.AppUtils;
+import org.json.JSONException;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 public class LastfmDownloader extends OkHttpDownloader {
 	
@@ -73,9 +62,9 @@ public class LastfmDownloader extends OkHttpDownloader {
         InputStream in = lastfmQuery.getInputStream();
         if (in != null) {
             try {
-                uris = LastfmXmlParser.parseImages(in);
-            } catch (XmlPullParserException e) {
-                Log.w(TAG, "Error parsing xml!", e);
+                uris = LastfmJsonParser.parseImages(in);
+            } catch (JSONException e) {
+                Log.w(TAG, "Error parsing JSON.", e);
             }
         }
 	    

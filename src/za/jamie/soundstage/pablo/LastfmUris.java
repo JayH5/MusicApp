@@ -6,33 +6,32 @@ import android.net.Uri;
 
 public final class LastfmUris {
 
+    private static final Uri BASE_URI = Uri.parse("http://ws.audioscrobbler.com/2.0/");
 	private static final String LAST_FM_API_KEY = "5221fc4823ffde4ec61f8aef509d247c";
-	private static final String BASE_PATH = "http://ws.audioscrobbler.com/2.0/";
 	private static final String ARTIST_AUTOCORRECT = "1";
 	private static final String ALBUM_AUTOCORRECT = "1";
+    private static final String FORMAT = "json";
 	
 	public static Uri getArtistInfoUri(String artist) {
-		Uri.Builder builder = new Uri.Builder();
-		builder.encodedPath(BASE_PATH)
+		return BASE_URI.buildUpon()
 			.appendQueryParameter("method", "artist.getinfo")
 			.appendQueryParameter("artist", artist)
 			.appendQueryParameter("autocorrect", ARTIST_AUTOCORRECT)
-			.appendQueryParameter("api_key", LAST_FM_API_KEY);
-		
-		return builder.build();
+			.appendQueryParameter("api_key", LAST_FM_API_KEY)
+            .appendQueryParameter("format", FORMAT)
+            .build();
 	}
 	
 	public static Uri getAlbumInfoUri(String album, String artist, long id) {
-		Uri.Builder builder = new Uri.Builder();
-		builder.encodedPath(BASE_PATH)
+		return BASE_URI.buildUpon()
 			.appendQueryParameter("method", "album.getinfo")
 			.appendQueryParameter("album", album)
 			.appendQueryParameter("artist", artist)
 			.appendQueryParameter("autocorrect", ALBUM_AUTOCORRECT)
 			.appendQueryParameter("api_key", LAST_FM_API_KEY)
-			.appendQueryParameter("_id", String.valueOf(id));
-		
-		return builder.build();
+            .appendQueryParameter("format", FORMAT)
+			.appendQueryParameter("_id", String.valueOf(id))
+            .build();
 	}
 	
 	public static Uri getAlbumInfoUri(Track track) {
