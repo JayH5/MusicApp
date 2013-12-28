@@ -67,6 +67,7 @@ public class ArtistsAdapter extends LibraryAdapter {
 			.load(uri)
 			.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
 			.centerCrop()
+            .placeholder(R.drawable.placeholder_grey)
 			.into(artistImage);
 		
 		if (mFlipHelper != null) {

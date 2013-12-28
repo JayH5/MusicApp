@@ -62,8 +62,8 @@ public class ArtistAlbumListAdapter extends BasicCursorAdapter {
 		
 		Pablo.with(mContext)
 			.load(uri)
-			.fit()
-			.centerCrop()
+            .resizeDimen(R.dimen.image_thumb_album, R.dimen.image_thumb_album)
+            .placeholder(R.drawable.placeholder_grey)
 			.into(thumbImage);
 		
 		if (mFlipHelper != null) {

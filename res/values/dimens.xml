@@ -2,7 +2,7 @@
 <resources>
     <!-- Image thumbnails -->
     <dimen name="image_thumb_artist">96dp</dimen>
-    <dimen name="image_thumb_album">120dp</dimen>
+    <dimen name="image_thumb_album">128dp</dimen>
     <dimen name="image_thumb_padding">1dp</dimen>
     
     <!-- Summary fragments -->
@@ -18,7 +18,7 @@
     <dimen name="track_number_width">48dp</dimen>
     <dimen name="track_number_text_size">24sp</dimen>
     <dimen name="list_item_height">64dp</dimen>
-    <dimen name="list_item_height_large">128dp</dimen>
+    <dimen name="list_item_height_large">128.5dp</dimen> <!-- Add 0.5 dp so 2x small == large -->
     <dimen name="list_item_padding_horizontal">12dp</dimen>
     <dimen name="grid_info_holder_height">64dp</dimen>
     <dimen name="grid_spacing">1dp</dimen>
@@ -56,9 +56,8 @@
     <!-- Button bars -->
     <dimen name="button_bar_height">48dp</dimen>
     <dimen name="button_bar_divider_padding">8dp</dimen>
-    
-    <dimen name="actionbar_title_font_size">18sp</dimen>
 
     <dimen name="spacer_album_grid">8dp</dimen>
+    <dimen name="image_dialog_spacing">16dp</dimen>
     
 </resources>

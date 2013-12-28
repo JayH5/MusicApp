@@ -88,6 +88,7 @@ public class AlbumsAdapter extends LibraryAdapter {
                     .fit()
                     .centerCrop()
                     .transform(mGradient)
+                    .placeholder(R.drawable.placeholder_grey)
                     .into(albumArtImage);
         }
 		

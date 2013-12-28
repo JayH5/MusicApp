@@ -5,6 +5,7 @@ import java.lang.ref.WeakReference;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.pablo.Pablo;
 import android.app.DialogFragment;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -41,7 +42,9 @@ public class ImageDialogFragment extends DialogFragment {
 		final View v = inflater.inflate(R.layout.fragment_image_dialog, container, false);
 		
 		final ImageView imageView = (ImageView) v.findViewById(R.id.imageBig);
-		int size = getResources().getDisplayMetrics().widthPixels;
+        final Resources res = getResources();
+		int size = res.getDisplayMetrics().widthPixels -
+                res.getDimensionPixelSize(R.dimen.image_dialog_spacing);
 		Pablo.with(getActivity())
 			.load(mUri)
 			.resize(size, size)
