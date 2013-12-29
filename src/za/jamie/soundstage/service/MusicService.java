@@ -276,8 +276,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         unregisterReceiver(mIntentReceiver);
         unregisterReceiver(mUnmountReceiver);
         unregisterReceiver(mNoisyReceiver);
-        
-        Pablo.with(this).shutdown();
 
         // Remove any pending alarms
         mAlarmManager.cancel(mShutdownIntent);
