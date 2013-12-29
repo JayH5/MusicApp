@@ -9,6 +9,8 @@ import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.utils.AppUtils;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.LoaderManager.LoaderCallbacks;
@@ -193,15 +195,19 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 					cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
 			
 			// Set the subtitle
+            mSubtitle.setVisibility(View.VISIBLE);
 			mSubtitle.setText(artist);
 			
 			// Load image
-			Uri uri = LastfmUris.getAlbumInfoUri(album, artist, albumId);
-			Pablo.with(getActivity())
-				.load(uri)
-				.fit()
-				.centerCrop()
-				.into(mImage);
+            if (AppUtils.isPortrait(getResources())) {
+                mImage.setVisibility(View.VISIBLE);
+                Uri uri = LastfmUris.getAlbumInfoUri(album, artist, albumId);
+                Pablo.with(getActivity())
+                    .load(uri)
+                    .fit()
+                    .centerCrop()
+                    .into(mImage);
+            }
 			
 			// Add menu entries
 			mMenuAdapter.add(new MenuEntry("Play track") {
@@ -262,6 +268,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			} while (cursor.moveToNext());
 			
 			// Set the subtitle
+            mSubtitle.setVisibility(View.VISIBLE);
 			if (artists.size() == 1) {
 				mSubtitle.setText(artists.get(0).getTitle());
 			} else if (artists.size() > 1) {
@@ -269,12 +276,16 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			}
 			
 			// Load the image for the album
-			Uri uri = LastfmUris.getAlbumInfoUri(mItem.getTitle(), artists.get(0).getTitle(), mItem.getId());
-			Pablo.with(getActivity())
-				.load(uri)
-				.fit()
-				.centerCrop()
-				.into(mImage);
+            if (AppUtils.isPortrait(getResources())) {
+                mImage.setVisibility(View.VISIBLE);
+                Uri uri = LastfmUris.getAlbumInfoUri(mItem.getTitle(), artists.get(0).getTitle(),
+                        mItem.getId());
+                Pablo.with(getActivity())
+                    .load(uri)
+                    .fit()
+                    .centerCrop()
+                    .into(mImage);
+            }
 			
 			// Add the option to the menu...
 			mMenuAdapter.add(new MenuEntry("Play album") {
@@ -316,12 +327,15 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	
 	private void loadArtist() {
 		// Load the image
-		Uri uri = LastfmUris.getArtistInfoUri(mItem.getTitle());
-		Pablo.with(getActivity())
-			.load(uri)
-			.fit()
-			.centerCrop()
-			.into(mImage);
+        if (AppUtils.isPortrait(getResources())) {
+            mImage.setVisibility(View.VISIBLE);
+            Uri uri = LastfmUris.getArtistInfoUriBig(mItem.getTitle());
+            Pablo.with(getActivity())
+                .load(uri)
+                .fit()
+                .centerCrop()
+                .into(mImage);
+        }
 		
 		// Add menu entries
 		mMenuAdapter.add(new MenuEntry("Play all songs by artist") {
@@ -356,7 +370,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	
 	private void playItem() {
 		final MusicActivity activity = (MusicActivity) getActivity();
-		activity.getMusicConnection().enqueue(mItem, MusicService.PLAY);
+		getMusicConnection().enqueue(mItem, MusicService.PLAY);
 		getDialog().dismiss();
 		activity.showPlayer();
 	}

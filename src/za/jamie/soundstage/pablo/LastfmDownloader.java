@@ -46,10 +46,7 @@ public class LastfmDownloader extends OkHttpDownloader {
         // Now check lastfm. First query the service.
 		Response lastfmQuery = super.load(uri, localCacheOnly);
 
-        // TODO: Intelligently pick size to download
-        String method = uri.getQueryParameter("method");
-        String size = "album.getinfo".equals(method) ? "mega" : "extralarge";
-        Uri lastfmImage = getLastfmUri(lastfmQuery, size);
+        Uri lastfmImage = getLastfmUri(lastfmQuery, getImageSize(uri));
 
         // Then actually download the image.
         if (lastfmImage != null) {
@@ -57,6 +54,15 @@ public class LastfmDownloader extends OkHttpDownloader {
         }
         return null;
 	}
+
+    private static String getImageSize(Uri uri) {
+        String size = uri.getQueryParameter("size");
+        if (size == null) {
+            String method = uri.getQueryParameter("method");
+            size = "album.getinfo".equals(method) ? "mega" : "extralarge";
+        }
+        return size;
+    }
 	
 	private static Uri getLastfmUri(Response lastfmQuery, String size) throws IOException {
 		Uri uri = null;

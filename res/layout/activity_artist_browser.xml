@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res/za.jamie.soundstage"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
     
@@ -34,7 +34,8 @@
             app:shouldExpand="true"
             app:underlineHeight="0dp"
             app:indicatorHeight="0dp"
-            app:dividerPadding="8dp" />
+            app:dividerPadding="8dp"
+            app:tabBackground="?android:selectableItemBackground"/>
           
     </LinearLayout>        
     

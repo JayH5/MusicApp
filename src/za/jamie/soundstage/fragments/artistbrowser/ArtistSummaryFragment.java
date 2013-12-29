@@ -144,10 +144,12 @@ public class ArtistSummaryFragment extends Fragment implements
 					.centerCrop()
 					.into(mArtistImage);
 				
-				mArtistImage.setOnClickListener(new View.OnClickListener() {					
+				final Uri lastfmUriBig = lastfmUri.buildUpon()
+                        .appendQueryParameter("size", "mega").build();
+                mArtistImage.setOnClickListener(new View.OnClickListener() {
 					@Override
 					public void onClick(View v) {
-						ImageDialogFragment.newInstance(lastfmUri)
+						ImageDialogFragment.newInstance(lastfmUriBig)
 							.show(getFragmentManager(), TAG_IMAGE_DIALOG);
 					}
 				});

@@ -21,6 +21,17 @@ public final class LastfmUris {
             .appendQueryParameter("format", FORMAT)
             .build();
 	}
+
+    public static Uri getArtistInfoUriBig(String artist) {
+        return BASE_URI.buildUpon()
+            .appendQueryParameter("method", "artist.getinfo")
+            .appendQueryParameter("artist", artist)
+            .appendQueryParameter("autocorrect", ARTIST_AUTOCORRECT)
+            .appendQueryParameter("api_key", LAST_FM_API_KEY)
+            .appendQueryParameter("format", FORMAT)
+            .appendQueryParameter("size", "mega")
+            .build();
+    }
 	
 	public static Uri getAlbumInfoUri(String album, String artist, long id) {
 		return BASE_URI.buildUpon()
