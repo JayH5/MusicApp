@@ -39,7 +39,7 @@ public class LibraryActivity extends MusicActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_library);
+		setContentView(R.layout.activity_library);
 		
 		// Enable drawer animated icon
 		mMenuDrawer.setSlideDrawable(R.drawable.ic_drawer);
@@ -89,16 +89,6 @@ public class LibraryActivity extends MusicActivity {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		outState.putInt(STATE_SELECTED_PAGE, mViewPager.getCurrentItem());
-	}
-	
-	@Override
-	public void onBackPressed() {
-		final int drawerState = mMenuDrawer.getDrawerState();
-		if (isPlaying() && drawerState != MenuDrawer.STATE_OPEN && 
-				drawerState != MenuDrawer.STATE_OPENING) {
-			showNotification();
-		}
-		super.onBackPressed();
 	}
 	
 	/**

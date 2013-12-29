@@ -29,7 +29,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_artist_browser);
+		setContentView(R.layout.activity_artist_browser);
 		
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);

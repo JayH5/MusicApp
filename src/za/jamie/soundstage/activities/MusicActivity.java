@@ -14,7 +14,6 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
-import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -38,69 +37,90 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 
-    private boolean mIsInBackground = false;
+    private boolean mDestroyed = false;
+    private boolean mStartedButNotRegistered = false;
 	
 	private final MusicConnection mConnection = new MusicConnection();
 	
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		// Set up the menu drawer to display the player
-		mMenuDrawer = MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
-		
-		// Have to set offset... kind of a pain
-		final Resources res = getResources();
-		int menuSize = res.getDisplayMetrics().widthPixels
-				- res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
-		mMenuDrawer.setMenuSize(menuSize);		
-		mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
-		mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
-		mMenuDrawer.setOnDrawerStateChangeListener(this);
-		
-		// Initialize the music player fragment
-		final FragmentManager fm = getFragmentManager();
-		mPlayer = (MusicPlayerFragment) fm.findFragmentById(R.id.player);
-		
-		mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
-		if (mPlayQueue == null) {
-			mPlayQueue = PlayQueueFragment.newInstance();
-		}
-		
-		
-		ImageButton playQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
-		playQueueButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				mPlayQueue.show(fm, TAG_PLAY_QUEUE);
-			}
-		});
-		
-		mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
-			@Override
-			public void onConnected() {
-				if (!mIsInBackground) {
-					mConnection.hideNotification();
-				}
-			}
+		initMenuDrawer();
+		initFragments();
+		initService();
 
-			@Override
-			public void onDisconnected() { }			
-		});
-		
-		Intent serviceIntent = new Intent(this, MusicService.class);
-		startService(serviceIntent);
-		bindService(serviceIntent, mConnection, 0);
+        // If the activity is starting for the first time then the intent arrives here
+        Intent startIntent = getIntent();
+        if (startIntent != null) {
+            if (ACTION_SHOW_PLAYER.equals(startIntent.getAction())) {
+                showPlayer();
+                // Clear the action so drawer doesn't reopen on configuration changes
+                startIntent.setAction(null);
+            }
+        }
 	}
 
-	/**
-	 * Set the content view for this activity. Use this instead of {@link Activity#setContentView(int)}
-	 * so that the {@link MenuDrawer} can manage content properly.
-	 * @param layoutResId
-	 */
-	public void setMainContentView(int layoutResId) {
-		mMenuDrawer.setContentView(layoutResId);
-	}
+    private void initMenuDrawer() {
+        // Set up the menu drawer to display the player
+        mMenuDrawer =
+                MenuDrawer.attach(this, Type.BEHIND, Position.LEFT, MenuDrawer.MENU_DRAG_WINDOW);
+
+        // Have to set offset... kind of a pain
+        final Resources res = getResources();
+        int menuSize = res.getDisplayMetrics().widthPixels
+                - res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
+        mMenuDrawer.setMenuSize(menuSize);
+        mMenuDrawer.setMenuView(R.layout.menudrawer_frame);
+        mMenuDrawer.setDropShadow(R.drawable.menudrawer_shadow);
+        mMenuDrawer.setOnDrawerStateChangeListener(this);
+    }
+
+    private void initFragments() {
+        // Initialize the music player fragment
+        final FragmentManager fm = getFragmentManager();
+        mPlayer = (MusicPlayerFragment) fm.findFragmentById(R.id.player);
+
+        mPlayQueue = (PlayQueueFragment) fm.findFragmentByTag(TAG_PLAY_QUEUE);
+        if (mPlayQueue == null) {
+            mPlayQueue = PlayQueueFragment.newInstance();
+        }
+
+
+        ImageButton playQueueButton = (ImageButton) findViewById(R.id.play_queue_button);
+        playQueueButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPlayQueue.show(fm, TAG_PLAY_QUEUE);
+            }
+        });
+    }
+
+    private void initService() {
+        mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
+            @Override
+            public void onConnected() {
+                if (mStartedButNotRegistered) {
+                    mStartedButNotRegistered =
+                            !mConnection.registerActivityStarted(getComponentName());
+                }
+            }
+
+            @Override
+            public void onDisconnected() {
+                connectToService(); // Reconnect
+            }
+        });
+
+        connectToService();
+    }
+
+    private void connectToService() {
+        if (!mDestroyed && !isFinishing()) {
+            Intent serviceIntent = new Intent(this, MusicService.class);
+            startService(serviceIntent);
+            bindService(serviceIntent, mConnection, 0);
+        }
+    }
 	
 	@Override
 	protected void onNewIntent(Intent intent) {
@@ -109,27 +129,24 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 			showPlayer();
 		}
 	}
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
-        mConnection.hideNotification();
-        mIsInBackground = false;
-	}
 
     @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        // Bit of a hack to detect when app goes to background
-        if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && isPlaying()) {
-            showNotification();
-            mIsInBackground = true;
-        }
+    protected void onStart() {
+        super.onStart();
+        mStartedButNotRegistered = !mConnection.registerActivityStarted(getComponentName());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mStartedButNotRegistered = false;
+        mConnection.registerActivityStop(getComponentName());
     }
 	
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+        mDestroyed = true;
 		unbindService(mConnection);
 	}
 	
@@ -176,10 +193,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	@Override
 	public void onDrawerSlide(float openRatio, int offsetPixels) {
 		// Complete interface
-	}
-	
-	protected void showNotification() {
-		mConnection.showNotification(getNotificationIntent());
 	}
 	
 	/**

@@ -26,7 +26,7 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setMainContentView(R.layout.activity_album_browser);
+		setContentView(R.layout.activity_album_browser);
 		
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 		

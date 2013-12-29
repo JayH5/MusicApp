@@ -266,29 +266,29 @@ public class MusicConnection implements ServiceConnection {
 		return false;
 	}
 
-	public boolean showNotification(PendingIntent intent) {
-		if (mService != null) {
-			try {
-				mService.showNotification(intent);
-				return true;
-			} catch (RemoteException e) {
-				Log.w(TAG, "showNotification(PendingIntent)", e);
-			}
-		}
-		return false;
-	}
-	
-	public boolean hideNotification() {
-		if (mService != null) {
-			try {
-				mService.hideNotification();
-				return true;
-			} catch (RemoteException e) {
-				Log.w(TAG, "hideNotification()", e);
-			}
-		}
-		return false;
-	}
+    public boolean registerActivityStarted(ComponentName activity) {
+        if (mService != null) {
+            try {
+                mService.registerActivityStart(activity);
+                return true;
+            } catch (RemoteException e) {
+                Log.w(TAG, "showNotification(PendingIntent)", e);
+            }
+        }
+        return false;
+    }
+
+    public boolean registerActivityStop(ComponentName activity) {
+        if (mService != null) {
+            try {
+                mService.registerActivityStop(activity);
+                return true;
+            } catch (RemoteException e) {
+                Log.w(TAG, "showNotification(PendingIntent)", e);
+            }
+        }
+        return false;
+    }
 	
 	/**
 	 * A simple callback interface used to monitor the state of the connection to the Service.

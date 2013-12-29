@@ -9,6 +9,7 @@ import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.os.RemoteException;
 
 public class MusicServiceStub extends IMusicService.Stub {
@@ -115,16 +116,15 @@ public class MusicServiceStub extends IMusicService.Stub {
 	public void cycleRepeatMode() throws RemoteException {
 		mService.get().cycleRepeat();			
 	}
-	
-	@Override
-	public void showNotification(PendingIntent intent) 
-			throws RemoteException {
-		mService.get().showNotification(intent);
-	}
-	
-	@Override
-	public void hideNotification() throws RemoteException {
-		mService.get().hideNotification();
-	}
+
+    @Override
+    public void registerActivityStart(ComponentName activity) throws RemoteException {
+        mService.get().registerActivityStart(activity);
+    }
+
+    @Override
+    public void registerActivityStop(ComponentName activity) throws RemoteException {
+        mService.get().registerActivityStop(activity);
+    }
 
 }

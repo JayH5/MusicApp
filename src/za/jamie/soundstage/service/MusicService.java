@@ -1,11 +1,15 @@
 package za.jamie.soundstage.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.LibraryActivity;
+import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.appwidgets.AppWidgetHelper;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
@@ -122,6 +126,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private long mLastAlbumId = -1;
 
     private final IBinder mBinder = new MusicServiceStub(this);
+    private final Set<ComponentName> mStartedActivities = new HashSet<ComponentName>();
 
     // Callback lists for remote listeners
     private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
@@ -575,7 +580,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    	}
 	    	mMusicStatusCallbackList.finishBroadcast();
     	}
-    	
+    	showNotificationIfNecessary();
     	if (mShowNotification) {
     		mNotificationHelper.updatePlayState(isPlaying);
     	}
@@ -1150,8 +1155,27 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update notification/lock screen controls
+
+    private void showNotificationIfNecessary() {
+        if (mStartedActivities.isEmpty()) {
+            if (isPlaying() && !mShowNotification) {
+                showNotification(createNotificationIntent(
+                        new ComponentName(this, LibraryActivity.class)));
+            }
+        }
+    }
+
+    private PendingIntent createNotificationIntent(ComponentName component) {
+        Intent intent = new Intent();
+        intent.setComponent(component);
+        intent.setAction(MusicActivity.ACTION_SHOW_PLAYER)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        return PendingIntent.getActivity(this, 0, intent, 0);
+    }
     
-    public synchronized void showNotification(PendingIntent intent) {
+    private void showNotification(PendingIntent intent) {
     	mShowNotification = true;
     	mNotificationHelper.startForeground(this, intent);
     	updateNotification();
@@ -1171,9 +1195,25 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		.into(mNotificationHelper);
     }
     
-    public synchronized void hideNotification() {
-    	mShowNotification = false;
-    	stopForeground(true);
+    private void hideNotification() {
+        if (mShowNotification) {
+            mShowNotification = false;
+            stopForeground(true);
+        }
+    }
+
+    public synchronized void registerActivityStart(ComponentName activity) {
+        if (mStartedActivities.add(activity)) {
+            hideNotification();
+        }
+    }
+
+    public synchronized void registerActivityStop(ComponentName activity) {
+        if (mStartedActivities.remove(activity)) {
+            if (mStartedActivities.isEmpty() && isPlaying()) {
+                showNotification(createNotificationIntent(activity));
+            }
+        }
     }
     
     /**

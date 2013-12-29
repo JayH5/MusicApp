@@ -36,6 +36,6 @@ oneway interface IMusicService {
 	void enqueue(in MusicItem item, int action);
 	
 	// Tell the service to show/remove notification
-	void showNotification(in PendingIntent intent);
-	void hideNotification();
+	void registerActivityStart(in ComponentName activity);
+	void registerActivityStop(in ComponentName activity);
 }
