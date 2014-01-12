@@ -8,7 +8,11 @@ import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicConnection;
+
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.view.HapticFeedbackConstants;
@@ -16,8 +20,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 
 import com.mobeta.android.dslv.DragSortListView;
@@ -96,7 +102,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		saveButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				getMusicConnection().savePlayQueueAsPlaylist("Test");	
+                saveAsPlaylist();
 			}
 		});
 		
@@ -120,6 +126,32 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		
 		return v;
 	}
+
+    private void saveAsPlaylist() {
+        final Context context = getActivity();
+        final EditText editText = (EditText)
+                getActivity().getLayoutInflater().inflate(R.layout.edit_text_save_playlist, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Enter playlist name:")
+                .setView(editText)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        getMusicConnection().savePlayQueueAsPlaylist(editText.getText().toString());
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+        builder.show();
+        editText.requestFocus();
+        InputMethodManager imm =
+                (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+    }
 	
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {

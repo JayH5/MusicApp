@@ -1,19 +1,19 @@
 package za.jamie.soundstage.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import za.jamie.soundstage.IMusicService;
-import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IPlayQueueCallback;
-import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.models.Track;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import za.jamie.soundstage.IMusicPlayerCallback;
+import za.jamie.soundstage.IMusicService;
+import za.jamie.soundstage.IPlayQueueCallback;
+import za.jamie.soundstage.models.MusicItem;
+import za.jamie.soundstage.models.Track;
 
 /**
  * Class to encapsulate the interface between the MusicService process
@@ -206,10 +206,10 @@ public class MusicConnection implements ServiceConnection {
 		return false;
 	}
 	
-	public boolean registerMusicStatusCallback(IMusicStatusCallback callback) {
+	public boolean registerMusicPlayerCallback(IMusicPlayerCallback callback) {
 		if (mService != null) {
 			try {
-				mService.registerMusicStatusCallback(callback);
+				mService.registerMusicPlayerCallback(callback);
 				return true;
 			} catch (RemoteException e) {
 				Log.w(TAG, "registerMusicStatusCallback(IMusicStatusCallback)", e);
@@ -218,13 +218,13 @@ public class MusicConnection implements ServiceConnection {
 		return false;
 	}
 	
-	public boolean unregisterMusicStatusCallback(IMusicStatusCallback callback) {
+	public boolean unregisterMusicPlayerCallback(IMusicPlayerCallback callback) {
 		if (mService != null) {
 			try {
-				mService.unregisterMusicStatusCallback(callback);
+				mService.unregisterMusicPlayerCallback(callback);
 				return true;
 			} catch (RemoteException e) {
-				Log.w(TAG, "unregisterMusicStatusCallback(IMusicStatusCallback)", e);
+				Log.w(TAG, "unregisterMusicPlayerCallback(IMusicStatusCallback)", e);
 			}
 		}
 		return false;

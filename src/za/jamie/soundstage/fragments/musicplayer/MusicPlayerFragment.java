@@ -1,15 +1,5 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
-import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.MusicFragment;
-import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.service.MusicConnection;
-import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.widgets.DurationTextView;
-import za.jamie.soundstage.widgets.RepeatingImageButton;
 import android.animation.ObjectAnimator;
 import android.content.ContentUris;
 import android.content.Context;
@@ -31,6 +21,17 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.squareup.picasso.Callback;
+
+import za.jamie.soundstage.IMusicPlayerCallback;
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.MusicFragment;
+import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.widgets.DurationTextView;
+import za.jamie.soundstage.widgets.RepeatingImageButton;
 
 public class MusicPlayerFragment extends MusicFragment {
 
@@ -78,7 +79,7 @@ public class MusicPlayerFragment extends MusicFragment {
 			new MusicConnection.ConnectionCallbacks() {
 		@Override
 		public void onConnected() {
-			getMusicConnection().registerMusicStatusCallback(mCallback);
+			getMusicConnection().registerMusicPlayerCallback(mCallback);
 		}
 
 		@Override
@@ -115,7 +116,7 @@ public class MusicPlayerFragment extends MusicFragment {
         
         // Remove all our callbacks
         getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
-        getMusicConnection().unregisterMusicStatusCallback(mCallback);
+        getMusicConnection().unregisterMusicPlayerCallback(mCallback);
 	}
 	
 	@Override
@@ -446,7 +447,7 @@ public class MusicPlayerFragment extends MusicFragment {
         }
     };
 	
-	private final IMusicStatusCallback mCallback = new IMusicStatusCallback.Stub() {
+	private final IMusicPlayerCallback mCallback = new IMusicPlayerCallback.Stub() {
 		
 		@Override
 		public void onTrackChanged(final Track track) throws RemoteException {

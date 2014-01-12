@@ -14,8 +14,10 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
@@ -23,6 +25,7 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 	
@@ -39,6 +42,17 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 
     private boolean mDestroyed = false;
     private boolean mStartedButNotRegistered = false;
+
+    private final IntentFilter mToastFilter = new IntentFilter("za.jamie.soundstage.TOAST");
+    private final BroadcastReceiver mToastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null) {
+                String text = intent.getStringExtra("extra_toast");
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
 	
 	private final MusicConnection mConnection = new MusicConnection();
 	
@@ -134,6 +148,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
     protected void onStart() {
         super.onStart();
         mStartedButNotRegistered = !mConnection.registerActivityStarted(getComponentName());
+        registerReceiver(mToastReceiver, mToastFilter);
     }
 
     @Override
@@ -141,6 +156,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         super.onStop();
         mStartedButNotRegistered = false;
         mConnection.registerActivityStop(getComponentName());
+        unregisterReceiver(mToastReceiver);
     }
 	
 	@Override

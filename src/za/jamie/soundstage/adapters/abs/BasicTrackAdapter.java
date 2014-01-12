@@ -79,13 +79,13 @@ public abstract class BasicTrackAdapter extends BasicCursorAdapter
 			trackList = new LinkedList<Track>();
 			do {
 				trackList.add(new Track(
-						cursor.getLong(mIdColIdx),
-						cursor.getString(mTitleColIdx),
-						cursor.getLong(mArtistIdColIdx),
-						cursor.getString(mArtistColIdx),
-						cursor.getLong(mAlbumIdColIdx),
-						cursor.getString(mAlbumColIdx),
-						cursor.getLong(mDurationColIdx)));
+						cursor.getLong(getIdColIdx()),
+						cursor.getString(getTitleColIdx()),
+						cursor.getLong(getArtistIdColIdx()),
+						cursor.getString(getArtistColIdx()),
+						cursor.getLong(getAlbumIdColIdx()),
+						cursor.getString(getAlbumColIdx()),
+						cursor.getLong(getDurationColIdx())));
 			} while (cursor.moveToNext());
 		}
 		return trackList;
@@ -96,13 +96,14 @@ public abstract class BasicTrackAdapter extends BasicCursorAdapter
 		Cursor cursor = getCursor();
 		Track track = null;
 		if (cursor != null && cursor.moveToPosition(position)) {
-			track = new Track(cursor.getLong(mIdColIdx),
-					cursor.getString(mTitleColIdx),
-					cursor.getLong(mArtistIdColIdx),
-					cursor.getString(mArtistColIdx),
-					cursor.getLong(mAlbumIdColIdx),
-					cursor.getString(mAlbumColIdx),
-					cursor.getLong(mDurationColIdx));
+			track = new Track(
+                    cursor.getLong(getIdColIdx()),
+                    cursor.getString(getTitleColIdx()),
+                    cursor.getLong(getArtistIdColIdx()),
+                    cursor.getString(getArtistColIdx()),
+                    cursor.getLong(getAlbumIdColIdx()),
+                    cursor.getString(getAlbumColIdx()),
+                    cursor.getLong(getDurationColIdx()));
 		}
 		return track;
 	}

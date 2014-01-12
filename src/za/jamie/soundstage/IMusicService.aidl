@@ -1,6 +1,6 @@
 package za.jamie.soundstage;
 
-import za.jamie.soundstage.IMusicStatusCallback;
+import za.jamie.soundstage.IMusicPlayerCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
@@ -27,8 +27,8 @@ oneway interface IMusicService {
 	void cycleRepeatMode();
 	
 	// MusicStatusCallback
-	void registerMusicStatusCallback(IMusicStatusCallback callback);
-	void unregisterMusicStatusCallback(IMusicStatusCallback callback);	
+	void registerMusicPlayerCallback(IMusicPlayerCallback callback);
+	void unregisterMusicPlayerCallback(IMusicPlayerCallback callback);
 	
 	// Opening new music/enqueueing music for the library
 	void open(in List<Track> tracks, int position);

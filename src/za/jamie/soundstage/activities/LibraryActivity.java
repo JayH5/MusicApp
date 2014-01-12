@@ -1,13 +1,5 @@
 package za.jamie.soundstage.activities;
 
-import net.simonvt.menudrawer.MenuDrawer;
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.library.AlbumsFragment;
-import za.jamie.soundstage.fragments.library.ArtistsFragment;
-import za.jamie.soundstage.fragments.library.PlaylistsFragment;
-import za.jamie.soundstage.fragments.library.SongsFragment;
-import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Fragment;
@@ -18,6 +10,14 @@ import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.MenuItem;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.library.AlbumsFragment;
+import za.jamie.soundstage.fragments.library.ArtistsFragment;
+import za.jamie.soundstage.fragments.library.PlaylistsFragment;
+import za.jamie.soundstage.fragments.library.SongsFragment;
+import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 
 public class LibraryActivity extends MusicActivity {
 

@@ -1,16 +1,16 @@
 package za.jamie.soundstage.service;
 
+import android.content.ComponentName;
+import android.os.RemoteException;
+
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+import za.jamie.soundstage.IMusicPlayerCallback;
 import za.jamie.soundstage.IMusicService;
-import za.jamie.soundstage.IMusicStatusCallback;
 import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
-import android.app.PendingIntent;
-import android.content.ComponentName;
-import android.os.RemoteException;
 
 public class MusicServiceStub extends IMusicService.Stub {
 
@@ -41,17 +41,17 @@ public class MusicServiceStub extends IMusicService.Stub {
 	}
 
 	@Override
-	public void registerMusicStatusCallback(IMusicStatusCallback callback)
+	public void registerMusicPlayerCallback(IMusicPlayerCallback callback)
 			throws RemoteException {
 		
-		mService.get().registerMusicStatusCallback(callback);
+		mService.get().registerMusicPlayerCallback(callback);
 	}
 
 	@Override
-	public void unregisterMusicStatusCallback(IMusicStatusCallback callback)
+	public void unregisterMusicPlayerCallback(IMusicPlayerCallback callback)
 			throws RemoteException {
 		
-		mService.get().unregisterMusicStatusCallback(callback);
+		mService.get().unregisterMusicPlayerCallback(callback);
 	}
 
 	@Override

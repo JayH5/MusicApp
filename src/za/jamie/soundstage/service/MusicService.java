@@ -1,27 +1,14 @@
 package za.jamie.soundstage.service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import za.jamie.soundstage.IMusicStatusCallback;
-import za.jamie.soundstage.IPlayQueueCallback;
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.LibraryActivity;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.appwidgets.AppWidgetHelper;
-import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -35,9 +22,26 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import za.jamie.soundstage.IMusicPlayerCallback;
+import za.jamie.soundstage.IPlayQueueCallback;
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.LibraryActivity;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.appwidgets.AppWidgetHelper;
+import za.jamie.soundstage.models.MusicItem;
+import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.Pablo;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
@@ -129,8 +133,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private final Set<ComponentName> mStartedActivities = new HashSet<ComponentName>();
 
     // Callback lists for remote listeners
-    private final RemoteCallbackList<IMusicStatusCallback> mMusicStatusCallbackList =
-    		new RemoteCallbackList<IMusicStatusCallback>();
+    private final RemoteCallbackList<IMusicPlayerCallback> mMusicPlayerCallbackList =
+    		new RemoteCallbackList<IMusicPlayerCallback>();
     
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
     		new RemoteCallbackList<IPlayQueueCallback>();   
@@ -274,7 +278,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonReceiverComponent);
 
         // Remove music control callbacks
-        mMusicStatusCallbackList.kill();
+        mMusicPlayerCallbackList.kill();
         mPlayQueueCallbackList.kill();
 
         // Unregister the broadcast receivers
@@ -486,18 +490,18 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void syncSeekPosition() {
     	final long seekPosition = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized (mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized (mMusicPlayerCallbackList) {
+    		int i = mMusicPlayerCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
-	    			mMusicStatusCallbackList.getBroadcastItem(i)
+	    			mMusicPlayerCallbackList.getBroadcastItem(i)
 	    					.onPositionSync(seekPosition, timestamp);
 	    		} catch (RemoteException e) {
 	    			Log.w(TAG, "syncPosition()", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicPlayerCallbackList.finishBroadcast();
     	}
     	
     	mPreferences.edit()
@@ -509,20 +513,20 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final Track currentTrack = getCurrentTrack();
     	final long position = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized(mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlayerCallbackList) {
+    		int i = mMusicPlayerCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
-	    			final IMusicStatusCallback callback = 
-	    					mMusicStatusCallbackList.getBroadcastItem(i);
+	    			final IMusicPlayerCallback callback =
+	    					mMusicPlayerCallbackList.getBroadcastItem(i);
 	    			callback.onTrackChanged(currentTrack);
 	    			callback.onPositionSync(position, timestamp);
 				} catch (RemoteException e) {
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicPlayerCallbackList.finishBroadcast();
     	}
     	
     	onQueuePositionChanged();
@@ -565,20 +569,20 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final boolean isPlaying = isPlaying();
     	final long position = position();
     	final long timestamp = System.currentTimeMillis();
-    	synchronized(mMusicStatusCallbackList) {
-	    	int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlayerCallbackList) {
+	    	int i = mMusicPlayerCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
-	    			final IMusicStatusCallback callback = 
-	    					mMusicStatusCallbackList.getBroadcastItem(i);
+	    			final IMusicPlayerCallback callback =
+	    					mMusicPlayerCallbackList.getBroadcastItem(i);
 	    			callback.onPlayStateChanged(isPlaying);
 	    			callback.onPositionSync(position, timestamp);
 				} catch (RemoteException e) {
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicPlayerCallbackList.finishBroadcast();
     	}
     	showNotificationIfNecessary();
     	if (mShowNotification) {
@@ -595,18 +599,18 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onShuffleStateChanged() {
     	final boolean shuffleEnabled = isShuffleEnabled();
-    	synchronized (mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized (mMusicPlayerCallbackList) {
+    		int i = mMusicPlayerCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
-	    			mMusicStatusCallbackList.getBroadcastItem(i)
+	    			mMusicPlayerCallbackList.getBroadcastItem(i)
 	    					.onShuffleStateChanged(shuffleEnabled);
 	    		} catch (RemoteException e) {
 	    			Log.w(TAG, "Remote error during shuffle mode change.", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicPlayerCallbackList.finishBroadcast();
     	}
     	
     	mAppWidgetHelper.updateShuffleState(shuffleEnabled);
@@ -614,18 +618,18 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void onRepeatModeChanged() {
     	final int repeatMode = getRepeatMode();
-    	synchronized(mMusicStatusCallbackList) {
-    		int i = mMusicStatusCallbackList.beginBroadcast();
+    	synchronized(mMusicPlayerCallbackList) {
+    		int i = mMusicPlayerCallbackList.beginBroadcast();
 	    	while (i > 0) {
 	    		i--;
 	    		try {
-	    			mMusicStatusCallbackList.getBroadcastItem(i)
+	    			mMusicPlayerCallbackList.getBroadcastItem(i)
 	    					.onRepeatModeChanged(repeatMode);
 	    		} catch (RemoteException e) {
 	    			Log.w(TAG, "notifyRepeatModeChanged()", e);
 	    		}
 	    	}
-	    	mMusicStatusCallbackList.finishBroadcast();
+	    	mMusicPlayerCallbackList.finishBroadcast();
     	}
     	
     	mAppWidgetHelper.updateRepeatMode(repeatMode);
@@ -638,7 +642,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Register callbacks and deliver requested information
 	
-	private void deliverMusicStatus(IMusicStatusCallback callback) {
+	private void deliverMusicStatus(IMusicPlayerCallback callback) {
 		try {
 			callback.onTrackChanged(getCurrentTrack());
 			callback.onPlayStateChanged(isPlaying());
@@ -651,13 +655,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	}
 	
 	// Reckon this is threadsafe looking at source of RemoteCallbackList
-	public void registerMusicStatusCallback(IMusicStatusCallback callback) {
-		mMusicStatusCallbackList.register(callback);
+	public void registerMusicPlayerCallback(IMusicPlayerCallback callback) {
+		mMusicPlayerCallbackList.register(callback);
 		deliverMusicStatus(callback);
 	}
 	
-	public void unregisterMusicStatusCallback(IMusicStatusCallback callback) {
-		mMusicStatusCallbackList.unregister(callback);
+	public void unregisterMusicPlayerCallback(IMusicPlayerCallback callback) {
+		mMusicPlayerCallbackList.unregister(callback);
 	}
 	
 	private void deliverPlayQueue(IPlayQueueCallback callback) {
@@ -1028,6 +1032,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	String selection = null;
     	String[] selectionArgs = null;
     	String sortOrder = null;
+        PROJECTION[0] = MediaStore.Audio.Media._ID;
     	switch (item.getType()) {
     	case MusicItem.TYPE_TRACK:
     		uri = ContentUris.withAppendedId(URI, item.getId());
@@ -1046,6 +1051,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     		break;
     	case MusicItem.TYPE_PLAYLIST:
     		uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
+            PROJECTION[0] = MediaStore.Audio.Playlists.Members.AUDIO_ID;
     		sortOrder = PLAYLIST_SORT_ORDER;
     		break;
     	default:
@@ -1117,8 +1123,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     public synchronized void savePlayQueueAsPlaylist(String playlistName) {
-    	// TODO: WIP
-    	/*if (!TextUtils.isEmpty(playlistName)) {
+    	if (!TextUtils.isEmpty(playlistName)) {
     		final ContentResolver resolver = getContentResolver();
     		final Uri playlistsUri = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI;
     		
@@ -1129,28 +1134,42 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     				MediaStore.Audio.Playlists.NAME + "=?", // Selection
     				new String[] { playlistName }, // Selection args
     				null); // Sort order
+
+            int count = cursor.getCount();
+            cursor.close();
     		
-    		long playlistId = 0;
-    		if (cursor.getCount() == 0) {
+    		// Create the new playlist
+            long playlistId = 0;
+    		if (count == 0) {
     			ContentValues values = new ContentValues(1);
     			values.put(MediaStore.Audio.Playlists.NAME, playlistName);
     			Uri uri = resolver.insert(playlistsUri, values);
+                Log.d(TAG, "Playlist created with uri: " + uri);
     			playlistId = Long.parseLong(uri.getLastPathSegment());
-    		}
-    		cursor.close();
-    		
+            } else {
+                Intent intent = new Intent("za.jamie.soundstage.TOAST");
+                intent.putExtra("extra_toast", "Playlist '" + playlistName + "' already exists.");
+                sendBroadcast(intent);
+            }
+
     		if (playlistId > 0) {
     			Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
     			List<Track> tracks = mPlayQueue.getPlayQueue();
     			final int len = tracks.size();
     			ContentValues[] values = new ContentValues[len];
     			for (int i = 0; i < len; i++) {
-    				values[i] = new ContentValues();
-    				tracks.get(i).writeToContentValues(values[i]);
+    				Track track = tracks.get(i);
+                    values[i] = new ContentValues(2);
+                    values[i].put(MediaStore.Audio.Playlists.Members.AUDIO_ID, track.getId());
+                    values[i].put(MediaStore.Audio.Playlists.Members.PLAY_ORDER, i + 1);
     			}
     			resolver.bulkInsert(uri, values);
+
+                Intent intent = new Intent("za.jamie.soundstage.TOAST");
+                intent.putExtra("extra_toast", "Playlist '" + playlistName + "' created.");
+                sendBroadcast(intent);
     		}
-    	}*/
+    	}
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

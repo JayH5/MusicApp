@@ -28,7 +28,7 @@ public class PlaylistsAdapter extends LibraryAdapter {
 
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
-		TextView nameText = (TextView) view.findViewById(R.id.title);
+		TextView nameText = (TextView) view.findViewById(R.id.list_item);
 		String name = cursor.getString(mNameColIdx);
 		nameText.setText(name);
 		
