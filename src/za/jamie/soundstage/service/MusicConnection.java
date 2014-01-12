@@ -241,6 +241,18 @@ public class MusicConnection implements ServiceConnection {
 		}
 		return false;
 	}
+
+    public boolean open(MusicItem item, int position) {
+        if (mService != null) {
+            try {
+                mService.openItem(item, position);
+                return true;
+            } catch (RemoteException e) {
+                Log.w(TAG, "open(MusicItem, int)", e);
+            }
+        }
+        return false;
+    }
 	
 	public boolean shuffle(List<Track> tracks) {
 		if (mService != null) {

@@ -40,6 +40,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 
+    private SearchView mSearchView;
+
     private boolean mDestroyed = false;
     private boolean mStartedButNotRegistered = false;
 
@@ -193,10 +195,28 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
     	getMenuInflater().inflate(R.menu.search, menu);
     	
     	SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        mSearchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
+        mSearchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                Intent intent = new Intent(MusicActivity.this, SearchActivity.class);
+                intent.putExtra(SearchManager.QUERY, s);
+                startActivity(intent);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                return false;
+            }
+        });
         
         return true;
+    }
+
+    protected SearchView getSearchView() {
+        return mSearchView;
     }
 
 	@Override

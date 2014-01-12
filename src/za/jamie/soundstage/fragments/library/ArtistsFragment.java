@@ -77,12 +77,9 @@ public class ArtistsFragment extends MusicListFragment {
     
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {		
-		Uri data = ContentUris.withAppendedId(
-				MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, id);
-    	
+		Uri data = ContentUris.withAppendedId(MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, id);
     	Intent intent = new Intent(Intent.ACTION_VIEW);
 		intent.setDataAndType(data, MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE);
-
 		startActivity(intent);
     }
     

@@ -51,7 +51,7 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		mAlbumId = getArguments().getLong(EXTRA_ALBUM_ID);
 				
 		mAdapter = new AlbumTrackListAdapter(getActivity(), 
-				R.layout.list_item_track, null, 0);
+				R.layout.list_item_album_track, null, 0);
 		
 		// Add observer to trigger collection of album stats
 		mAdapter.registerDataSetObserver(new DataSetObserver() {

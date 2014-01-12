@@ -60,6 +60,11 @@ public class MusicServiceStub extends IMusicService.Stub {
 
 		mService.get().open(tracks, position);
 	}
+
+    @Override
+    public void openItem(MusicItem item, int position) {
+        mService.get().open(item, position);
+    }
 	
 	@Override
 	public void shuffle(List<Track> tracks) throws RemoteException {

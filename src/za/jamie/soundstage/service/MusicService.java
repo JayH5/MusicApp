@@ -980,6 +980,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	setShuffleEnabled(true);
     	open(tracks, -1);
     }
+
+    public synchronized void open(MusicItem item, int position) {
+        open(fetchMusicItem(item), position);
+    }
     
     /**
      * Queues a new list for playback
@@ -1028,39 +1032,41 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     public synchronized void enqueue(MusicItem item, int action) {
-    	final Uri uri;
-    	String selection = null;
-    	String[] selectionArgs = null;
-    	String sortOrder = null;
+    	enqueue(fetchMusicItem(item), action);
+    }
+
+    private List<Track> fetchMusicItem(MusicItem item) {
+        Uri uri = null;
+        String selection = null;
+        String[] selectionArgs = null;
+        String sortOrder = null;
         PROJECTION[0] = MediaStore.Audio.Media._ID;
-    	switch (item.getType()) {
-    	case MusicItem.TYPE_TRACK:
-    		uri = ContentUris.withAppendedId(URI, item.getId());
-    		break;
-    	case MusicItem.TYPE_ARTIST:
-    		uri = URI;
-    		selection = ARTIST_SELECTION;
-    		selectionArgs = new String[] { String.valueOf(item.getId()) };
-    		sortOrder = ARTIST_SORT_ORDER;
-    		break;
-    	case MusicItem.TYPE_ALBUM:
-    		uri = URI;
-    		selection = ALBUM_SELECTION;
-    		selectionArgs = new String[] { String.valueOf(item.getId()) };
-    		sortOrder = ALBUM_SORT_ORDER;
-    		break;
-    	case MusicItem.TYPE_PLAYLIST:
-    		uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
-            PROJECTION[0] = MediaStore.Audio.Playlists.Members.AUDIO_ID;
-    		sortOrder = PLAYLIST_SORT_ORDER;
-    		break;
-    	default:
-    		return;
-    	}
-    	final Cursor cursor =
-    			getContentResolver().query(uri, PROJECTION, selection, selectionArgs, sortOrder);
-    	
-    	enqueue(buildTrackList(cursor), action);
+        switch (item.getType()) {
+            case MusicItem.TYPE_TRACK:
+                uri = ContentUris.withAppendedId(URI, item.getId());
+                break;
+            case MusicItem.TYPE_ARTIST:
+                uri = URI;
+                selection = ARTIST_SELECTION;
+                selectionArgs = new String[] { String.valueOf(item.getId()) };
+                sortOrder = ARTIST_SORT_ORDER;
+                break;
+            case MusicItem.TYPE_ALBUM:
+                uri = URI;
+                selection = ALBUM_SELECTION;
+                selectionArgs = new String[] { String.valueOf(item.getId()) };
+                sortOrder = ALBUM_SORT_ORDER;
+                break;
+            case MusicItem.TYPE_PLAYLIST:
+                uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
+                PROJECTION[0] = MediaStore.Audio.Playlists.Members.AUDIO_ID;
+                sortOrder = PLAYLIST_SORT_ORDER;
+                break;
+        }
+        final Cursor cursor =
+                getContentResolver().query(uri, PROJECTION, selection, selectionArgs, sortOrder);
+
+        return buildTrackList(cursor);
     }
     
     private static List<Track> buildTrackList(Cursor cursor) {

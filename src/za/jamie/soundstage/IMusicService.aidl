@@ -32,6 +32,7 @@ oneway interface IMusicService {
 	
 	// Opening new music/enqueueing music for the library
 	void open(in List<Track> tracks, int position);
+	void openItem(in MusicItem item, int position);
 	void shuffle(in List<Track> tracks);	
 	void enqueue(in MusicItem item, int action);
 	

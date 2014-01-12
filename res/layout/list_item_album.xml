@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/image_thumb_artist">
+
+    <LinearLayout
+        android:id="@+id/list_item"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <za.jamie.soundstage.widgets.HeightSquaredImageView
+            android:id="@+id/albumImage"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="1dp"
+            android:scaleType="centerCrop"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp">
+
+            <TextView
+                android:id="@+id/albumName"
+                style="@style/ListItemText.Title" />
+
+            <TextView
+                android:id="@+id/albumArtist"
+                style="@style/ListItemText.Subtitle" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <include
+        layout="@layout/list_item_flipped"
+        android:visibility="gone" />
+
+</FrameLayout>
