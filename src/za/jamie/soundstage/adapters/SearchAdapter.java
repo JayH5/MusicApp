@@ -110,10 +110,6 @@ public class SearchAdapter extends CursorAdapter {
 
     @Override
     public int getItemViewType(int position) {
-        if (position == 0) {
-            return super.getItemViewType(position); // Header
-        }
-
         final String mimeType = getItemMimeType(position);
         final int viewType;
         if ("artist".equals(mimeType)) {
