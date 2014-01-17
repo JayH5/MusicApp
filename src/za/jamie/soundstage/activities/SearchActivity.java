@@ -18,22 +18,35 @@ import za.jamie.soundstage.fragments.SearchFragment;
 public class SearchActivity extends MusicActivity implements
         SearchView.OnQueryTextListener {
 
+    private static final String STATE_FILTER = "state_filter";
+
     private SearchFragment mSearchFragment;
+    private String mFilterString;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final String query = getIntent().getStringExtra(SearchManager.QUERY);
+        if (savedInstanceState != null) {
+            mFilterString = savedInstanceState.getString(STATE_FILTER);
+        } else {
+            mFilterString = getIntent().getStringExtra(SearchManager.QUERY);
+        }
 
-        ActionBar ab = getActionBar();
-        ab.setSubtitle("\"" + query + "\"");
-        ab.setDisplayHomeAsUpEnabled(true);
-
-        mSearchFragment = SearchFragment.newInstance(query);
+        mSearchFragment = SearchFragment.newInstance(mFilterString);
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, mSearchFragment)
                 .commit();
+
+        ActionBar ab = getActionBar();
+        ab.setSubtitle("\"" + mFilterString + "\"");
+        ab.setDisplayHomeAsUpEnabled(true);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_FILTER, mFilterString);
     }
 
     @Override
@@ -51,7 +64,7 @@ public class SearchActivity extends MusicActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         boolean result = super.onCreateOptionsMenu(menu);
-        getSearchView().setOnQueryTextListener(mSearchFragment);
+        getSearchView().setOnQueryTextListener(this);
         return result;
     }
 
@@ -59,7 +72,7 @@ public class SearchActivity extends MusicActivity implements
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         String query = intent.getStringExtra(SearchManager.QUERY);
-        mSearchFragment.onQueryTextChange(query);
+        onQueryTextChange(query);
     }
 
     @Override
@@ -76,13 +89,19 @@ public class SearchActivity extends MusicActivity implements
             }
             searchView.clearFocus();
         }
-        getActionBar().setSubtitle("\"" + mSearchFragment.getFilterString() + "\"");
+        getActionBar().setSubtitle("\"" + mFilterString + "\"");
         return true;
     }
 
     @Override
     public boolean onQueryTextChange(String query) {
-        return false;
+        if (TextUtils.isEmpty(query)) {
+            return false;
+        }
+
+        mFilterString = query;
+        mSearchFragment.setFilterString(mFilterString);
+        return true;
     }
 
 }

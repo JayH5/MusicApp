@@ -26,13 +26,12 @@ import za.jamie.soundstage.models.MusicItem;
  * Created by jamie on 2014/01/12.
  */
 public class SearchFragment extends MusicListFragment implements
-        LoaderManager.LoaderCallbacks<Cursor>, SearchView.OnQueryTextListener {
+        LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String EXTRA_QUERY = "extra_query";
 
     private SearchAdapter mAdapter;
     private String mFilterString;
-    private SearchView.OnQueryTextListener mCallback;
 
     private TextView mHeaderView;
 
@@ -53,6 +52,12 @@ public class SearchFragment extends MusicListFragment implements
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(EXTRA_QUERY, mFilterString);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
         mHeaderView = (TextView) inflater.inflate(R.layout.list_item_header, null, false);
         return inflater.inflate(R.layout.list_fragment_search, parent, false);
@@ -65,17 +70,6 @@ public class SearchFragment extends MusicListFragment implements
         final ListView lv = getListView();
         lv.addHeaderView(mHeaderView);
         setListAdapter(mAdapter);
-        //mFlipHelper.initFlipper(lv);
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            mCallback = (SearchView.OnQueryTextListener) activity;
-        } catch (ClassCastException e) {
-            throw new RuntimeException("Parent activity must implement OnQueryTextListener");
-        }
     }
 
     @Override
@@ -115,25 +109,6 @@ public class SearchFragment extends MusicListFragment implements
     }
 
     @Override
-    public boolean onQueryTextSubmit(String query) {
-        if (mCallback != null) {
-            return mCallback.onQueryTextSubmit(query);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean onQueryTextChange(String query) {
-        if (TextUtils.isEmpty(query)) {
-            return false;
-        }
-
-        mFilterString = query;
-        getLoaderManager().restartLoader(0, null, this);
-        return true;
-    }
-
-    @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         String mimeType = mAdapter.getItemMimeType(position - 1);
         if("artist".equals(mimeType)) {
@@ -165,7 +140,9 @@ public class SearchFragment extends MusicListFragment implements
         showPlayer();
     }
 
-    public String getFilterString() {
-        return mFilterString;
+    public void setFilterString(String filter) {
+        mFilterString = filter;
+        getLoaderManager().restartLoader(0, null, this);
     }
+
 }

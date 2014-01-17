@@ -129,11 +129,10 @@ public class SearchAdapter extends CursorAdapter {
 
     @Override
     public Cursor swapCursor(Cursor newCursor) {
-        Cursor oldCursor = super.swapCursor(newCursor);
         if (newCursor != null) {
             getColumnIndices(newCursor);
         }
-        return oldCursor;
+        return super.swapCursor(newCursor);
     }
 
     protected void getColumnIndices(Cursor cursor) {
