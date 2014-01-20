@@ -91,30 +91,28 @@
     <LinearLayout
         android:id="@+id/music_player_info_holder"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/action_button_shuffle"
         android:layout_above="@+id/music_player_action_holder"
         android:layout_alignParentLeft="true"
-        android:layout_marginBottom="20dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:gravity="center"
         android:orientation="vertical" >
 
         <TextView
             android:id="@+id/music_player_track_name"
-            style="@style/MusicPlayerTitleText"
             android:gravity="center"
-            android:layout_gravity="center" />
+            style="@style/MusicPlayerTitleText" />
 
         <TextView
             android:id="@+id/music_player_album_name"
             style="@style/MusicPlayerSubtitleText"
-            android:layout_gravity="center"
             android:background="@drawable/button_white_highlight" />
 
         <TextView
             android:id="@+id/music_player_artist_name"
             style="@style/MusicPlayerSubtitleText"
-            android:layout_gravity="center"
             android:background="@drawable/button_white_highlight" />
     </LinearLayout>
     
