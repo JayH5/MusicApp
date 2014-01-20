@@ -39,112 +39,119 @@
             style="@style/SeekText" />
         
     </LinearLayout>
-    
-    <za.jamie.soundstage.widgets.DurationTextView
-        android:id="@+id/elapsedTime"
-        style="@style/MusicPlayerDurationText"
-        android:layout_below="@id/music_player_album_art"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="16dp" />
-    
-    <za.jamie.soundstage.widgets.DurationTextView
-        android:id="@+id/totalTime"
-        style="@style/MusicPlayerDurationText"
-        android:layout_below="@id/music_player_album_art"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="8dp"
-        android:layout_marginTop="16dp" />
-    
-    <SeekBar
-        android:id="@+id/seek_bar"
-        style="@style/SeekBarHoloDarkBlue"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/music_player_album_art"
-        android:layout_alignParentLeft="true"
-        android:max="1000"
-        android:layout_marginTop="-8dp"
-        android:paddingLeft="0dp"
-        android:paddingRight="0dp" />
-    
-    <ImageButton
-        android:id="@+id/action_button_shuffle"
-        style="@style/TransparentImageButton"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_below="@id/elapsedTime"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="8dp"
-        android:src="@drawable/btn_shuffle" />
-    
-    <ImageButton
-        android:id="@+id/action_button_repeat"
-        style="@style/TransparentImageButton"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_below="@id/totalTime"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="8dp"
-        android:src="@drawable/btn_repeat" />
-    
-    <LinearLayout
-        android:id="@+id/music_player_info_holder"
+
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/action_button_shuffle"
-        android:layout_above="@+id/music_player_action_holder"
-        android:layout_alignParentLeft="true"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
-        android:gravity="center"
-        android:orientation="vertical" >
+        android:background="@color/blackish"
+        android:layout_below="@+id/music_player_album_art">
 
-        <TextView
-            android:id="@+id/music_player_track_name"
-            android:gravity="center"
-            style="@style/MusicPlayerTitleText" />
+        <za.jamie.soundstage.widgets.DurationTextView
+            android:id="@+id/elapsedTime"
+            style="@style/MusicPlayerDurationText"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="16dp" />
 
-        <TextView
-            android:id="@+id/music_player_album_name"
-            style="@style/MusicPlayerSubtitleText"
-            android:background="@drawable/button_white_highlight" />
+        <za.jamie.soundstage.widgets.DurationTextView
+            android:id="@+id/totalTime"
+            style="@style/MusicPlayerDurationText"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="16dp" />
 
-        <TextView
-            android:id="@+id/music_player_artist_name"
-            style="@style/MusicPlayerSubtitleText"
-            android:background="@drawable/button_white_highlight" />
-    </LinearLayout>
-    
-    <LinearLayout
-        android:id="@+id/music_player_action_holder"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:divider="?android:listDivider"
-        android:dividerPadding="12dp"
-        android:gravity="center_vertical"
-        android:showDividers="middle" >
-        
-        <za.jamie.soundstage.widgets.RepeatingImageButton
-            android:id="@+id/action_button_previous"
-            style="@style/TransparentImageButton"
-            android:background="@drawable/button_white_highlight"
-            android:src="@drawable/btn_playback_previous" />
-        
+        <SeekBar
+            android:id="@+id/seek_bar"
+            style="@style/SeekBarHoloDarkBlue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:max="1000"
+            android:layout_marginTop="-8dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp" />
+
         <ImageButton
-            android:id="@+id/action_button_play"
+            android:id="@+id/action_button_shuffle"
             style="@style/TransparentImageButton"
-            android:background="@drawable/button_white_highlight"
-            android:src="@drawable/btn_playback_play" />
-        
-        <za.jamie.soundstage.widgets.RepeatingImageButton
-            android:id="@+id/action_button_next"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_below="@id/elapsedTime"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="8dp"
+            android:src="@drawable/btn_shuffle" />
+
+        <ImageButton
+            android:id="@+id/action_button_repeat"
             style="@style/TransparentImageButton"
-            android:background="@drawable/button_white_highlight"
-            android:src="@drawable/btn_playback_next" />
-           
-    </LinearLayout>
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_below="@id/totalTime"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="8dp"
+            android:src="@drawable/btn_repeat" />
+
+        <LinearLayout
+            android:id="@+id/music_player_info_holder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/action_button_shuffle"
+            android:layout_above="@+id/music_player_action_holder"
+            android:layout_alignParentLeft="true"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:gravity="center"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/music_player_track_name"
+                android:gravity="center"
+                style="@style/MusicPlayerTitleText" />
+
+            <TextView
+                android:id="@+id/music_player_album_name"
+                style="@style/MusicPlayerSubtitleText"
+                android:background="@drawable/button_white_highlight" />
+
+            <TextView
+                android:id="@+id/music_player_artist_name"
+                style="@style/MusicPlayerSubtitleText"
+                android:background="@drawable/button_white_highlight" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/music_player_action_holder"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal"
+            android:divider="?android:listDivider"
+            android:dividerPadding="12dp"
+            android:gravity="center_vertical"
+            android:showDividers="middle" >
+
+            <za.jamie.soundstage.widgets.RepeatingImageButton
+                android:id="@+id/action_button_previous"
+                style="@style/TransparentImageButton"
+                android:background="@drawable/button_white_highlight"
+                android:src="@drawable/btn_playback_previous" />
+
+            <ImageButton
+                android:id="@+id/action_button_play"
+                style="@style/TransparentImageButton"
+                android:background="@drawable/button_white_highlight"
+                android:src="@drawable/btn_playback_play" />
+
+            <za.jamie.soundstage.widgets.RepeatingImageButton
+                android:id="@+id/action_button_next"
+                style="@style/TransparentImageButton"
+                android:background="@drawable/button_white_highlight"
+                android:src="@drawable/btn_playback_next" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>
