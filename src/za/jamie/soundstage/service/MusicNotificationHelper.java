@@ -1,7 +1,5 @@
 package za.jamie.soundstage.service;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.models.Track;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -15,6 +13,9 @@ import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso.LoadedFrom;
 import com.squareup.picasso.Target;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.models.Track;
 
 public class MusicNotificationHelper implements Target {
 	
@@ -38,7 +39,7 @@ public class MusicNotificationHelper implements Target {
 	
 	private Notification buildNotification(Context context, PendingIntent intent) {
 		Notification notification = new Notification.Builder(context)
-				.setSmallIcon(R.drawable.stat_notify_music)
+				.setSmallIcon(R.drawable.ic_stat_play)
 				.setContentIntent(intent)
 				.setPriority(Notification.PRIORITY_DEFAULT)
 				.setContent(mBaseView)
@@ -61,7 +62,9 @@ public class MusicNotificationHelper implements Target {
 	}
 	
 	public void updatePlayState(boolean isPlaying) {
-		int playButtonDrawable = isPlaying ?
+		int icon = isPlaying ? R.drawable.ic_stat_play : R.drawable.ic_stat_pause;
+        mNotification.icon = icon;
+        int playButtonDrawable = isPlaying ?
 				R.drawable.btn_playback_pause : R.drawable.btn_playback_play;
 	    mBaseView.setImageViewResource(R.id.notification_base_play, playButtonDrawable);
 	    mExpandedView.setImageViewResource(R.id.notification_expanded_play, playButtonDrawable);

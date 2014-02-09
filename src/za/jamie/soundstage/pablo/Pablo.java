@@ -38,6 +38,7 @@ public class Pablo {
 		Picasso.Builder builder = new Picasso.Builder(context);
 		builder.downloader(new LastfmDownloader(context))
 			.memoryCache(new LruCache(calculateMemoryCacheSize(context, CACHE_PORTION)))
+            .requestTransformer(new SizeRequestTransformer())
 			.diskCache(new DiskCache(context));
 		return builder.build();
 	}
@@ -46,6 +47,7 @@ public class Pablo {
 		Picasso.Builder builder = new Picasso.Builder(context);
 		builder.downloader(new LastfmDownloader(context))
 			.executor(getSingleThreadExecutor())
+            .requestTransformer(new SizeRequestTransformer())
 			.memoryCache(new LruCache(calculateMemoryCacheSize(context, SERVICE_CACHE_PORTION)))
 			.diskCache(new DiskCache(context));
 		return builder.build();

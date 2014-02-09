@@ -4,8 +4,9 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.LastfmUtils;
 import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.Context;
 import android.content.res.Resources;
@@ -62,7 +63,8 @@ public class ArtistsAdapter extends LibraryAdapter {
 		numAlbumsText.setText(TextUtils.getNumAlbumsText(res, cursor.getInt(mNumAlbumsIdx)));
 		numTracksText.setText(TextUtils.getNumTracksText(res, cursor.getInt(mNumTracksIdx)));
 		
-		Uri uri = LastfmUris.getArtistInfoUri(artist);
+		long id = cursor.getLong(mArtistIdColIdx);
+        Uri uri = SoundstageUris.artistImage(id, artist);
 		Pablo.with(mContext)
 			.load(uri)
 			.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
@@ -71,7 +73,7 @@ public class ArtistsAdapter extends LibraryAdapter {
 			.into(artistImage);
 		
 		if (mFlipHelper != null) {
-			MusicItem item = new MusicItem(cursor.getLong(mArtistIdColIdx), artist, MusicItem.TYPE_ARTIST);
+			MusicItem item = new MusicItem(id, artist, MusicItem.TYPE_ARTIST);
 			mFlipHelper.bindFlippedViewButtons(view, item);
 		}
 	}

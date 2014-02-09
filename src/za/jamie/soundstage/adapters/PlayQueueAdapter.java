@@ -1,15 +1,16 @@
 package za.jamie.soundstage.adapters;
 
-import java.util.List;
-
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.ResourceArrayAdapter;
-import za.jamie.soundstage.models.Track;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import java.util.List;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.adapters.abs.ResourceArrayAdapter;
+import za.jamie.soundstage.models.Track;
 
 public class PlayQueueAdapter extends ResourceArrayAdapter<Track> {
 
@@ -41,6 +42,7 @@ public class PlayQueueAdapter extends ResourceArrayAdapter<Track> {
 	
 	public void setQueuePosition(int position) {
 		mQueuePosition = position;
+        notifyDataSetChanged();
 	}
 	
 	public int getQueuePosition() {

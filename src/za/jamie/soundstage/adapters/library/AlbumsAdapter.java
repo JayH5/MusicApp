@@ -1,14 +1,7 @@
 package za.jamie.soundstage.adapters.library;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.LibraryAdapter;
-import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
-import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.pablo.AlbumGridGradient;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.utils.TextUtils;
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -18,6 +11,16 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.adapters.abs.LibraryAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.models.MusicItem;
+import za.jamie.soundstage.pablo.AlbumGridGradient;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
+import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.utils.TextUtils;
 
 public class AlbumsAdapter extends LibraryAdapter {
 
@@ -30,6 +33,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 	
 	private int mNumColumns;
     private int mHeaderHeight;
+    private int mImageSize;
     private int mItemHeight;
 	private GridView.LayoutParams mItemLayoutParams;
 	
@@ -41,8 +45,18 @@ public class AlbumsAdapter extends LibraryAdapter {
 		mContext = context;
 		mItemLayoutParams = new GridView.LayoutParams(
 				LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-        mHeaderHeight = mContext.getResources().getDimensionPixelSize(R.dimen.spacer_album_grid);
+
+        Resources res = mContext.getResources();
+        mHeaderHeight = res.getDimensionPixelSize(R.dimen.spacer_album_grid);
+        mImageSize = calculateImageSize(res);
 	}
+
+    private int calculateImageSize(Resources res) {
+        return (int) ((AppUtils.smallestScreenWidth(res)
+                - res.getDimensionPixelOffset(R.dimen.list_padding_default)
+                - res.getDimensionPixelOffset(R.dimen.list_padding_fastscroll)) / 2.0f)
+                - res.getDimensionPixelOffset(R.dimen.grid_spacing);
+    }
 	
 	public void setFlippingViewHelper(FlippingViewHelper helper) {
 		mFlipHelper = helper;
@@ -76,16 +90,16 @@ public class AlbumsAdapter extends LibraryAdapter {
 		artistText.setText(artist);
 
 		long id = cursor.getLong(mIdColIdx);
-		Uri uri = LastfmUris.getAlbumInfoUri(album, artist, id);
+		Uri uri = SoundstageUris.albumImage(id, album, artist);
 
         if (mItemHeight > 0) {
             if (mGradient == null) {
-                mGradient = new AlbumGridGradient(mContext.getResources(), mItemHeight, mItemHeight);
+                mGradient = new AlbumGridGradient(mContext.getResources(), mImageSize, mImageSize);
             }
 
             Pablo.with(mContext)
                     .load(uri)
-                    .fit()
+                    .resize(mImageSize, mImageSize)
                     .centerCrop()
                     .transform(mGradient)
                     .placeholder(R.drawable.placeholder_grey)

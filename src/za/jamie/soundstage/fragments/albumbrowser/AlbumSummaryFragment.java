@@ -1,13 +1,5 @@
 package za.jamie.soundstage.fragments.albumbrowser;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.AlbumBrowserActivity;
-import za.jamie.soundstage.fragments.ImageDialogFragment;
-import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.utils.TextUtils;
 import android.app.Fragment;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -18,6 +10,16 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.AlbumBrowserActivity;
+import za.jamie.soundstage.fragments.ImageDialogFragment;
+import za.jamie.soundstage.models.AlbumStatistics;
+import za.jamie.soundstage.pablo.LastfmUtils;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
+import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.utils.TextUtils;
 
 public class AlbumSummaryFragment extends Fragment {
 	
@@ -37,12 +39,12 @@ public class AlbumSummaryFragment extends Fragment {
 			TextView duration = (TextView) v.findViewById(R.id.albumDuration);
 			TextView year = (TextView) v.findViewById(R.id.albumYear);
 			
-			final Uri uri = LastfmUris.getAlbumInfoUri(stats.title,
-					stats.artists.firstKey().getTitle(), stats.id);
+			final Uri uri = SoundstageUris.albumImage(stats);
 			Pablo.with(getActivity())
 				.load(uri)
 				.resizeDimen(R.dimen.image_thumb_album, R.dimen.image_thumb_album)
 				.centerCrop()
+                .placeholder(R.drawable.placeholder_grey)
 				.into(art);
 			
 			art.setOnClickListener(new View.OnClickListener() {				

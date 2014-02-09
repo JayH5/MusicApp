@@ -223,6 +223,10 @@ public abstract class ArrayAdapter<T> extends BaseAdapter implements Filterable 
 		return mObjects.size();
 	}
 
+    public List<T> getObjects() {
+        return mObjects;
+    }
+
 	@Override
 	public T getItem(int position) {
 		return mObjects.get(position);

@@ -1,8 +1,8 @@
 package za.jamie.soundstage.fragments;
 
-import android.app.Activity;
 import android.app.LoaderManager;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -10,30 +10,27 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.text.TextUtils;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ListView;
-import android.widget.SearchView;
-import android.widget.TextView;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.SearchAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.models.MusicItem;
 
 /**
  * Created by jamie on 2014/01/12.
  */
 public class SearchFragment extends MusicListFragment implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>, SearchAdapter.OnScrollRequestListener {
 
     private static final String EXTRA_QUERY = "extra_query";
 
     private SearchAdapter mAdapter;
     private String mFilterString;
-
-    private TextView mHeaderView;
+    private FlippingViewHelper mFlipHelper;
 
     public static SearchFragment newInstance(String query) {
         Bundle args = new Bundle();
@@ -47,29 +44,21 @@ public class SearchFragment extends MusicListFragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mAdapter = new SearchAdapter(getActivity());
+        mAdapter = new SearchAdapter(getActivity(), null);
+        mAdapter.setOnScrollRequestListener(this);
+
+        ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
+        mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
+        mAdapter.setFlippingViewHelper(mFlipHelper);
+        setListAdapter(mAdapter);
+
         mFilterString = getArguments().getString(EXTRA_QUERY);
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString(EXTRA_QUERY, mFilterString);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
-        mHeaderView = (TextView) inflater.inflate(R.layout.list_item_header, null, false);
-        return inflater.inflate(R.layout.list_fragment_search, parent, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        setListAdapter(null);
-        final ListView lv = getListView();
-        lv.addHeaderView(mHeaderView);
-        setListAdapter(mAdapter);
+        mFlipHelper.initFlipper(getListView());
     }
 
     @Override
@@ -95,12 +84,7 @@ public class SearchFragment extends MusicListFragment implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        updateHeaderView(data != null ? data.getCount() : 0);
         mAdapter.swapCursor(data);
-    }
-
-    private void updateHeaderView(int count) {
-        mHeaderView.setText(count + " RESULTS");
     }
 
     @Override
@@ -110,7 +94,7 @@ public class SearchFragment extends MusicListFragment implements
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        String mimeType = mAdapter.getItemMimeType(position - 1);
+        String mimeType = mAdapter.getItemMimeType(position);
         if("artist".equals(mimeType)) {
             launchArtistBrowser(id);
         } else if ("album".equals(mimeType)) {
@@ -137,7 +121,14 @@ public class SearchFragment extends MusicListFragment implements
     private void playTrack(long trackId) {
         MusicItem track = new MusicItem(trackId, "", MusicItem.TYPE_TRACK);
         getMusicConnection().open(track, 0);
+        hideKeyboard();
         showPlayer();
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm =
+                (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(), 0);
     }
 
     public void setFilterString(String filter) {
@@ -145,4 +136,8 @@ public class SearchFragment extends MusicListFragment implements
         getLoaderManager().restartLoader(0, null, this);
     }
 
+    @Override
+    public void scrollToPosition(int position) {
+        getListView().smoothScrollToPositionFromTop(position, 0);
+    }
 }

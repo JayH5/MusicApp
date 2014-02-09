@@ -1,16 +1,8 @@
 package za.jamie.soundstage.fragments.albumbrowser;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.adapters.albumbrowser.AlbumTrackListAdapter;
-import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
-import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.TrackListFragment;
-import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.musicstore.CursorManager;
-import za.jamie.soundstage.musicstore.MusicStore;
-import za.jamie.soundstage.utils.AppUtils;
 import android.app.Activity;
+import android.app.LoaderManager;
+import android.content.Loader;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.os.Bundle;
@@ -20,7 +12,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-public class AlbumTrackListFragment extends TrackListFragment {
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.albumbrowser.AlbumTrackListAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
+import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.models.AlbumStatistics;
+import za.jamie.soundstage.providers.MusicLoaders;
+import za.jamie.soundstage.utils.AppUtils;
+
+public class AlbumTrackListFragment extends TrackListFragment implements
+        LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String EXTRA_ALBUM_ID = "extra_album_id";
 	
@@ -63,17 +66,15 @@ public class AlbumTrackListFragment extends TrackListFragment {
 			}
 		});
 		
-		ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
-		mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
+		ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
+		mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
 		mAdapter.setFlippingViewHelper(mFlipHelper);
 	}
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-				MusicStore.Tracks.getAlbumTracks(mAlbumId));		
-		getLoaderManager().initLoader(0, null, cm);
+		getLoaderManager().initLoader(0, null, this);
 	}
 	
 	@Override
@@ -142,6 +143,21 @@ public class AlbumTrackListFragment extends TrackListFragment {
 		}
 		return null;
 	}
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return MusicLoaders.albumSongs(getActivity(), mAlbumId);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        mAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        mAdapter.swapCursor(null);
+    }
+
 	
 	/**
 	 * Interface for delivery of collected album statistics. The Activity that adds this fragment

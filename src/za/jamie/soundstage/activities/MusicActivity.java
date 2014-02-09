@@ -22,6 +22,7 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SearchView;
@@ -39,8 +40,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
-
-    private SearchView mSearchView;
 
     private boolean mDestroyed = false;
     private boolean mStartedButNotRegistered = false;
@@ -193,30 +192,8 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
     	getMenuInflater().inflate(R.menu.search, menu);
-    	
-    	SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        mSearchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
-        mSearchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String s) {
-                Intent intent = new Intent(MusicActivity.this, SearchActivity.class);
-                intent.putExtra(SearchManager.QUERY, s);
-                startActivity(intent);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String s) {
-                return false;
-            }
-        });
-        
+        menu.findItem(R.id.menu_search).setIntent(new Intent(this, SearchActivity.class));
         return true;
-    }
-
-    protected SearchView getSearchView() {
-        return mSearchView;
     }
 
 	@Override

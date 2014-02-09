@@ -6,9 +6,6 @@ import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,13 +18,10 @@ import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.provider.MediaStore;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,8 +34,10 @@ import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.appwidgets.AppWidgetHelper;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
+import za.jamie.soundstage.providers.MusicItemStore;
+import za.jamie.soundstage.utils.AppUtils;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
@@ -50,35 +46,16 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	private static final String TAG = "MusicService";
 	
 	// Intent actions for external control
-	public static final String ACTION_TOGGLE_PLAYBACK = 
+	public static final String ACTION_TOGGLE_PLAYBACK =
 			"za.jamie.soundstage.action.TOGGLE_PLAYBACK";
     public static final String ACTION_PLAY = "za.jamie.soundstage.action.PLAY";
-    public static final String ACTION_PAUSE = 
-    		"za.jamie.soundstage.action.PAUSE";
+    public static final String ACTION_PAUSE = "za.jamie.soundstage.action.PAUSE";
     public static final String ACTION_STOP = "za.jamie.soundstage.action.STOP";
     public static final String ACTION_NEXT = "za.jamie.soundstage.action.NEXT";
     public static final String ACTION_PREVIOUS = "za.jamie.soundstage.action.PREVIOUS";
     public static final String ACTION_REPEAT = "za.jamie.soundstage.action.REPEAT";
     public static final String ACTION_SHUFFLE = "za.jamie.soundstage.action.SHUFFLE";
     public static final String ACTION_UPDATE_WIDGETS = "za.jamie.soundstage.action.UPDATE_WIDGETS";
-    
-    private static final Uri URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-    private static final String[] PROJECTION = new String[] {
-    	MediaStore.Audio.Media._ID,
-    	MediaStore.Audio.Media.TITLE,
-    	MediaStore.Audio.Media.ARTIST_ID,
-    	MediaStore.Audio.Media.ARTIST,
-    	MediaStore.Audio.Media.ALBUM_ID,
-    	MediaStore.Audio.Media.ALBUM,
-    	MediaStore.Audio.Media.DURATION
-    };
-    
-    private static final String ALBUM_SELECTION = MediaStore.Audio.Media.ALBUM_ID + "=?";
-    private static final String ARTIST_SELECTION = MediaStore.Audio.Media.ARTIST_ID + "=?";
-    
-    private static final String ARTIST_SORT_ORDER = MediaStore.Audio.Media.TITLE_KEY;
-    private static final String ALBUM_SORT_ORDER = MediaStore.Audio.Media.TRACK;
-    private static final String PLAYLIST_SORT_ORDER = MediaStore.Audio.Playlists.Members.PLAY_ORDER;
 
     // Repeat modes
     public static final int REPEAT_NONE = 0;
@@ -97,6 +74,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private static final String PREF_CARD_ID = "cardid";
     private static final String PREF_SEEK_POSITION = "seekpos";
     private static final String PREF_REPEAT_MODE = "repeatmode";
+
+    private int mLastQueuedPosition = -1;
+    private MusicItem mLastQueuedItem;
 
     // State information
     private boolean mIsBound = false;
@@ -223,7 +203,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         filter.addAction(ACTION_PREVIOUS);
         filter.addAction(ACTION_REPEAT);
         filter.addAction(ACTION_SHUFFLE);
-        registerReceiver(mIntentReceiver, filter);
+        registerReceiver(mActionReceiver, filter);
     }
 
     private void registerUnmountReceiver() {
@@ -235,8 +215,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     private void registerNoisyReceiver() {
-    	final IntentFilter filter = new IntentFilter();
-    	filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+    	final IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     	registerReceiver(mNoisyReceiver, filter);
     }
 
@@ -282,7 +261,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         mPlayQueueCallbackList.kill();
 
         // Unregister the broadcast receivers
-        unregisterReceiver(mIntentReceiver);
+        unregisterReceiver(mActionReceiver);
         unregisterReceiver(mUnmountReceiver);
         unregisterReceiver(mNoisyReceiver);
 
@@ -329,7 +308,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
                 return START_NOT_STICKY;
             }
         	
-            mIntentReceiver.onReceive(this, intent);
+            mActionReceiver.onReceive(this, intent);
         }
 
         // Make sure the service will shut down on its own if it was
@@ -626,7 +605,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			mMusicPlayerCallbackList.getBroadcastItem(i)
 	    					.onRepeatModeChanged(repeatMode);
 	    		} catch (RemoteException e) {
-	    			Log.w(TAG, "notifyRepeatModeChanged()", e);
+	    			Log.w(TAG, "onRepeatModeChanged()", e);
 	    		}
 	    	}
 	    	mMusicPlayerCallbackList.finishBroadcast();
@@ -982,7 +961,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
 
     public synchronized void open(MusicItem item, int position) {
-        open(fetchMusicItem(item), position);
+        List<Track> tracks = MusicItemStore.fetchMusicItem(getContentResolver(), item);
+        open(tracks, position);
     }
     
     /**
@@ -1000,8 +980,17 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final int playPosition = mPlayQueue.getPosition();
     	switch(action) {
     	case NEXT:
-    		if (!isShuffleEnabled() && playPosition + 1 < mPlayQueue.size()) {
-    			mPlayQueue.addAll(playPosition + 1, list);
+            int insertPosition;
+            if (mLastQueuedPosition > -1 && playPosition < mLastQueuedPosition) {
+                insertPosition = mLastQueuedPosition;
+            } else {
+                insertPosition = playPosition + 1;
+            }
+            mLastQueuedPosition = insertPosition + list.size();
+            Log.d(TAG, "insertPosition = " + insertPosition);
+            Log.d(TAG, "Current position = " + playPosition);
+    		if (!isShuffleEnabled() && insertPosition < mPlayQueue.size()) {
+    			mPlayQueue.addAll(insertPosition, list);
     		} else {
     			mPlayQueue.addAll(list);
     		}
@@ -1032,61 +1021,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     public synchronized void enqueue(MusicItem item, int action) {
-    	enqueue(fetchMusicItem(item), action);
+        List<Track> tracks = MusicItemStore.fetchMusicItem(getContentResolver(), item);
+    	enqueue(tracks, action);
     }
 
-    private List<Track> fetchMusicItem(MusicItem item) {
-        Uri uri = null;
-        String selection = null;
-        String[] selectionArgs = null;
-        String sortOrder = null;
-        PROJECTION[0] = MediaStore.Audio.Media._ID;
-        switch (item.getType()) {
-            case MusicItem.TYPE_TRACK:
-                uri = ContentUris.withAppendedId(URI, item.getId());
-                break;
-            case MusicItem.TYPE_ARTIST:
-                uri = URI;
-                selection = ARTIST_SELECTION;
-                selectionArgs = new String[] { String.valueOf(item.getId()) };
-                sortOrder = ARTIST_SORT_ORDER;
-                break;
-            case MusicItem.TYPE_ALBUM:
-                uri = URI;
-                selection = ALBUM_SELECTION;
-                selectionArgs = new String[] { String.valueOf(item.getId()) };
-                sortOrder = ALBUM_SORT_ORDER;
-                break;
-            case MusicItem.TYPE_PLAYLIST:
-                uri = MediaStore.Audio.Playlists.Members.getContentUri("external", item.getId());
-                PROJECTION[0] = MediaStore.Audio.Playlists.Members.AUDIO_ID;
-                sortOrder = PLAYLIST_SORT_ORDER;
-                break;
-        }
-        final Cursor cursor =
-                getContentResolver().query(uri, PROJECTION, selection, selectionArgs, sortOrder);
 
-        return buildTrackList(cursor);
-    }
     
-    private static List<Track> buildTrackList(Cursor cursor) {
-    	List<Track> trackList = null;
-    	if (cursor.moveToFirst()) {
-    		trackList = new ArrayList<Track>();
-    		do {
-    			trackList.add(new Track(
-    					cursor.getLong(0), // Track id
-    					cursor.getString(1), // Title
-    					cursor.getLong(2), // Artist id
-    					cursor.getString(3), // Artist
-    					cursor.getLong(4), // Album id
-    					cursor.getString(5), // Album
-    					cursor.getLong(6))); // Duration
-    		} while (cursor.moveToNext());
-    	}
-    	cursor.close();
-    	return trackList;
-    }
+
 
      /**
      * Sets the position of a track in the queue
@@ -1127,56 +1068,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
    		}
         onQueueChanged();
     }
-    
-    public synchronized void savePlayQueueAsPlaylist(String playlistName) {
-    	if (!TextUtils.isEmpty(playlistName)) {
-    		final ContentResolver resolver = getContentResolver();
-    		final Uri playlistsUri = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI;
-    		
-    		// First check if a playlist of the same name already exists
-    		final Cursor cursor = resolver.query(
-    				playlistsUri, // Uri
-    				new String[] { MediaStore.Audio.Playlists.NAME }, // Projection
-    				MediaStore.Audio.Playlists.NAME + "=?", // Selection
-    				new String[] { playlistName }, // Selection args
-    				null); // Sort order
-
-            int count = cursor.getCount();
-            cursor.close();
-    		
-    		// Create the new playlist
-            long playlistId = 0;
-    		if (count == 0) {
-    			ContentValues values = new ContentValues(1);
-    			values.put(MediaStore.Audio.Playlists.NAME, playlistName);
-    			Uri uri = resolver.insert(playlistsUri, values);
-                Log.d(TAG, "Playlist created with uri: " + uri);
-    			playlistId = Long.parseLong(uri.getLastPathSegment());
-            } else {
-                Intent intent = new Intent("za.jamie.soundstage.TOAST");
-                intent.putExtra("extra_toast", "Playlist '" + playlistName + "' already exists.");
-                sendBroadcast(intent);
-            }
-
-    		if (playlistId > 0) {
-    			Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
-    			List<Track> tracks = mPlayQueue.getPlayQueue();
-    			final int len = tracks.size();
-    			ContentValues[] values = new ContentValues[len];
-    			for (int i = 0; i < len; i++) {
-    				Track track = tracks.get(i);
-                    values[i] = new ContentValues(2);
-                    values[i].put(MediaStore.Audio.Playlists.Members.AUDIO_ID, track.getId());
-                    values[i].put(MediaStore.Audio.Playlists.Members.PLAY_ORDER, i + 1);
-    			}
-    			resolver.bulkInsert(uri, values);
-
-                Intent intent = new Intent("za.jamie.soundstage.TOAST");
-                intent.putExtra("extra_toast", "Playlist '" + playlistName + "' created.");
-                sendBroadcast(intent);
-    		}
-    	}
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update notification/lock screen controls
@@ -1211,7 +1102,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	mNotificationHelper.updateMetaData(currentTrack);
     	mNotificationHelper.updatePlayState(isPlaying());
     	
-    	Uri albumArtUri = LastfmUris.getAlbumInfoUri(currentTrack);
+    	Uri albumArtUri = SoundstageUris.albumImage(currentTrack);
     	final int notificationDimen = R.dimen.notification_expanded_height;
     	Pablo.with(this)
     		.load(albumArtUri)
@@ -1241,23 +1132,12 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         }
     }
     
-    /**
-     * Workaround for Android weirdness when headphones unplugged
-     */
-    /*private void resetRCC() {
-    	mAudioManager.unregisterRemoteControlClient(mRemoteControlClient);
-    	mRemoteControlClient = createRemoteControlClient(mMediaButtonReceiverComponent);
-    	mAudioManager.registerRemoteControlClient(mRemoteControlClient);
-    	updateRCCPlayState(isPlaying());
-    	updateRCCMetaData(getCurrentTrack());
-    }*/
-    
     private void updateAlbumArt(Track track) {
     	if (mLastAlbumId == track.getAlbumId()) {
     		return;
     	}
     	
-    	Uri uri = LastfmUris.getAlbumInfoUri(track);
+    	Uri uri = SoundstageUris.albumImage(track);
     	Picasso pablo = Pablo.with(this);
     	if (mShowNotification) {
     		final int notificationDimen = R.dimen.notification_expanded_height;
@@ -1266,14 +1146,14 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     			.centerCrop()
     			.into(mNotificationHelper);
     	}
-    	final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int size = AppUtils.smallestScreenWidth(getResources());
     	pablo.load(uri)
-    		.resize(screenWidth, screenWidth)
+    		.resize(size, size)
     		.centerCrop()
     		.into(mRemoteControlClient);
     	
     	pablo.load(uri)
-    		.resize(screenWidth, screenWidth)
+    		.resize(size, size)
     		.centerCrop()
     		.into(mAppWidgetHelper);
     	
@@ -1281,13 +1161,15 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     private void updateWidgets(int appWidgetId) {
-    	mAppWidgetHelper.update(getCurrentTrack(), isPlaying(), isShuffleEnabled(), getRepeatMode(),
-    			appWidgetId);
-    	
-    	final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+    	Track track = getCurrentTrack();
+        mAppWidgetHelper.update(track, isPlaying(), isShuffleEnabled(), getRepeatMode(),
+                appWidgetId);
+
+        int size = AppUtils.smallestScreenWidth(getResources());
+        Uri uri = SoundstageUris.albumImage(track);
     	Pablo.with(this)
-    		.load(LastfmUris.getAlbumInfoUri(getCurrentTrack()))
-    		.resize(screenWidth, screenWidth)
+    		.load(uri)
+    		.resize(size, size)
     		.centerCrop()
     		.into(mAppWidgetHelper);
     }
@@ -1354,7 +1236,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Broadcast receivers
 
-    private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver mActionReceiver = new BroadcastReceiver() {
 
     	@Override
         public void onReceive(final Context context, final Intent intent) {
@@ -1406,7 +1288,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 			final String action = intent.getAction();
 			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
 				pause();
-				//resetRCC();
 			}
 		}    	
     };

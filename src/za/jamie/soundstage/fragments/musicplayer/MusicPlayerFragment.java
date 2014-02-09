@@ -1,9 +1,12 @@
 package za.jamie.soundstage.fragments.musicplayer;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.animation.ObjectAnimator;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +16,7 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -22,14 +26,17 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Callback;
 
+import java.lang.ref.WeakReference;
+
 import za.jamie.soundstage.IMusicPlayerCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.pablo.LastfmUris;
 import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 
@@ -69,11 +76,14 @@ public class MusicPlayerFragment extends MusicFragment {
 	// Seek bar
 	private long mSeekStartPosition = 0;
     private ObjectAnimator mSeekBarAnimator;
+    private Animator mBigSeekAnimator;
     
     private boolean mIsPlaying = false;
 	
 	private long mTimeSync;
 	private long mTimeSyncStamp;
+
+    private int mImageSize;
 	
 	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
 			new MusicConnection.ConnectionCallbacks() {
@@ -96,6 +106,10 @@ public class MusicPlayerFragment extends MusicFragment {
 		
 		// Register connection observer
 		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
+
+        Resources res = getResources();
+        mImageSize = AppUtils.smallestScreenWidth(res)
+                - res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
 	}
 	
 	@Override
@@ -170,7 +184,35 @@ public class MusicPlayerFragment extends MusicFragment {
         mBigElapsedTime = (DurationTextView) v.findViewById(R.id.big_elapsed_time);
         mBigTotalTime = (DurationTextView) v.findViewById(R.id.big_total_time);
 
+        mBigSeekAnimator = AnimatorInflater.loadAnimator(getActivity(), R.animator.fade_in_big_seek);
+        mBigSeekAnimator.setTarget(mSeekInfoHolder);
+
+        // Make the track title single line if there isn't room for 2 lines
+        if (AppUtils.isPortrait(getResources())) {
+            ensureInfoHolderHasSpace(v);
+        }
+
         return v;
+    }
+
+    private void ensureInfoHolderHasSpace(View root) {
+        final View infoHolder = root.findViewById(R.id.music_player_info_holder);
+        infoHolder.getViewTreeObserver().addOnPreDrawListener(
+                new ViewTreeObserver.OnPreDrawListener() {
+                    @Override
+                    public boolean onPreDraw() {
+                        int measuredWidth = infoHolder.getMeasuredWidth();
+                        int measuredHeight = infoHolder.getMeasuredHeight();
+                        if (measuredWidth > 0 && measuredHeight > 0) {
+                            if (measuredHeight < getResources()
+                                    .getDimensionPixelSize(R.dimen.music_player_min_info_holder_height)) {
+                                mTrackText.setSingleLine();
+                            }
+                            infoHolder.getViewTreeObserver().removeOnPreDrawListener(this);
+                        }
+                        return true;
+                    }
+                });
     }
 	
 	/*
@@ -200,9 +242,7 @@ public class MusicPlayerFragment extends MusicFragment {
             beginSeek();
             mBigElapsedTime.setDuration(calculatePosition());
             mBigTotalTime.setDuration(mDuration);
-            ObjectAnimator.ofFloat(mSeekInfoHolder, "alpha", 0.0f, 1.0f)
-            	.setDuration(150)
-            	.start();
+            mBigSeekAnimator.start();
         }
 
         @Override
@@ -210,7 +250,7 @@ public class MusicPlayerFragment extends MusicFragment {
             if (!fromuser) {
                 return;
             }
-            final long seekPosition = (long) (mDuration * ((float) progress / 1000));
+            final long seekPosition = (long) (mDuration * (progress / 1000.0f));
             mBigElapsedTime.setDuration(seekPosition);
             seek(seekPosition);
         }
@@ -218,9 +258,14 @@ public class MusicPlayerFragment extends MusicFragment {
         @Override
         public void onStopTrackingTouch(SeekBar bar) {
             endSeek();
-            ObjectAnimator.ofFloat(mSeekInfoHolder, "alpha", 1.0f, 0.0f)
-					.setDuration(150)
-					.start();
+            mBigSeekAnimator.cancel();
+            float alpha = mSeekInfoHolder.getAlpha();
+            if (alpha > 0.0f) {
+                float fadeIn = alpha / 1.0f;
+                ObjectAnimator.ofFloat(mSeekInfoHolder, "alpha", fadeIn, 0.0f)
+                        .setDuration((int) (150 * fadeIn))
+                        .start();
+            }
         }
     };
 	
@@ -270,22 +315,13 @@ public class MusicPlayerFragment extends MusicFragment {
 			mArtistText.setText(track.getArtist());
 			mArtistText.setTag(track.getArtistId());
 			
-			final Uri uri = LastfmUris.getAlbumInfoUri(track.getAlbum(), track.getArtist(),
-					track.getAlbumId());
+			final Uri uri = SoundstageUris.albumImage(track);
 			Pablo.with(getActivity())
-				.load(uri)
-				.placeholder(mAlbumArt.getDrawable())
-				.into(mAlbumArt, new Callback() {
-
-					@Override
-					public void onError() {
-						mAlbumArt.setImageBitmap(null);
-					}
-
-					@Override
-					public void onSuccess() { }
-					
-				});
+				    .load(uri)
+                    .resize(mImageSize, mImageSize)
+                    .centerCrop()
+				    .placeholder(mAlbumArt.getDrawable())
+				    .into(mAlbumArt, new ImageCallback(this));
 			
 			updateDuration(track.getDuration());
 		}
@@ -520,5 +556,27 @@ public class MusicPlayerFragment extends MusicFragment {
 			
 		}
 	};
+
+    private static class ImageCallback implements Callback {
+
+        final WeakReference<MusicPlayerFragment> mPlayer;
+
+        ImageCallback(MusicPlayerFragment player) {
+            mPlayer = new WeakReference<MusicPlayerFragment>(player);
+        }
+
+        @Override
+        public void onSuccess() {
+
+        }
+
+        @Override
+        public void onError() {
+            MusicPlayerFragment player = mPlayer.get();
+            if (player != null) {
+                player.mAlbumArt.setImageBitmap(null);
+            }
+        }
+    }
 
 }

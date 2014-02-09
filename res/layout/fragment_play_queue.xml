@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
     <RelativeLayout
         android:id="@+id/play_queue_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
         android:paddingLeft="16dp"
@@ -35,6 +35,16 @@
 	        android:textSize="14sp"
 	        android:textColor="@color/text_color_secondary"
 	        android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/play_queue_error_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/play_queue_is_shuffled"
+            android:textSize="14sp"
+            android:textColor="@color/clock_red"
+            android:visibility="gone"/>
         
         <ImageButton
 	        android:layout_width="wrap_content"
@@ -45,35 +55,51 @@
 	        style="@style/TransparentImageButton"
 	        android:src="@drawable/play_queue_goto2" />
         
-    </RelativeLayout>   
-        
-    <com.mobeta.android.dslv.DragSortListView
-	    xmlns:dslv="http://schemas.android.com/apk/res/za.jamie.soundstage"
-	    android:id="@+id/dslv"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_below="@id/play_queue_header"
-	    android:layout_above="@+id/play_queue_footer"
-	    android:paddingLeft="16dp"
-	    android:paddingRight="16dp"
-	    android:divider="@drawable/list_divider_play_store"
-	    android:dividerHeight="2dp"
-	    android:scrollbarStyle="outsideOverlay"
-	    android:clipToPadding="false"
-	    dslv:drag_enabled="true"
-	    dslv:float_alpha="0.6"
-	    dslv:drag_start_mode="onDown"
-	    dslv:drag_handle_id="@+id/drag_handle"
-	    dslv:remove_enabled="true"
-	    dslv:remove_mode="clickRemove"
-	    dslv:click_remove_id="@+id/remove_button"
-	    dslv:float_background_color="#FFF" />
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/play_queue_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.0">
+
+        <com.mobeta.android.dslv.DragSortListView
+            xmlns:dslv="http://schemas.android.com/apk/res/za.jamie.soundstage"
+            android:id="@+id/dslv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:divider="@drawable/list_divider_play_store"
+            android:dividerHeight="2dp"
+            android:scrollbarStyle="outsideOverlay"
+            android:clipToPadding="false"
+            dslv:drag_enabled="true"
+            dslv:float_alpha="0.6"
+            dslv:drag_start_mode="onDown"
+            dslv:drag_handle_id="@+id/drag_handle"
+            dslv:remove_enabled="true"
+            dslv:remove_mode="clickRemove"
+            dslv:click_remove_id="@+id/remove_button"
+            dslv:float_background_color="#FFF" />
+
+        <EditText
+            android:id="@+id/play_queue_name_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:padding="8dp"
+            android:inputType="textNoSuggestions|textCapWords"
+            android:visibility="gone"/>
+
+    </FrameLayout>
     
     <LinearLayout
         android:id="@+id/play_queue_footer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_weight="0.0"
         android:paddingTop="12dp"
         android:paddingBottom="8dp"
         android:paddingLeft="16dp"
@@ -104,7 +130,7 @@
             android:background="@drawable/btn_blue_solid"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
-            android:text="@string/play_queue_save"
+            android:text="@string/play_queue_save_queue"
             android:textAllCaps="true"
             android:textSize="14sp"
             android:textColor="#FFF"
@@ -112,4 +138,4 @@
         
     </LinearLayout>
     
-</RelativeLayout>
+</LinearLayout>

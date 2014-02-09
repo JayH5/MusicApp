@@ -4,7 +4,9 @@ import za.jamie.soundstage.R;
 import android.annotation.SuppressLint;
 import android.content.res.Resources;
 
-public class TextUtils {
+public final class TextUtils {
+
+    private TextUtils() {}
 	
 	public static String getYearText(int firstYear, int lastYear) {
 		final StringBuilder sb = new StringBuilder();
@@ -51,15 +53,17 @@ public class TextUtils {
 		
 		return durationText;
 	}
+
+    public static String getNumArtistsText(Resources res, int numArtists) {
+        return res.getQuantityString(R.plurals.artists, numArtists, numArtists);
+    }
 	
 	public static String getNumAlbumsText(Resources res, int numAlbums) {
-		return res.getQuantityString(R.plurals.albums, numAlbums, numAlbums)
-				.toUpperCase();
+		return res.getQuantityString(R.plurals.albums, numAlbums, numAlbums);
 	}
 	
 	public static String getNumTracksText(Resources res, int numTracks) {
-		return res.getQuantityString(R.plurals.tracks, numTracks, numTracks)
-				.toUpperCase();
+		return res.getQuantityString(R.plurals.tracks, numTracks, numTracks);
 	}
 	
 	public static String getTrackNumText(int trackNum) {

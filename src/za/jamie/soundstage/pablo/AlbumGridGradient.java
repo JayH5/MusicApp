@@ -38,7 +38,6 @@ public class AlbumGridGradient implements Transformation {
     public Bitmap transform(Bitmap bitmap) {
         final Canvas canvas = new Canvas(bitmap);
         canvas.drawRect(mDrawArea, mPaint);
-
         return bitmap;
     }
 

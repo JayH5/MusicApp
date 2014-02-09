@@ -2,8 +2,11 @@ package za.jamie.soundstage.fragments.library;
 
 import android.app.ActivityOptions;
 import android.app.Fragment;
+import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
@@ -20,10 +23,10 @@ import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.library.AlbumsAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.musicstore.CursorManager;
-import za.jamie.soundstage.musicstore.MusicStore;
+import za.jamie.soundstage.providers.MusicLoaders;
 
-public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener {
+public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickListener,
+        LoaderManager.LoaderCallbacks<Cursor> {
 	
 	public static final String EXTRA_ITEM_ID = "extra_item_id";
 	
@@ -51,7 +54,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
         		R.layout.grid_item_two_line, R.layout.grid_item_header, null, 0);
         mAdapter.setMinSectionSize(5);
         
-        ViewFlipper flipper = new ViewFlipper(R.id.grid_item, R.id.flipped_view);
+        ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.grid_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper); 
         mAdapter.setFlippingViewHelper(mFlipHelper);
     }
@@ -59,9 +62,7 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
-        final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		MusicStore.Albums.REQUEST);
-        getLoaderManager().initLoader(0, null, cm);
+        getLoaderManager().initLoader(0, null, this);
     }
     
     @Override
@@ -115,5 +116,20 @@ public class AlbumsFragment extends Fragment implements AdapterView.OnItemClickL
 				ActivityOptions.makeScaleUpAnimation(v, 0, 0, v.getWidth(), v.getHeight());
 		getActivity().startActivity(intent, options.toBundle());
 	}
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return MusicLoaders.albums(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        mAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        mAdapter.swapCursor(null);
+    }
 
 }

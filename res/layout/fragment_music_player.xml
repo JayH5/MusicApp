@@ -62,17 +62,6 @@
             android:layout_marginRight="8dp"
             android:layout_marginTop="16dp" />
 
-        <SeekBar
-            android:id="@+id/seek_bar"
-            style="@style/SeekBarHoloDarkBlue"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:max="1000"
-            android:layout_marginTop="-8dp"
-            android:paddingLeft="0dp"
-            android:paddingRight="0dp" />
-
         <ImageButton
             android:id="@+id/action_button_shuffle"
             style="@style/TransparentImageButton"
@@ -153,5 +142,16 @@
         </LinearLayout>
 
     </RelativeLayout>
+
+    <SeekBar
+        android:id="@+id/seek_bar"
+        style="@style/SeekBarHoloDarkBlue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/music_player_album_art"
+        android:max="1000"
+        android:layout_marginTop="-8dp"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp" />
 
 </RelativeLayout>

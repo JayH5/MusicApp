@@ -4,8 +4,9 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicCursorAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.pablo.LastfmUris;
+import za.jamie.soundstage.pablo.LastfmUtils;
 import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.utils.TextUtils;
 import android.content.Context;
 import android.content.res.Resources;
@@ -58,7 +59,7 @@ public class ArtistAlbumListAdapter extends BasicCursorAdapter {
 		
 		String artist = cursor.getString(mArtistColIdx);
 		long id = cursor.getLong(mIdColIdx);
-		Uri uri = LastfmUris.getAlbumInfoUri(album, artist, id);
+		Uri uri = SoundstageUris.albumImage(id, album, artist);
 		
 		Pablo.with(mContext)
 			.load(uri)

@@ -1,16 +1,5 @@
 package za.jamie.soundstage.fragments;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.models.MusicItem;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.service.MusicService;
-import za.jamie.soundstage.utils.AppUtils;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.LoaderManager.LoaderCallbacks;
@@ -33,6 +22,17 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.models.MusicItem;
+import za.jamie.soundstage.pablo.DeferredWidthRequestCreator;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
+import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.utils.AppUtils;
 
 public class MoreDialogFragment extends MusicDialogFragment implements LoaderCallbacks<Cursor>,
 		AdapterView.OnItemClickListener {
@@ -64,6 +64,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	
 	private TextView mSubtitle;
 	private ImageView mImage;
+    private ListView mListView;
 	
 	private ArrayAdapter<MenuEntry> mMenuAdapter;
 	
@@ -102,9 +103,9 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 		mSubtitle = (TextView) v.findViewById(R.id.subtitle);
 		mImage = (ImageView) v.findViewById(R.id.image);
 		
-		ListView lv = (ListView) v.findViewById(R.id.list);
-		lv.setAdapter(mMenuAdapter);
-		lv.setOnItemClickListener(this);
+		mListView = (ListView) v.findViewById(R.id.list);
+        mListView.setAdapter(mMenuAdapter);
+        mListView.setOnItemClickListener(this);
 		
 		if (mItem.getType() == MusicItem.TYPE_ARTIST) {
 			loadArtist();
@@ -200,16 +201,11 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			
 			// Load image
             if (AppUtils.isPortrait(getResources())) {
-                mImage.setVisibility(View.VISIBLE);
-                Uri uri = LastfmUris.getAlbumInfoUri(album, artist, albumId);
-                Pablo.with(getActivity())
-                    .load(uri)
-                    .fit()
-                    .centerCrop()
-                    .into(mImage);
+                loadImage(SoundstageUris.albumImage(albumId, album, artist));
             }
 			
 			// Add menu entries
+            mMenuAdapter.clear();
 			mMenuAdapter.add(new MenuEntry("Play track") {
 				@Override
 				public void onClick() {
@@ -277,17 +273,13 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 			
 			// Load the image for the album
             if (AppUtils.isPortrait(getResources())) {
-                mImage.setVisibility(View.VISIBLE);
-                Uri uri = LastfmUris.getAlbumInfoUri(mItem.getTitle(), artists.get(0).getTitle(),
-                        mItem.getId());
-                Pablo.with(getActivity())
-                    .load(uri)
-                    .fit()
-                    .centerCrop()
-                    .into(mImage);
+                Uri uri = SoundstageUris.albumImage(mItem.getId(), mItem.getTitle(),
+                        artists.get(0).getTitle());
+                loadImage(uri);
             }
 			
 			// Add the option to the menu...
+            mMenuAdapter.clear();
 			mMenuAdapter.add(new MenuEntry("Play album") {
 				@Override
 				public void onClick() {
@@ -328,16 +320,11 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	private void loadArtist() {
 		// Load the image
         if (AppUtils.isPortrait(getResources())) {
-            mImage.setVisibility(View.VISIBLE);
-            Uri uri = LastfmUris.getArtistInfoUriBig(mItem.getTitle());
-            Pablo.with(getActivity())
-                .load(uri)
-                .fit()
-                .centerCrop()
-                .into(mImage);
+            loadImage(SoundstageUris.artistImage(mItem.getId(), mItem.getTitle()));
         }
-		
+
 		// Add menu entries
+        mMenuAdapter.clear();
 		mMenuAdapter.add(new MenuEntry("Play all songs by artist") {
 			@Override
 			public void onClick() {
@@ -367,12 +354,27 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	private void loadPlaylist(Cursor cursor) {
 		
 	}
+
+    private void loadImage(Uri uri) {
+        final int width = mImage.getWidth();
+        final int height = getResources().getDimensionPixelSize(R.dimen.more_dialog_image_height);
+        if (width > 0) {
+            Pablo.with(getActivity())
+                    .load(uri)
+                    .resize(width, height)
+                    .centerCrop()
+                    .into(mImage);
+        } else {
+            new DeferredWidthRequestCreator(Pablo.with(getActivity())
+                    .load(uri)
+                    .centerCrop(), mImage, height);
+        }
+    }
 	
 	private void playItem() {
-		final MusicActivity activity = (MusicActivity) getActivity();
 		getMusicConnection().enqueue(mItem, MusicService.PLAY);
 		getDialog().dismiss();
-		activity.showPlayer();
+		showPlayer();
 	}
 	
 	private AlertDialog buildArtistListDialog(List<MusicItem> artists) {
@@ -417,11 +419,11 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	}
 	
 	private void addItemToQueue() {
-		
+		getMusicConnection().enqueue(mItem, MusicService.LAST);
 	}
 	
 	private void addItemToPlayList() {
-		
+		// TODO
 	}	
 	
 	private void showDeleteDialog() {
@@ -461,7 +463,7 @@ public class MoreDialogFragment extends MusicDialogFragment implements LoaderCal
 	}
 	
 	private void deleteItem() {
-		
+		// TODO
 	}
 	
 	private class MenuEntry {

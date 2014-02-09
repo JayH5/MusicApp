@@ -1,20 +1,24 @@
 package za.jamie.soundstage.fragments.library;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.adapters.library.SongsAdapter;
-import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
-import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.TrackListFragment;
-import za.jamie.soundstage.musicstore.CursorManager;
-import za.jamie.soundstage.musicstore.MusicStore;
+import android.app.LoaderManager;
+import android.content.Loader;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-public class SongsFragment extends TrackListFragment {
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.library.SongsAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
+import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.providers.MusicLoaders;
+
+public class SongsFragment extends TrackListFragment implements
+        LoaderManager.LoaderCallbacks<Cursor> {
     
     private SongsAdapter mAdapter;
     private FlippingViewHelper mFlipHelper;
@@ -27,17 +31,15 @@ public class SongsFragment extends TrackListFragment {
         		R.layout.list_item_two_line, R.layout.list_item_header, null, 0);
         setListAdapter(mAdapter);
         
-        ViewFlipper flipper = new ViewFlipper(R.id.list_item, R.id.flipped_view);
-        mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
+        ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
+        mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
         mAdapter.setFlippingViewHelper(mFlipHelper);
     }
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		final CursorManager cm = new CursorManager(getActivity(), mAdapter, 
-        		MusicStore.Tracks.REQUEST);
-        getLoaderManager().initLoader(0, null, cm);
+        getLoaderManager().initLoader(0, null, this);
 	}
 	
 	@Override
@@ -56,5 +58,20 @@ public class SongsFragment extends TrackListFragment {
 		super.onViewCreated(view, savedInstanceState);
 		mFlipHelper.initFlipper(getListView());
 	}
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return MusicLoaders.songs(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        mAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        mAdapter.swapCursor(null);
+    }
   
 }

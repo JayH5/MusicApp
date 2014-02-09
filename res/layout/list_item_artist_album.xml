@@ -39,7 +39,8 @@
 	        	<TextView
 	           		android:id="@+id/albumTracks"
 	           		style="@style/ListItemText.Subtitle"
-	           		android:paddingRight="16dp" />
+	           		android:paddingRight="16dp"
+                    android:textAllCaps="true"/>
 	        	
 	        	<TextView
 	        		android:id="@+id/albumYear"

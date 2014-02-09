@@ -70,7 +70,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 	private Paint underlinePaint;
 	private Paint dividerPaint;
 
-	private boolean shouldExpand = false;
+	private boolean shouldExpand = true;
 	private boolean textAllCaps = true;
 
 	private int scrollOffset = 52;

@@ -1,14 +1,9 @@
 package za.jamie.soundstage.fragments.artistbrowser;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.adapters.abs.SummaryAdapter;
-import za.jamie.soundstage.fragments.ImageDialogFragment;
-import za.jamie.soundstage.pablo.LastfmUris;
-import za.jamie.soundstage.pablo.Pablo;
-import za.jamie.soundstage.utils.TextUtils;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.LoaderManager;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Loader;
@@ -22,6 +17,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.adapters.abs.SummaryAdapter;
+import za.jamie.soundstage.fragments.ImageDialogFragment;
+import za.jamie.soundstage.pablo.LastfmUtils;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.pablo.SoundstageUris;
+import za.jamie.soundstage.utils.TextUtils;
 
 public class ArtistSummaryFragment extends Fragment implements 
 		LoaderManager.LoaderCallbacks<Cursor> {
@@ -137,19 +140,18 @@ public class ArtistSummaryFragment extends Fragment implements
 						cursor.getInt(numTracksColIdx)));
 				
 				final String artist = cursor.getString(artistColIdx);
-				final Uri lastfmUri = LastfmUris.getArtistInfoUri(artist);
+                long id = ContentUris.parseId(mArtistUri);
+                final Uri uri = SoundstageUris.artistImage(id, artist);
 				Pablo.with(getActivity())
-					.load(lastfmUri)
+					.load(uri)
 					.resizeDimen(R.dimen.image_thumb_artist, R.dimen.image_thumb_artist)
 					.centerCrop()
 					.into(mArtistImage);
-				
-				final Uri lastfmUriBig = lastfmUri.buildUpon()
-                        .appendQueryParameter("size", "mega").build();
+
                 mArtistImage.setOnClickListener(new View.OnClickListener() {
 					@Override
 					public void onClick(View v) {
-						ImageDialogFragment.newInstance(lastfmUriBig)
+						ImageDialogFragment.newInstance(uri)
 							.show(getFragmentManager(), TAG_IMAGE_DIALOG);
 					}
 				});

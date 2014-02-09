@@ -1,14 +1,15 @@
 package za.jamie.soundstage.adapters.utils;
 
+import android.view.View;
+import android.widget.AbsListView;
+import android.widget.Toast;
+
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.animation.ViewFlipper;
 import za.jamie.soundstage.fragments.MoreDialogFragment;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.service.MusicService;
-import android.view.View;
-import android.widget.AbsListView;
-import android.widget.Toast;
 
 public class FlippingViewHelper implements View.OnClickListener, View.OnLongClickListener {
 
@@ -28,31 +29,24 @@ public class FlippingViewHelper implements View.OnClickListener, View.OnLongClic
 	}
 	
 	public void bindFlippedViewButtons(View listItem, MusicItem item) {
-		final View flippedView = listItem.findViewById(mFlipper.getBackViewId());
-		
-		View now = flippedView.findViewById(R.id.flipped_view_now);
-		now.setTag(item);
-		now.setOnClickListener(this);
-		now.setOnLongClickListener(this);
-		View next = flippedView.findViewById(R.id.flipped_view_next);
-		next.setTag(item);
-		next.setOnClickListener(this);
-		next.setOnLongClickListener(this);
-		View last = flippedView.findViewById(R.id.flipped_view_last);
-		last.setTag(item);
-		last.setOnClickListener(this);
-		last.setOnLongClickListener(this);
-		View more = flippedView.findViewById(R.id.flipped_view_more);
-		more.setTag(item);
-		more.setOnClickListener(this);
-		more.setOnLongClickListener(this);
+		View flippedView = listItem.findViewById(mFlipper.getBackViewId());
+        bindSubView(flippedView.findViewById(R.id.flipped_view_now), item);
+		bindSubView(flippedView.findViewById(R.id.flipped_view_next), item);
+        bindSubView(flippedView.findViewById(R.id.flipped_view_last), item);
+        bindSubView(flippedView.findViewById(R.id.flipped_view_more), item);
 	}
+
+    private void bindSubView(View view, MusicItem item) {
+        view.setTag(item);
+        view.setOnClickListener(this);
+        view.setOnLongClickListener(this);
+    }
 
 	@Override
 	public void onClick(View v) {
 		final MusicItem item = (MusicItem) v.getTag();
 		
-		int action = 0; 
+		int action = -1;
 		switch(v.getId()) {
 		case R.id.flipped_view_now:
 			action = MusicService.NOW;
@@ -72,7 +66,9 @@ public class FlippingViewHelper implements View.OnClickListener, View.OnLongClic
 			break;
 		}
 
-		mActivity.getMusicConnection().enqueue(item, action);
+		if (action > -1) {
+            mActivity.getMusicConnection().enqueue(item, action);
+        }
 		
 		mFlipper.unflip();
 	}

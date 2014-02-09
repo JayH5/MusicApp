@@ -1,22 +1,19 @@
 package za.jamie.soundstage.utils;
 
-import java.io.File;
-import java.util.List;
-
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningTaskInfo;
 import android.app.FragmentTransaction;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Environment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.DisplayMetrics;
 
-public class AppUtils {
+import java.io.File;
+
+public final class AppUtils {
 	
 	/**
      * Get a usable cache directory (external if available, internal otherwise)
@@ -33,6 +30,14 @@ public class AppUtils {
 
         return new File(cachePath, uniqueName);
 	}
+
+    public static File getAppDir(Context context, String uniqueName) {
+        String path = !Environment.isExternalStorageRemovable()
+                || Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())
+                ? context.getExternalFilesDir(null).getPath() : context.getFilesDir().getPath();
+
+        return new File(path, uniqueName);
+    }
 	
 	public static final void loadActionBarTabs(final ActionBar actionBar,
                                                final ViewPager viewPager) {
@@ -83,4 +88,9 @@ public class AppUtils {
 	public static boolean isPortrait(Resources res) {
 		return res.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 	}
+
+    public static int smallestScreenWidth(Resources res) {
+        DisplayMetrics dm = res.getDisplayMetrics();
+        return Math.min(dm.widthPixels, dm.heightPixels);
+    }
 }

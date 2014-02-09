@@ -48,12 +48,14 @@
     
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent"
+        android:background="@color/blackish">
         
         <LinearLayout
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_gravity="top"
+            android:id="@+id/music_player_info_holder"
 	        android:padding="8dp"
 	        android:orientation="vertical" >
 	        

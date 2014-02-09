@@ -1,5 +1,13 @@
 package za.jamie.soundstage.pablo;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
+import android.util.Log;
+
+import com.squareup.picasso.Cache;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -10,19 +18,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import za.jamie.soundstage.utils.AppUtils;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
-import android.util.Log;
-
-import com.squareup.picasso.Cache;
 
 public class DiskCache implements Cache {
 
 	private static final String TAG = "DiskCache";
 	
-	public static final String DEFAULT_CACHE_DIR_NAME = "Cache";
+	public static final String DEFAULT_CACHE_DIR_NAME = "imagecache";
 	public static final int DEFAULT_COMPRESS_QUALITY = 98;
 
 	private final File mCacheDir;
@@ -30,7 +31,7 @@ public class DiskCache implements Cache {
 	private final Object mLock = new Object();
 	
 	public DiskCache(Context context) {
-		this(AppUtils.getCacheDir(context, DEFAULT_CACHE_DIR_NAME));
+		this(AppUtils.getAppDir(context, DEFAULT_CACHE_DIR_NAME));
 	}
 	
 	public DiskCache(File directory) {
@@ -87,10 +88,10 @@ public class DiskCache implements Cache {
 		Bitmap bitmap = null;
 		final String diskKey = hashKeyForDisk(key);
 		synchronized(mLock) {
-			//if (createDirIfNeeded()) {
-				File cacheFile = new File(mCacheDir, diskKey);
-				bitmap = BitmapFactory.decodeFile(cacheFile.getPath());
-			//}
+            File cacheFile = new File(mCacheDir, diskKey);
+            if (cacheFile.exists()) {
+                bitmap = BitmapFactory.decodeFile(cacheFile.getPath());
+            }
 		}
 		return bitmap;
 	}

@@ -9,6 +9,7 @@ import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -48,9 +49,9 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		}		
 
 		Uri uri = getIntent().getData();
-		mArtistId = Long.parseLong(uri.getLastPathSegment());
-				
-		// Set up the summary fragment
+		mArtistId = ContentUris.parseId(uri);
+
+        // Set up the summary fragment
 		final FragmentManager fm = getFragmentManager();
 		mSummaryFragment = (ArtistSummaryFragment) fm.findFragmentByTag(TAG_SUMMARY_FRAG);
 		if (mSummaryFragment == null) {

@@ -54,8 +54,7 @@ public class AppWidgetHelper implements Target {
     	final int resource = shuffled ? R.drawable.btn_playback_shuffle_all : R.drawable.btn_shuffle;
     	for (int appWidgetId : getAppWidgetIds()) {
     		final RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
-    		final int layoutId = views.getLayoutId();
-    		if (layoutId == R.layout.app_widget_4x3 || layoutId == R.layout.app_widget_4x4) {
+            if (AppWidget.isBigWidget(views)) {
 	    		views.setImageViewResource(R.id.app_widget_shuffle, resource);
 	    		mAppWidgetManager.updateAppWidget(appWidgetId, views);
     		}
@@ -73,8 +72,7 @@ public class AppWidgetHelper implements Target {
     	}
     	for (int appWidgetId : getAppWidgetIds()) {
     		final RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
-    		final int layoutId = views.getLayoutId();
-    		if (layoutId == R.layout.app_widget_4x3 || layoutId == R.layout.app_widget_4x4) {
+    		if (AppWidget.isBigWidget(views)) {
 	    		views.setImageViewResource(R.id.app_widget_repeat, resource);
 	    		mAppWidgetManager.updateAppWidget(appWidgetId, views);
     		}
@@ -96,11 +94,13 @@ public class AppWidgetHelper implements Target {
     	final RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
     	
     	// Update metadata
-    	views.setTextViewText(R.id.app_widget_track, track.getTitle());
-    	if (views.getLayoutId() != R.layout.app_widget_4x1) {
-    		views.setTextViewText(R.id.app_widget_album, track.getAlbum());
-    	}
-		views.setTextViewText(R.id.app_widget_artist, track.getArtist());
+    	if (track != null) {
+            views.setTextViewText(R.id.app_widget_track, track.getTitle());
+            if (views.getLayoutId() != R.layout.app_widget_4x1) {
+                views.setTextViewText(R.id.app_widget_album, track.getAlbum());
+            }
+            views.setTextViewText(R.id.app_widget_artist, track.getArtist());
+        }
 		
 		// Update play/pause button
 		int resource = isPlaying ? R.drawable.btn_playback_pause : R.drawable.btn_playback_play; 
@@ -108,7 +108,7 @@ public class AppWidgetHelper implements Target {
 		
 		// Shuffle and repeat
 		final int layoutId = views.getLayoutId();
-		if (layoutId == R.layout.app_widget_4x3 || layoutId == R.layout.app_widget_4x4) {
+		if (AppWidget.isBigWidget(views)) {
 			resource = shuffled ? R.drawable.btn_playback_shuffle_all : R.drawable.btn_shuffle;
     		views.setImageViewResource(R.id.app_widget_shuffle, resource);
     		

@@ -65,6 +65,7 @@
         <item name="android:textSize">@dimen/title_text_size</item>
         <item name="android:textColor">?android:textColorSecondary</item>
         <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">end</item>
     </style>
     
     <style name="MusicPlayerDurationText" parent="ListItemText">

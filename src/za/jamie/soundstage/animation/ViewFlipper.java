@@ -1,48 +1,33 @@
 package za.jamie.soundstage.animation;
 
-import java.lang.ref.WeakReference;
-
 import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 
+import java.lang.ref.WeakReference;
+
+import za.jamie.soundstage.R;
+
 public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 	
 	//private static final String TAG = "ViewFlipper";
 
-	private static final long DURATION_MILLIS = 250;
-
 	private WeakReference<View> mLastFlip = null;
 	
-	private final Interpolator mAccelerator = new AccelerateInterpolator();
-	private final Interpolator mDecelerator = new DecelerateInterpolator();
-	
-	private int mFrontRes;
+	private final Context mContext;
+    private int mFrontRes;
 	private int mBackRes;
 	
-	public ViewFlipper(int frontRes, int backRes) {
+	public ViewFlipper(Context context, int frontRes, int backRes) {
+        mContext = context;
 		mFrontRes = frontRes;
 		mBackRes = backRes;
-	}
-	
-	public void unflip() {
-		if (mLastFlip == null) {
-			return;
-		}
-		View lastFlip = mLastFlip.get();
-		if (lastFlip != null) {
-			flip(lastFlip.findViewById(mBackRes), lastFlip.findViewById(mFrontRes));
-			mLastFlip.clear();
-		}
-		mLastFlip = null;
 	}
 	
 	public void flip(View root) {
@@ -60,6 +45,18 @@ public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 		flip(root.findViewById(mFrontRes), root.findViewById(mBackRes));
 		mLastFlip = new WeakReference<View>(root);
 	}
+
+    public void unflip() {
+        if (mLastFlip == null) {
+            return;
+        }
+        View lastFlip = mLastFlip.get();
+        if (lastFlip != null) {
+            flip(lastFlip.findViewById(mBackRes), lastFlip.findViewById(mFrontRes));
+            mLastFlip.clear();
+        }
+        mLastFlip = null;
+    }
 	
 	/**
 	 * Performs a flip animation from one view to the other
@@ -67,24 +64,21 @@ public class ViewFlipper implements OnScrollListener, OnItemLongClickListener {
 	 * @param to
 	 */
 	private void flip(final View from, final View to) {
-		ObjectAnimator visToInvis = ObjectAnimator.ofFloat(from, "rotationX", 0f, 90f);
-		visToInvis.setDuration(DURATION_MILLIS);
-		visToInvis.setInterpolator(mAccelerator);
+        final Animator flipIn = AnimatorInflater.loadAnimator(mContext, R.animator.flip_in);
+        flipIn.setTarget(from);
 		
-		final ObjectAnimator invisToVis = 
-				ObjectAnimator.ofFloat(to, "rotationX", 90f, 0f);
-		invisToVis.setDuration(DURATION_MILLIS);
-		invisToVis.setInterpolator(mDecelerator);
-		
-		visToInvis.addListener(new AnimatorListenerAdapter() {
-			@Override
-			public void onAnimationEnd(Animator anim) {
-				from.setVisibility(View.GONE);
-				invisToVis.start();
-				to.setVisibility(View.VISIBLE);
-			}
-		});
-		visToInvis.start();
+		final Animator flipOut = AnimatorInflater.loadAnimator(mContext, R.animator.flip_out);
+        flipOut.setTarget(to);
+
+        flipIn.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator anim) {
+                from.setVisibility(View.GONE);
+                flipOut.start();
+                to.setVisibility(View.VISIBLE);
+            }
+        });
+		flipIn.start();
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import com.squareup.picasso.OkHttpDownloader;
 
@@ -11,6 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
+import za.jamie.soundstage.utils.UriUtils;
 
 public class LastfmDownloader extends OkHttpDownloader {
 	
@@ -29,51 +32,48 @@ public class LastfmDownloader extends OkHttpDownloader {
 	@Override
 	public Response load(Uri uri, boolean localCacheOnly) throws IOException {
 		// First check local album art
-        final String id = uri.getQueryParameter("_id");
-		if (id != null) {
-			Uri albumArtUri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, Long.parseLong(id));
+        String type = UriUtils.getFirstPathSegment(uri);
+        Log.d(TAG, "Type= " + type);
+        if (type.equals("album")) {
+            String id = uri.getLastPathSegment();
+            if (id != null && id.matches("\\d+")) {
+                Uri albumArtUri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, Long.parseLong(id));
 
-            InputStream in = null;
-			try {
-				in = mContentResolver.openInputStream(albumArtUri);
-			} catch (FileNotFoundException ignored) { }
-			
-			if (in != null) {
-				return new Response(in, true);
-			}
-		}
+                InputStream in = null;
+                try {
+                    in = mContentResolver.openInputStream(albumArtUri);
+                } catch (FileNotFoundException ignored) { }
+
+                if (in != null) {
+                    return new Response(in, true);
+                }
+            }
+        }
 
         // Now check lastfm. First query the service.
-		Response lastfmQuery = super.load(uri, localCacheOnly);
+        Uri lastfmQueryUri = LastfmUtils.queryFromSoundstageUri(uri);
+		Response lastfmQueryResponse = super.load(lastfmQueryUri, localCacheOnly);
 
-        Uri lastfmImage = getLastfmUri(lastfmQuery, getImageSize(uri));
+        Map<String, Uri> lastfmImageUris = getLastfmImageUris(lastfmQueryResponse);
 
         // Then actually download the image.
-        if (lastfmImage != null) {
-		    return super.load(lastfmImage, localCacheOnly);
+        if (lastfmImageUris != null) {
+            int width = UriUtils.getIntegerQueryParameter(uri, "width", -1);
+            int height = UriUtils.getIntegerQueryParameter(uri, "height", -1);
+            Uri imageUri = LastfmUtils.pickBestImageUri(lastfmImageUris, width, height);
+		    return super.load(imageUri, localCacheOnly);
         }
         return null;
 	}
-
-    private static String getImageSize(Uri uri) {
-        String size = uri.getQueryParameter("size");
-        if (size == null) {
-            String method = uri.getQueryParameter("method");
-            size = "album.getinfo".equals(method) ? "mega" : "extralarge";
-        }
-        return size;
-    }
 	
-	private static Uri getLastfmUri(Response lastfmQuery, String size) throws IOException {
-		Uri uri = null;
-        InputStream in = lastfmQuery.getInputStream();
+	private static Map<String, Uri> getLastfmImageUris(Response lastfmQueryResponse)
+            throws IOException {
+		Map<String, Uri> uris = null;
+        InputStream in = lastfmQueryResponse.getInputStream();
         if (in != null) {
-            Map<String, Uri> uris = LastfmJsonParser.parseImages(in);
-            if (uris != null) {
-                uri = uris.get(size);
-            }
+            uris = LastfmJsonParser.parseImages(in);
         }
-		return uri;
+		return uris;
 	}
 
 }

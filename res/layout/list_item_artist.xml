@@ -24,11 +24,13 @@
 	        
 	        <TextView 
 	            android:id="@+id/artistAlbums"
-	            style="@style/ListItemText.Subtitle" />
+	            style="@style/ListItemText.Subtitle"
+                android:textAllCaps="true"/>
 	        
 	        <TextView 
 	            android:id="@+id/artistTracks" 
-	            style="@style/ListItemText.Subtitle" />
+	            style="@style/ListItemText.Subtitle"
+                android:textAllCaps="true"/>
 	                
 	    </LinearLayout>
 	    

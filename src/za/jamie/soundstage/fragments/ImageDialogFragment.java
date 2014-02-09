@@ -1,9 +1,5 @@
 package za.jamie.soundstage.fragments;
 
-import java.lang.ref.WeakReference;
-
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.pablo.Pablo;
 import android.app.DialogFragment;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -14,6 +10,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Callback;
+
+import java.lang.ref.WeakReference;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.pablo.Pablo;
+import za.jamie.soundstage.utils.AppUtils;
 
 public class ImageDialogFragment extends DialogFragment {
 	private static final String EXTRA_IMAGE_KEY = "extra_image_key";
@@ -43,7 +45,7 @@ public class ImageDialogFragment extends DialogFragment {
 		
 		final ImageView imageView = (ImageView) v.findViewById(R.id.imageBig);
         final Resources res = getResources();
-		int size = res.getDisplayMetrics().widthPixels -
+		int size = AppUtils.smallestScreenWidth(res) -
                 res.getDimensionPixelSize(R.dimen.image_dialog_spacing);
 		Pablo.with(getActivity())
 			.load(mUri)

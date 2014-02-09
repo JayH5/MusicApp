@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/app_widget_container"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="@dimen/widget_4x1_height"
     android:background="@color/blackish" >
     
     <LinearLayout
@@ -79,7 +79,7 @@
     </LinearLayout>
     
     <ImageView
-        android:layout_height="2dp"
+        android:layout_height="@dimen/widget_highlight_height"
         android:layout_width="match_parent"
         android:layout_alignParentBottom="true"
         android:background="@android:color/holo_blue_dark" />

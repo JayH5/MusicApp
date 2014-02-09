@@ -1,6 +1,5 @@
 package za.jamie.soundstage.activities;
 
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -10,6 +9,8 @@ import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.MenuItem;
+
+import java.util.Locale;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.library.AlbumsFragment;
@@ -126,18 +127,17 @@ public class LibraryActivity extends MusicActivity {
 			return 4;
 		}
 
-		@SuppressLint("DefaultLocale")
 		@Override
 		public CharSequence getPageTitle(int position) {
 			switch (position) {
 			case SECTION_ARTISTS:
-				return getString(R.string.library_section_artists).toUpperCase();
+				return getString(R.string.library_section_artists).toUpperCase(Locale.US);
 			case SECTION_ALBUMS:
-				return getString(R.string.library_section_albums).toUpperCase();
+				return getString(R.string.library_section_albums).toUpperCase(Locale.US);
 			case SECTION_SONGS:
-				return getString(R.string.library_section_songs).toUpperCase();
+				return getString(R.string.library_section_songs).toUpperCase(Locale.US);
 			case SECTION_PLAYLISTS:
-				return getString(R.string.library_section_playlists).toUpperCase();
+				return getString(R.string.library_section_playlists).toUpperCase(Locale.US);
 			}
 			return null;
 		}

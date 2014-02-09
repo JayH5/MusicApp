@@ -12,7 +12,6 @@ oneway interface IMusicService {
 	void setQueuePosition(int position);	
 	void moveQueueItem(int from, int to);
 	void removeTrack(int position);
-	void savePlayQueueAsPlaylist(in String playlistName);
 	
 	// QueueStatusCallback
 	void registerPlayQueueCallback(IPlayQueueCallback callback);

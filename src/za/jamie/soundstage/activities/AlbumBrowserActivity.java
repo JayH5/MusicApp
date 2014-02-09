@@ -44,7 +44,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 
-		mAlbumId = Long.parseLong(getIntent().getData().getLastPathSegment());		
+		mAlbumId = ContentUris.parseId(getIntent().getData());
 
 		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);

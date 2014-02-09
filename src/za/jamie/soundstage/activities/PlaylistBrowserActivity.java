@@ -5,6 +5,7 @@ import za.jamie.soundstage.fragments.playlistbrowser.PlaylistTrackListFragment;
 import android.app.ActionBar;
 import android.app.FragmentManager;
 import android.app.LoaderManager.LoaderCallbacks;
+import android.content.ContentUris;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -30,9 +31,9 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 		
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 		
-		mPlaylistId = Long.parseLong(getIntent().getData().getLastPathSegment());
-		
-		final FragmentManager fm = getFragmentManager();
+		mPlaylistId = ContentUris.parseId(getIntent().getData());
+
+        final FragmentManager fm = getFragmentManager();
 		if (fm.findFragmentByTag(TAG_LIST_FRAGMENT) == null) {
 			fm.beginTransaction()
 				.add(R.id.list_frame, PlaylistTrackListFragment.newInstance(mPlaylistId), 

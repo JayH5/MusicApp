@@ -7,33 +7,51 @@ import android.app.Fragment;
 
 public class MusicFragment extends Fragment {
 
-	@Override
+	private MusicActivity mActivity;
+
+    @Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		if (!(activity instanceof MusicActivity)) {
-			throw new RuntimeException("MusicFragment needs a MusicActivity as its parent.");
-		}
+        try {
+            mActivity = (MusicActivity) activity;
+        } catch (ClassCastException e) {
+            throw new RuntimeException("MusicFragment needs a MusicActivity as its parent.");
+        }
 	}
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mActivity = null;
+    }
+
+    /**
+     *
+     * @return The MusicActivity that this fragment is attached to.
+     */
+    protected MusicActivity getMusicActivity() {
+        return mActivity;
+    }
 	
 	/**
 	 * See {@link MusicActivity#getMusicConnection()}
 	 */
 	protected MusicConnection getMusicConnection() {
-		return ((MusicActivity) getActivity()).getMusicConnection();
+		return mActivity.getMusicConnection();
 	}
 	
 	/**
 	 * See {@link MusicActivity#showPlayer()}
 	 */
 	protected void showPlayer() {
-		((MusicActivity) getActivity()).showPlayer();
+		mActivity.showPlayer();
 	}
 	
 	/**
 	 * See {@link MusicActivity#hidePlayer()}
 	 */
 	protected void hidePlayer() {
-		((MusicActivity) getActivity()).hidePlayer();
+		mActivity.hidePlayer();
 	}
 
 }
