@@ -54,7 +54,7 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 		mAlbumId = getArguments().getLong(EXTRA_ALBUM_ID);
 				
 		mAdapter = new AlbumTrackListAdapter(getActivity(), 
-				R.layout.list_item_album_track, null, 0);
+				R.layout.list_item_album_track, R.layout.list_item_header, null, 0);
 		
 		// Add observer to trigger collection of album stats
 		mAdapter.registerDataSetObserver(new DataSetObserver() {
@@ -109,11 +109,10 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		if (mStatsHeader != null) {
-			super.onListItemClick(l, v, position - 1, id);
-		} else {
-			super.onListItemClick(l, v, position, id);
-		}
+        if (mStatsHeader != null) {
+			position--;
+        }
+        super.onListItemClick(l, v, mAdapter.getCursorPosition(position), id);
 	}
 	
 	public AlbumStatistics getAlbumStatistics() {
