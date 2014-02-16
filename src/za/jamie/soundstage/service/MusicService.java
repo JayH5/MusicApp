@@ -21,6 +21,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.RequestCreator;
 
 import java.util.HashSet;
 import java.util.List;
@@ -74,9 +75,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private static final String PREF_CARD_ID = "cardid";
     private static final String PREF_SEEK_POSITION = "seekpos";
     private static final String PREF_REPEAT_MODE = "repeatmode";
-
-    private int mLastQueuedPosition = -1;
-    private MusicItem mLastQueuedItem;
 
     // State information
     private boolean mIsBound = false;
@@ -980,15 +978,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final int playPosition = mPlayQueue.getPosition();
     	switch(action) {
     	case NEXT:
-            int insertPosition;
-            if (mLastQueuedPosition > -1 && playPosition < mLastQueuedPosition) {
-                insertPosition = mLastQueuedPosition;
-            } else {
-                insertPosition = playPosition + 1;
-            }
-            mLastQueuedPosition = insertPosition + list.size();
-            Log.d(TAG, "insertPosition = " + insertPosition);
-            Log.d(TAG, "Current position = " + playPosition);
+            int insertPosition = playPosition + 1;
     		if (!isShuffleEnabled() && insertPosition < mPlayQueue.size()) {
     			mPlayQueue.addAll(insertPosition, list);
     		} else {
@@ -1147,15 +1137,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     			.into(mNotificationHelper);
     	}
         int size = AppUtils.smallestScreenWidth(getResources());
-    	pablo.load(uri)
-    		.resize(size, size)
-    		.centerCrop()
-    		.into(mRemoteControlClient);
-    	
-    	pablo.load(uri)
-    		.resize(size, size)
-    		.centerCrop()
-    		.into(mAppWidgetHelper);
+        RequestCreator request = pablo.load(uri).resize(size, size).centerCrop();
+    	request.into(mRemoteControlClient);
+    	request.into(mAppWidgetHelper);
     	
     	mLastAlbumId = track.getAlbumId();
     }
