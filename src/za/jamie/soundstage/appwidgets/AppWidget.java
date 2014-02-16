@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.widget.RemoteViews;
 
@@ -86,13 +85,8 @@ public class AppWidget extends AppWidgetProvider {
         int minWidth = -1;
 		int minHeight = -1;
 		if (options != null) {
-            int minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-			int minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-            Log.d(TAG, "Notification min width= " + minWidthDp + ", min height= " + minHeightDp);
-
             int maxWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
             int maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-            Log.d(TAG, "Notification max width= " + maxWidthDp + ", max height= " + maxHeightDp);
 
             DisplayMetrics dm = context.getResources().getDisplayMetrics();
             minWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxWidthDp, dm);
