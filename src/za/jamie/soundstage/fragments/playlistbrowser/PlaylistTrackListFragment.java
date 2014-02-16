@@ -14,14 +14,14 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
 	//private static final String TAG = "TrackListFragment";
-	private static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
+    private static final String ARG_PLAYLIST_ID = "arg_playlist_id";
 	
 	private PlaylistTrackAdapter mAdapter;
 	private long mPlaylistId;
 	
 	public static PlaylistTrackListFragment newInstance(long playlistId) {		
 		final Bundle args = new Bundle();
-		args.putLong(EXTRA_PLAYLIST_ID, playlistId);
+		args.putLong(ARG_PLAYLIST_ID, playlistId);
 		
 		PlaylistTrackListFragment frag = new PlaylistTrackListFragment();
 		frag.setArguments(args);
@@ -37,7 +37,7 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
 		
 		setListAdapter(mAdapter);
 		
-		mPlaylistId = getArguments().getLong(EXTRA_PLAYLIST_ID);
+		mPlaylistId = getArguments().getLong(ARG_PLAYLIST_ID);
 	}
 	
 	@Override

@@ -13,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
 import za.jamie.soundstage.adapters.albumbrowser.AlbumTrackListAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;

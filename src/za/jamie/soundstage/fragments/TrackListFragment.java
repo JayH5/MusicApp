@@ -1,12 +1,13 @@
 package za.jamie.soundstage.fragments;
 
+import android.view.View;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+
 import java.util.List;
 
 import za.jamie.soundstage.adapters.interfaces.TrackListAdapter;
 import za.jamie.soundstage.models.Track;
-import android.view.View;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 
 public class TrackListFragment extends MusicListFragment {
 	
