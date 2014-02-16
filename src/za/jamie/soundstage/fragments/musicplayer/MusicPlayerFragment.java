@@ -24,10 +24,6 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.squareup.picasso.Callback;
-
-import java.lang.ref.WeakReference;
-
 import za.jamie.soundstage.IMusicPlayerCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.MusicFragment;
@@ -321,7 +317,8 @@ public class MusicPlayerFragment extends MusicFragment {
                     .resize(mImageSize, mImageSize)
                     .centerCrop()
 				    .placeholder(mAlbumArt.getDrawable())
-				    .into(mAlbumArt, new ImageCallback(this));
+                    .error(R.drawable.placeholder_grey)
+				    .into(mAlbumArt);
 			
 			updateDuration(track.getDuration());
 		}
@@ -556,27 +553,5 @@ public class MusicPlayerFragment extends MusicFragment {
 			
 		}
 	};
-
-    private static class ImageCallback implements Callback {
-
-        final WeakReference<MusicPlayerFragment> mPlayer;
-
-        ImageCallback(MusicPlayerFragment player) {
-            mPlayer = new WeakReference<MusicPlayerFragment>(player);
-        }
-
-        @Override
-        public void onSuccess() {
-
-        }
-
-        @Override
-        public void onError() {
-            MusicPlayerFragment player = mPlayer.get();
-            if (player != null) {
-                player.mAlbumArt.setImageBitmap(null);
-            }
-        }
-    }
 
 }
