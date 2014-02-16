@@ -1,9 +1,10 @@
 package za.jamie.soundstage.adapters.abs;
 
-import za.jamie.soundstage.adapters.interfaces.SearchableAdapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.widget.ResourceCursorAdapter;
+
+import za.jamie.soundstage.adapters.interfaces.SearchableAdapter;
 
 public abstract class BasicCursorAdapter extends ResourceCursorAdapter implements 
 		SearchableAdapter {
@@ -14,25 +15,20 @@ public abstract class BasicCursorAdapter extends ResourceCursorAdapter implement
 
 	@Override
 	public Cursor swapCursor(Cursor newCursor) {
-		if (newCursor != null) {
-			onCursorLoad(newCursor);
+		if (newCursor != null && newCursor != getCursor()) {
+            getColumnIndices(newCursor);
 		}
 		return super.swapCursor(newCursor);
 	}
 	
 	@Override
 	public int getItemPosition(long itemId) {
-		final int len = getCount();
-		for (int i = 0; i < len; i++) {
+		for (int i = 0, n = getCount(); i < n; i++) {
 			if (getItemId(i) == itemId) {
 				return i;
 			}
 		}
 		return -1;
-	}
-	
-	protected void onCursorLoad(Cursor cursor) {
-		getColumnIndices(cursor);
 	}
 	
 	protected abstract void getColumnIndices(Cursor cursor);

@@ -1,9 +1,5 @@
 package za.jamie.soundstage.adapters.abs;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import za.jamie.soundstage.adapters.interfaces.SearchableAdapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -12,6 +8,11 @@ import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import za.jamie.soundstage.adapters.interfaces.SearchableAdapter;
 
 public abstract class LibraryAdapter extends CursorAdapter implements SectionIndexer, 
 		SearchableAdapter {
@@ -48,17 +49,37 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 		mLayout = layout;
 		mHeaderLayout = headerLayout;
 	}
-	
-	@Override
-	public Cursor swapCursor(Cursor newCursor) {
-		if (newCursor != null) {
-			getColumnIndices(newCursor);
-			index(newCursor);
-		} else {
-			clearIndexing();
-		}
-		return super.swapCursor(newCursor);
-	}
+
+    private void clearIndexing() {
+        mSections.clear();
+        mSectionPositions.clear();
+        mItemPositions.clear();
+        mSectionsArray = null;
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        clearIndexing();
+        Cursor cursor = getCursor();
+        if (cursor != null) {
+            index(cursor);
+        }
+        super.notifyDataSetChanged();
+    }
+
+    @Override
+    public void notifyDataSetInvalidated() {
+        super.notifyDataSetInvalidated();
+        clearIndexing();
+    }
+
+    @Override
+    public Cursor swapCursor(Cursor newCursor) {
+        if (newCursor != null && newCursor != getCursor()) {
+            getColumnIndices(newCursor);
+        }
+        return super.swapCursor(newCursor);
+    }
 	
 	protected abstract void getColumnIndices(Cursor cursor);
 	
@@ -80,7 +101,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	}
 	
 	/**
-	 * Makes a new view to hold the text in the header string.
+	 * Inflate a new view to hold the text in the header string.
 	 * @param context
 	 * @param header
 	 * @param parent
@@ -167,13 +188,6 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 		return mItemPositions.size();
 	}
 	
-	private void clearIndexing() {
-		mSections.clear();
-		mSectionPositions.clear();
-		mItemPositions.clear();
-		mSectionsArray = null;
-	}
-	
 	/**
 	 * Get the section that the cursor's current row belongs in.
 	 * @param context
@@ -214,7 +228,8 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	
 	@Override
 	public int getItemPosition(long itemId) {
-		for (int i = 0, count = getCount(); i < count; i++) {
+        // Sequentially search through items until one with matching id found
+		for (int i = 0, n = getCount(); i < n; i++) {
 			if (getItemId(i) == itemId) {
 				return i;
 			}
@@ -223,7 +238,6 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 	}
 	
 	private void index(Cursor cursor) {
-		clearIndexing();
 		if (cursor.moveToFirst()) {
 			int position = 0;
 			int section = 0;
@@ -257,7 +271,7 @@ public abstract class LibraryAdapter extends CursorAdapter implements SectionInd
 				}
 				mItemPositions.add(cursor.getPosition());
 				position++;
-			} while (cursor.moveToNext());		
+			} while (cursor.moveToNext());
 		}
 	}
 

@@ -49,16 +49,22 @@ public class AlbumTrackListAdapter extends BasicTrackAdapter {
 		super.getColumnIndices(cursor);
 		mTrackNumColIdx = cursor
 				.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK);
-		
-		checkCompilationAndIndexDiscs(cursor);
 	}
 
     @Override
-    public Cursor swapCursor(Cursor newCursor) {
-        if (newCursor == null) {
-            mItems.clear();
+    public void notifyDataSetChanged() {
+        mItems.clear();
+        Cursor cursor = getCursor();
+        if (cursor != null) {
+            checkCompilationAndIndexDiscs(cursor);
         }
-        return super.swapCursor(newCursor);
+        super.notifyDataSetChanged();
+    }
+
+    @Override
+    public void notifyDataSetInvalidated() {
+        super.notifyDataSetInvalidated();
+        mItems.clear();
     }
 
     @Override

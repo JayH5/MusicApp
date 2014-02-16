@@ -34,7 +34,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 	private int mNumColumns;
     private int mHeaderHeight;
     private int mImageSize;
-    private int mItemHeight;
+    private int mColumnWidth;
 	private GridView.LayoutParams mItemLayoutParams;
 	
 	private final Context mContext;
@@ -76,7 +76,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 
 	@Override
 	public void bindView(View view, Context context, Cursor cursor) {
-		if (view.getLayoutParams().height != mItemHeight) {
+		if (view.getLayoutParams().height != mColumnWidth) {
 			view.setLayoutParams(mItemLayoutParams);
 		}
 		
@@ -92,7 +92,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 		long id = cursor.getLong(mIdColIdx);
 		Uri uri = SoundstageUris.albumImage(id, album, artist);
 
-        if (mItemHeight > 0) {
+        if (mColumnWidth > 0) {
             if (mGradient == null) {
                 mGradient = new AlbumGridGradient(mContext.getResources(), mImageSize, mImageSize);
             }
@@ -111,26 +111,22 @@ public class AlbumsAdapter extends LibraryAdapter {
 			mFlipHelper.bindFlippedViewButtons(view, item);
 		}
 	}
-	
-	public void setItemHeight(int height) {
-		if (height == mItemHeight) {
-			return;
-		}
-		mItemHeight = height;
-		mItemLayoutParams = new GridView.LayoutParams(LayoutParams.MATCH_PARENT, mItemHeight);
-		notifyDataSetChanged();
-	}
-	
-	public int getItemHeight() {
-		return mItemHeight;
-	}
 
-    public void setNumColumns(int numColumns) {
-        mNumColumns = numColumns;
-    }
+    public void setColumnCountAndWidth(int numColumns, int columnWidth) {
+        boolean dataSetChanged = false;
+        if (numColumns != mNumColumns) {
+            mNumColumns = numColumns;
+            dataSetChanged = !isEmpty(); // If empty, spacers not shown so nothing changes
+        }
+        if (columnWidth != mColumnWidth) {
+            mColumnWidth = columnWidth;
+            mItemLayoutParams = new GridView.LayoutParams(LayoutParams.MATCH_PARENT, mColumnWidth);
+            dataSetChanged = true;
+        }
 
-    public int getNumColumns() {
-        return mNumColumns;
+        if (dataSetChanged) {
+            notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -146,7 +142,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 
     @Override
     public int getCount() {
-        if (mNumColumns == 0) {
+        if (mNumColumns == 0 || super.getCount() == 0) {
             return 0;
         }
 
