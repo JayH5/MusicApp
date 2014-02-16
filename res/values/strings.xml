@@ -66,4 +66,6 @@
     
     <string name="image_unavailable">Image unavailable</string>
 
+    <string name="disc_number">Disc %d</string>
+
 </resources>
