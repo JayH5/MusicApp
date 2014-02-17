@@ -5,7 +5,6 @@ import android.content.ContentUris;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -24,7 +23,7 @@ import za.jamie.soundstage.providers.MusicLoaders;
 public class ArtistsFragment extends MusicListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 	
-	public static final String EXTRA_ITEM_ID = "extra_item_id";
+	private static final String ARG_ITEM_ID = "extra_item_id";
 	
 	private FlippingViewHelper mFlipHelper;
 	
@@ -32,7 +31,7 @@ public class ArtistsFragment extends MusicListFragment implements
 	
 	public static ArtistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
-		args.putLong(EXTRA_ITEM_ID, itemId);
+		args.putLong(ARG_ITEM_ID, itemId);
 		
 		ArtistsFragment frag = new ArtistsFragment();
 		frag.setArguments(args);
@@ -51,17 +50,6 @@ public class ArtistsFragment extends MusicListFragment implements
         ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
         mAdapter.setFlippingViewHelper(mFlipHelper);
-        
-        final long itemId = getArguments().getLong(EXTRA_ITEM_ID, -1);
-        if (itemId > 0) {
-	        new DataSetObserver() {
-				@Override
-				public void onChanged() {
-					setSelection(mAdapter.getItemPosition(itemId));
-					mAdapter.unregisterDataSetObserver(this);
-				}
-	        };
-        }
     }
     
     @Override
@@ -98,6 +86,16 @@ public class ArtistsFragment extends MusicListFragment implements
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         mAdapter.swapCursor(cursor);
+        if (!mAdapter.isEmpty()) {
+            long itemId = getArguments().getLong(ARG_ITEM_ID);
+            if (itemId > 0) {
+                int itemPosition = mAdapter.getItemPosition(itemId);
+                if (itemPosition >= 0 && itemPosition < mAdapter.getCount()) {
+                    getListView().setSelection(itemPosition);
+                }
+                getArguments().remove(ARG_ITEM_ID);
+            }
+        }
     }
 
     @Override

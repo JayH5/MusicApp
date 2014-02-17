@@ -1,13 +1,5 @@
 package za.jamie.soundstage.fragments.library;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.adapters.library.PlaylistsAdapter;
-import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
-import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.MusicListFragment;
-import za.jamie.soundstage.providers.MusicLoaders;
-
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -19,17 +11,25 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ListView;
 
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.adapters.library.PlaylistsAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.animation.ViewFlipper;
+import za.jamie.soundstage.fragments.MusicListFragment;
+import za.jamie.soundstage.providers.MusicLoaders;
+
 public class PlaylistsFragment extends MusicListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 	
-	public static final String EXTRA_ITEM_ID = "extra_item_id";
+	public static final String ARG_ITEM_ID = "extra_item_id";
 	
 	private PlaylistsAdapter mAdapter;
 	private FlippingViewHelper mFlipHelper;
 	
 	public static PlaylistsFragment newInstance(long itemId) {
 		final Bundle args = new Bundle();
-		args.putLong(EXTRA_ITEM_ID, itemId);
+		args.putLong(ARG_ITEM_ID, itemId);
 		
 		PlaylistsFragment frag = new PlaylistsFragment();
 		frag.setArguments(args);
@@ -81,6 +81,16 @@ public class PlaylistsFragment extends MusicListFragment implements
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         mAdapter.swapCursor(cursor);
+        if (!mAdapter.isEmpty()) {
+            long itemId = getArguments().getLong(ARG_ITEM_ID);
+            if (itemId > 0) {
+                int itemPosition = mAdapter.getItemPosition(itemId);
+                if (itemPosition >= 0 && itemPosition < mAdapter.getCount()) {
+                    getListView().setSelection(itemPosition);
+                }
+                getArguments().remove(ARG_ITEM_ID);
+            }
+        }
     }
 
     @Override
