@@ -6,7 +6,6 @@ import android.content.ContentUris;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,6 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.GridView;
+
+import java.lang.ref.WeakReference;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.MusicActivity;
@@ -26,13 +27,9 @@ import za.jamie.soundstage.providers.MusicLoaders;
 
 public class AlbumsFragment extends GridFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 	
-	public static final String EXTRA_ITEM_ID = "extra_item_id";
-
-    private static final String EXTRA_INDEX = "extra_index";
-    private static final String EXTRA_OFFSET = "extra_offset";
-    private static final String EXTRA_COLUMNS = "extra_columns";
-	
-	//private static final String TAG = "AlbumGridFragment";
+	private static final String ARG_ITEM_ID = "extra_item_id";
+    private static final String EXTRA_POSITION = "extra_position";
+    private static final String EXTRA_NUM_COLUMNS = "extra_num_columns";
 	
 	private FlippingViewHelper mFlipHelper;
     
@@ -40,7 +37,7 @@ public class AlbumsFragment extends GridFragment implements LoaderManager.Loader
     
     public static AlbumsFragment newInstance(long albumId) {
     	final Bundle args = new Bundle();
-    	args.putLong(EXTRA_ITEM_ID, albumId);
+    	args.putLong(ARG_ITEM_ID, albumId);
     	
     	AlbumsFragment frag = new AlbumsFragment();
     	frag.setArguments(args);
@@ -79,64 +76,17 @@ public class AlbumsFragment extends GridFragment implements LoaderManager.Loader
         super.onViewCreated(view, savedInstanceState);
         final GridView grid = getGridView();
         mFlipHelper.initFlipper(grid);
-        grid.getViewTreeObserver().addOnGlobalLayoutListener(
-                new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        int numColumns = grid.getNumColumns();
-                        int columnWidth = grid.getColumnWidth();
-                        if (numColumns > 0 && columnWidth > 0) {
-                            mAdapter.setColumnCountAndWidth(numColumns, columnWidth);
-                            grid.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        }
-                    }
-                });
 
-        final long itemId = getArguments().getLong(EXTRA_ITEM_ID, 0);
-        if (itemId > 0) {
-            mAdapter.registerDataSetObserver(new DataSetObserver() {
-                @Override
-                public void onChanged() {
-                    if (mAdapter.getCount() > 0) {
-                        grid.setSelection(mAdapter.getItemPosition(itemId));
-                        mAdapter.unregisterDataSetObserver(this);
-                    }
-                }
-            });
-            getArguments().remove(EXTRA_ITEM_ID);
-        } else if (savedInstanceState != null) {
-            final int index = savedInstanceState.getInt(EXTRA_INDEX);
-            final int offset = savedInstanceState.getInt(EXTRA_OFFSET);
-            final int columns = savedInstanceState.getInt(EXTRA_COLUMNS);
-            grid.getViewTreeObserver().addOnGlobalLayoutListener(
-                    new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    int numColumns = grid.getNumColumns();
-                    if (numColumns > 0 && mAdapter.getCount() > 0) {
-                        int newIndex = index + (numColumns - columns);
-                        grid.setSelection(newIndex);
-                        grid.smoothScrollToPositionFromTop(newIndex, offset, 0);
-                        grid.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    }
-                }
-            });
-        }
+        GridLayoutListener listener = new GridLayoutListener(grid, mAdapter, savedInstanceState);
+        grid.getViewTreeObserver().addOnPreDrawListener(listener);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         GridView grid = getGridView();
-        int index = grid.getFirstVisiblePosition();
-        View v = grid.getChildAt(0);
-        int top = 0;
-        if (v != null) {
-            top = v.getTop();
-        }
-        outState.putInt(EXTRA_INDEX, index);
-        outState.putInt(EXTRA_OFFSET, top);
-        outState.putInt(EXTRA_COLUMNS, grid.getNumColumns());
+        outState.putInt(EXTRA_POSITION, grid.getFirstVisiblePosition());
+        outState.putInt(EXTRA_NUM_COLUMNS, grid.getNumColumns());
     }
 
     @Override
@@ -158,11 +108,66 @@ public class AlbumsFragment extends GridFragment implements LoaderManager.Loader
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         mAdapter.swapCursor(cursor);
+        if (!mAdapter.isEmpty()) {
+            long itemId = getArguments().getLong(ARG_ITEM_ID);
+            if (itemId > 0) {
+                int itemPosition = mAdapter.getItemPosition(itemId);
+                if (itemPosition >= 0 && itemPosition < mAdapter.getCount()) {
+                    setSelection(itemPosition);
+                }
+                getArguments().remove(ARG_ITEM_ID);
+            }
+        }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
         mAdapter.swapCursor(null);
+    }
+
+    private static class GridLayoutListener implements ViewTreeObserver.OnPreDrawListener {
+        final WeakReference<GridView> mGrid;
+        final AlbumsAdapter mAdapter;
+
+        Bundle mSavedInstanceState;
+
+        GridLayoutListener(GridView grid, AlbumsAdapter adapter, Bundle savedInstanceState) {
+            mGrid = new WeakReference<GridView>(grid);
+            mAdapter = adapter;
+            mSavedInstanceState = savedInstanceState;
+        }
+
+        @Override
+        public boolean onPreDraw() {
+            GridView grid = mGrid.get();
+            if (grid == null) {
+                return true;
+            }
+
+            ViewTreeObserver vto = grid.getViewTreeObserver();
+            if (!vto.isAlive()) {
+                return true;
+            }
+
+            int numColumns = grid.getNumColumns();
+            int columnWidth = grid.getColumnWidth();
+            if (numColumns <= 0 || columnWidth <= 0) {
+                return true;
+            }
+            mAdapter.setColumnCountAndWidth(numColumns, columnWidth);
+
+            if (mSavedInstanceState != null) {
+                int position = mSavedInstanceState.getInt(EXTRA_POSITION);
+                int oldNumColumns = mSavedInstanceState.getInt(EXTRA_NUM_COLUMNS);
+
+                // Adjust position for change in columns
+                position += numColumns - oldNumColumns;
+                grid.setSelection(position);
+            }
+
+            vto.removeOnPreDrawListener(this);
+            return true;
+        }
     }
 
 }

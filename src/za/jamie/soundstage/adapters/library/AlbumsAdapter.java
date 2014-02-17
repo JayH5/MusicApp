@@ -121,7 +121,7 @@ public class AlbumsAdapter extends LibraryAdapter {
         if (columnWidth != mColumnWidth) {
             mColumnWidth = columnWidth;
             mItemLayoutParams = new GridView.LayoutParams(LayoutParams.MATCH_PARENT, mColumnWidth);
-            dataSetChanged = true;
+            dataSetChanged = !isEmpty(); // If empty, no change in views
         }
 
         if (dataSetChanged) {
@@ -142,6 +142,7 @@ public class AlbumsAdapter extends LibraryAdapter {
 
     @Override
     public int getCount() {
+        // If number columns not set or cursor empty, appear to be empty
         if (mNumColumns == 0 || super.getCount() == 0) {
             return 0;
         }
