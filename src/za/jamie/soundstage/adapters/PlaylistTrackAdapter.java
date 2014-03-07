@@ -2,6 +2,9 @@ package za.jamie.soundstage.adapters;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.BasicTrackAdapter;
+import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
+import za.jamie.soundstage.models.MusicItem;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.MediaStore;
@@ -11,6 +14,8 @@ import android.widget.TextView;
 public class PlaylistTrackAdapter extends BasicTrackAdapter {
 
 	private int mIdColIdx;
+
+    private FlippingViewHelper mFlipHelper;
 	
 	public PlaylistTrackAdapter(Context context, int layout, Cursor c, 
 			int flags) {
@@ -22,9 +27,16 @@ public class PlaylistTrackAdapter extends BasicTrackAdapter {
 	public void bindView(View view, Context context, Cursor cursor) {
 		final TextView titleText = (TextView) view.findViewById(R.id.title);
 		final TextView subtitleText = (TextView) view.findViewById(R.id.subtitle);
-		
-		titleText.setText(cursor.getString(getTitleColIdx()));
+
+        long id = cursor.getLong(getIdColIdx());
+		String title = cursor.getString(getTitleColIdx());
+
+        titleText.setText(title);
 		subtitleText.setText(cursor.getString(getArtistColIdx()));
+
+        if (mFlipHelper != null) {
+            mFlipHelper.bindFlippedViewButtons(view, new MusicItem(id, title, MusicItem.TYPE_TRACK));
+        }
 	}
 	
 	@Override
@@ -37,5 +49,9 @@ public class PlaylistTrackAdapter extends BasicTrackAdapter {
 		super.getColumnIndices(cursor);
         mIdColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Playlists.Members.AUDIO_ID);
 	}
+
+    public void setFlippingViewHelper(FlippingViewHelper helper) {
+        mFlipHelper = helper;
+    }
 
 }

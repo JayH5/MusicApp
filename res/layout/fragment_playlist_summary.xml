@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_background" >
+
+    <GridLayout
+        android:id="@+id/album_thumbs"
+        android:layout_width="@dimen/summary_album_image_size"
+        android:layout_height="@dimen/summary_album_image_size"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:padding="@dimen/image_thumb_padding" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/summary_album_image_size"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/album_thumbs" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/playlist_detail_buttons"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:gravity="center_horizontal"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/playlist_artists"
+                android:layout_weight="1"
+                style="@style/NowText" />
+
+            <TextView
+                android:id="@+id/playlist_tracks"
+                android:layout_weight="1"
+                style="@style/NowText" />
+
+            <TextView
+                android:id="@+id/playlist_duration"
+                android:layout_weight="1"
+                style="@style/NowText" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/playlist_detail_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_bar_height"
+            android:gravity="center_vertical"
+            android:divider="?android:attr/dividerVertical"
+            android:dividerPadding="@dimen/button_bar_divider_padding"
+            android:showDividers="middle"
+            android:orientation="horizontal"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true" >
+
+            <ImageButton
+                android:id="@+id/browse_artist_button"
+                android:src="@drawable/btn_browse_artist"
+                style="@style/TransparentImageButton" />
+
+            <ImageButton
+                android:id="@+id/shuffle_button"
+                android:src="@drawable/btn_shuffle"
+                style="@style/TransparentImageButton" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</RelativeLayout>

@@ -58,7 +58,7 @@
         <item quantity="other">%d albums</item>
     </plurals>
     <plurals name="artists">
-        <item quantity="one">1 album</item>
+        <item quantity="one">1 artist</item>
         <item quantity="other">%d artists</item>
     </plurals>
     
