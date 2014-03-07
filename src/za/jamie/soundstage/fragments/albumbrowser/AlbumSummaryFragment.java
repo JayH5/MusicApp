@@ -15,7 +15,6 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.activities.AlbumBrowserActivity;
 import za.jamie.soundstage.fragments.ImageDialogFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.pablo.LastfmUtils;
 import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.utils.AppUtils;

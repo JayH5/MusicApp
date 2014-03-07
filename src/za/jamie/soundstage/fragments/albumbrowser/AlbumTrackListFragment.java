@@ -32,7 +32,7 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 	
 	private AlbumStatisticsCallback mCallback;
 	
-	// Header view (the album stats fragment) is the list header in landscape
+	// Header view (the album stats fragment) is the list header in portrait
 	private View mStatsHeader;
 	
 	private FlippingViewHelper mFlipHelper;
@@ -54,16 +54,6 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 				
 		mAdapter = new AlbumTrackListAdapter(getActivity(), 
 				R.layout.list_item_album_track, R.layout.list_item_header, null, 0);
-		
-		// Add observer to trigger collection of album stats
-		mAdapter.registerDataSetObserver(new DataSetObserver() {
-			@Override
-			public void onChanged() {
-				if (mCallback != null) {
-					mCallback.deliverAlbumStatistics(getAlbumStatistics());
-				}
-			}
-		});
 		
 		ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
 		mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
@@ -141,6 +131,7 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 		}
 		return null;
 	}
+
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         return MusicLoaders.albumSongs(getActivity(), mAlbumId);
@@ -149,6 +140,9 @@ public class AlbumTrackListFragment extends TrackListFragment implements
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         mAdapter.swapCursor(cursor);
+        if (!mAdapter.isEmpty() && mCallback != null) {
+            mCallback.deliverAlbumStatistics(getAlbumStatistics());
+        }
     }
 
     @Override

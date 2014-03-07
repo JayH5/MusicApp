@@ -1,15 +1,5 @@
 package za.jamie.soundstage.activities;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.SortedMap;
-
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.TrackListFragment;
-import za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment;
-import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
-import za.jamie.soundstage.models.AlbumStatistics;
-import za.jamie.soundstage.models.MusicItem;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
@@ -24,6 +14,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment;
+import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
+import za.jamie.soundstage.models.AlbumStatistics;
+import za.jamie.soundstage.models.MusicItem;
 
 public class AlbumBrowserActivity extends MusicActivity implements 
 		AlbumTrackListFragment.AlbumStatisticsCallback {
@@ -58,8 +59,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {
-		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
-        		LibraryActivity.SECTION_ALBUMS);
+		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, LibraryActivity.SECTION_ALBUMS);
         upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mAlbumId);
 		
 		return super.navigateUpTo(upIntent);
