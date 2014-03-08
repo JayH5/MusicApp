@@ -2,6 +2,7 @@ package za.jamie.soundstage.fragments.musicplayer;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -208,8 +209,8 @@ public class PlayQueueFragment extends MusicDialogFragment implements
         mNameField.setVisibility(View.INVISIBLE);
         mNameField.setText("");
 
-        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(
-                Context.INPUT_METHOD_SERVICE);
+        InputMethodManager imm =
+                (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(mNameField.getWindowToken(), 0);
 
         // Show list view
@@ -315,25 +316,14 @@ public class PlayQueueFragment extends MusicDialogFragment implements
         mNameField.setText("");
     }
 	
-	private IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
+	private final IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
 		@Override
 		public void deliverTrackList(final List<Track> trackList, final int position, 
 				final boolean isShuffled) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
+			safeRunOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					mAdapter.clear();
-					mAdapter.addAll(trackList);
-					mAdapter.setQueuePosition(position);
-					if (mSavedPosition != -1 && mSavedOffset != -1) {
-						mDslv.setSelectionFromTop(mSavedPosition, mSavedOffset);
-					} else {
-						mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
-					}
-                    mIsShuffled = isShuffled;
-					if (isShuffled) {
-						mMessageView.setVisibility(View.VISIBLE);
-					}
+					receiveTrackList(trackList, position, isShuffled);
 				}
 			});
 			
@@ -341,57 +331,97 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 
 		@Override
 		public void onPositionChanged(final int position) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
+			safeRunOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					mAdapter.setQueuePosition(position);
+                    receivePositionChange(position);
 				}
 			});
 		}
 
     };
 
+    private void receiveTrackList(List<Track> tracks, int position, boolean isShuffled) {
+        if (mAdapter == null) {
+            return;
+        }
+
+        mAdapter.clear();
+        mAdapter.addAll(tracks);
+        mAdapter.setQueuePosition(position);
+        if (mSavedPosition != -1 && mSavedOffset != -1) {
+            mDslv.setSelectionFromTop(mSavedPosition, mSavedOffset);
+        } else {
+            mDslv.setSelectionFromTop(position, SCROLL_OFFSET);
+        }
+        mIsShuffled = isShuffled;
+        if (isShuffled) {
+            mMessageView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void receivePositionChange(int position) {
+        if (mAdapter == null) {
+            return;
+        }
+
+        mAdapter.setQueuePosition(position);
+    }
+
+    private void safeRunOnUiThread(Runnable runnable) {
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(runnable);
+        }
+    }
+
     private void savePlayQueueAsPlaylist(String name) {
         if (TextUtils.isEmpty(name)) {
             return;
         }
 
-        new AsyncTask<String, Void, Message>() {
-            @Override
-            protected Message doInBackground(String... params) {
-                Message result = Message.obtain();
-                String name = params[0];
-                ContentResolver resolver = getActivity().getContentResolver();
-                String existingName = PlaylistUtils.findExistingPlaylist(resolver, name);
-                if (existingName == null) {
-                    long id = PlaylistUtils.createPlaylist(resolver, name);
-                    if (id > 0) {
-                        PlaylistUtils.savePlaylistTracks(resolver, id, mAdapter.getObjects());
-                        result.arg1 = 0;
-                        result.obj = name;
-                    } else {
-                        result.arg1 = 1;
-                    }
+        new SavePlayQueueTask().execute(name);
+    }
+
+    private class SavePlayQueueTask extends AsyncTask<String, Void, Message> {
+        @Override
+        protected Message doInBackground(String... params) {
+            final Activity activity = getActivity();
+            if (activity == null) {
+                return null;
+            }
+
+            Message result = Message.obtain();
+            String name = params[0];
+            ContentResolver resolver = activity.getContentResolver();
+            String existingName = PlaylistUtils.findExistingPlaylist(resolver, name);
+            if (existingName == null) {
+                long id = PlaylistUtils.createPlaylist(resolver, name);
+                if (id > 0) {
+                    PlaylistUtils.savePlaylistTracks(resolver, id, mAdapter.getObjects());
+                    result.arg1 = 0;
+                    result.obj = name;
                 } else {
                     result.arg1 = 1;
-                    result.obj = existingName;
                 }
-                return result;
+            } else {
+                result.arg1 = 1;
+                result.obj = existingName;
             }
+            return result;
+        }
 
-            @Override
-            protected void onPostExecute(Message result) {
-                String message;
-                if (result.arg1 == 0) {
-                    message = getString(R.string.play_queue_saved, result.obj);
-                } else if (result.obj != null) {
-                    message = getString(R.string.play_queue_already_exists, result.obj);
-                } else {
-                    message = getString(R.string.play_queue_error);
-                }
-                onPlaylistSaved(result.arg1 == 0, message);
+        @Override
+        protected void onPostExecute(Message result) {
+            String message;
+            if (result.arg1 == 0) {
+                message = getString(R.string.play_queue_saved, result.obj);
+            } else if (result.obj != null) {
+                message = getString(R.string.play_queue_already_exists, result.obj);
+            } else {
+                message = getString(R.string.play_queue_error);
             }
-        }.execute(name);
-
+            onPlaylistSaved(result.arg1 == 0, message);
+        }
     }
 }
