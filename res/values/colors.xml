@@ -10,6 +10,7 @@
     <color name="clock_red">#ff4444</color>
     <color name="blackish">#ff1c1e20</color>
     <color name="blackish_trans">#cc1c1e20</color>
+    <color name="blackish_extra_trans">#661c1e20</color>
     <color name="transparent_white">#66ffffff</color>
     <color name="hairline">#28ffffff</color>
     
