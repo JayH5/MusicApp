@@ -77,8 +77,7 @@ public final class MusicItemStore {
                         cursor.getLong(2), // Artist id
                         cursor.getString(3), // Artist
                         cursor.getLong(4), // Album id
-                        cursor.getString(5), // Album
-                        cursor.getLong(6))); // Duration
+                        cursor.getString(5))); // Album
             } while (cursor.moveToNext());
         }
         cursor.close();

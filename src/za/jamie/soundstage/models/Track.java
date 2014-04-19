@@ -7,7 +7,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 
-public class Track implements Parcelable {
+/**
+ * Container class for track metadata.
+ */
+public final class Track implements Parcelable {
 	private final long mId;
 	private final String mTitle;
     
@@ -16,11 +19,8 @@ public class Track implements Parcelable {
     
     private final long mAlbumId;
     private final String mAlbum;
-    
-    private final long mDuration;
 
-    public Track(long id, String title, long artistId, String artist, 
-    		long albumId, String album, long duration) {
+    public Track(long id, String title, long artistId, String artist, long albumId, String album) {
         mId = id;
         mTitle = title;
         
@@ -29,8 +29,6 @@ public class Track implements Parcelable {
         
         mAlbumId = albumId;
         mAlbum = album;
-        
-        mDuration = duration;
     }
 
     public long getId() {
@@ -55,10 +53,6 @@ public class Track implements Parcelable {
 
     public String getAlbum() {
         return mAlbum;
-    }
-    
-    public long getDuration() {
-    	return mDuration;
     }
 
     public Uri getUri() {
@@ -88,15 +82,14 @@ public class Track implements Parcelable {
     	out.put(MediaStore.Audio.Media.ARTIST, mArtist);
     	out.put(MediaStore.Audio.Media.ALBUM_ID, mAlbumId);
     	out.put(MediaStore.Audio.Media.ALBUM, mAlbum);
-    	out.put(MediaStore.Audio.Media.DURATION, mDuration);
     	
     	return mId;
     }
     
     @Override
-    public boolean equals(Object object) {
-    	if (object instanceof Track) {
-    		Track track = (Track) object;
+    public boolean equals(Object obj) {
+    	if (obj instanceof Track) {
+    		Track track = (Track) obj;
     		return track.getId() == mId;
     	}
     	return false;
@@ -117,13 +110,9 @@ public class Track implements Parcelable {
 		
 		out.writeLong(mAlbumId);
 		out.writeString(mAlbum);
-		
-		out.writeLong(mDuration);
 	}
 	
-	public static final Parcelable.Creator<Track> CREATOR
-			= new Parcelable.Creator<Track>() {
-		
+	public static final Parcelable.Creator<Track> CREATOR = new Parcelable.Creator<Track>() {
 		@Override
 		public Track createFromParcel(Parcel in) {
 			if (in != null) {
@@ -147,8 +136,6 @@ public class Track implements Parcelable {
 		
 		mAlbumId = in.readLong();
 		mAlbum = in.readString();
-		
-		mDuration = in.readLong();
 	}
 
 }

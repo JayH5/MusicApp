@@ -368,13 +368,6 @@ public class PlayQueueFragment extends MusicDialogFragment implements
         mAdapter.setQueuePosition(position);
     }
 
-    private void safeRunOnUiThread(Runnable runnable) {
-        final Activity activity = getActivity();
-        if (activity != null) {
-            activity.runOnUiThread(runnable);
-        }
-    }
-
     private void savePlayQueueAsPlaylist(String name) {
         if (TextUtils.isEmpty(name)) {
             return;

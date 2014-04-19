@@ -217,6 +217,18 @@ public class MusicConnection implements ServiceConnection {
 		}
 		return false;
 	}
+
+    public boolean requestMusicPlayerUpdate(IMusicPlayerCallback callback) {
+        if (mService != null) {
+            try {
+                mService.requestMusicPlayerUpdate(callback);
+                return true;
+            } catch (RemoteException e) {
+                Log.w(TAG, "requestMusicPlayerUpdate(IMusicPlayerCallback)", e);
+            }
+        }
+        return false;
+    }
 	
 	public boolean open(List<Track> tracks, int position) {
 		if (mService != null) {

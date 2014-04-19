@@ -28,6 +28,9 @@ oneway interface IMusicService {
 	// MusicStatusCallback
 	void registerMusicPlayerCallback(IMusicPlayerCallback callback);
 	void unregisterMusicPlayerCallback(IMusicPlayerCallback callback);
+
+	// Request update about current track
+    void requestMusicPlayerUpdate(IMusicPlayerCallback callback);
 	
 	// Opening new music/enqueueing music for the library
 	void open(in List<Track> tracks, int position);

@@ -1,9 +1,5 @@
 package za.jamie.soundstage.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import za.jamie.soundstage.models.Track;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -15,13 +11,17 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import za.jamie.soundstage.models.Track;
 
 public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	private static final String TAG = "PlayQueueDatabase";
 	
 	private static final String DATABASE_NAME = "playqueue.db";
-    private static final int DATABASE_VERSION = 13;
+    private static final int DATABASE_VERSION = 14;
     
     private static final String TABLE_NAME_TRACK_SET = "trackset";
     private static final String TABLE_NAME_TRACK_ORDER = "trackorder";
@@ -47,8 +47,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
     		+ MediaStore.Audio.Media.ARTIST_ID + " INTEGER, "
     		+ MediaStore.Audio.Media.ARTIST + " STRING, "
     		+ MediaStore.Audio.Media.ALBUM_ID + " INTEGER, "
-    		+ MediaStore.Audio.Media.ALBUM + " STRING, "
-    		+ MediaStore.Audio.Media.DURATION + " INTEGER)";
+    		+ MediaStore.Audio.Media.ALBUM + " STRING)";
     
     private static final String CREATE_TABLE_TRACK_ORDER = "CREATE TABLE "
     		+ TABLE_NAME_TRACK_ORDER + " ("
@@ -73,8 +72,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
     		+ MediaStore.Audio.Media.ARTIST_ID + ", "
     		+ MediaStore.Audio.Media.ARTIST + ", "
     		+ MediaStore.Audio.Media.ALBUM_ID + ", "
-    		+ MediaStore.Audio.Media.ALBUM + ", "
-    		+ MediaStore.Audio.Media.DURATION
+    		+ MediaStore.Audio.Media.ALBUM
     		+ " FROM " + TABLE_NAME_TRACK_ORDER
     		+ " JOIN " + TABLE_NAME_TRACK_SET
     		+ " ON " + TABLE_NAME_TRACK_ORDER + "." + COLUMN_NAME_TRACK_ID
@@ -153,8 +151,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 							cursor.getLong(2), // Artist id
 							cursor.getString(3), // Artist
 							cursor.getLong(4), // Album id
-							cursor.getString(5), // Album
-							cursor.getLong(6))); // Duration
+							cursor.getString(5))); // Album
 				} while (cursor.moveToNext());
 			}
 		}

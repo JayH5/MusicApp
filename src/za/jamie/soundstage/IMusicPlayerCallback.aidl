@@ -3,7 +3,7 @@ package za.jamie.soundstage;
 import za.jamie.soundstage.models.Track;
 
 oneway interface IMusicPlayerCallback {
-	void onPositionSync(long position, long timeStamp);
+	void onPositionSync(long position, long duration, long timeStamp);
 	void onTrackChanged(in Track track);
 	void onPlayStateChanged(boolean isPlaying);
 	void onShuffleStateChanged(boolean isShuffled);

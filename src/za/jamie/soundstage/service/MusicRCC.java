@@ -65,8 +65,7 @@ public class MusicRCC extends RemoteControlClient implements Target {
 		editMetadata(clearMetadata)
 			.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, track.getTitle())
 			.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, track.getArtist())
-			.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())			
-			.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, track.getDuration())
+			.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, track.getAlbum())
 			.apply();
 	}
 	

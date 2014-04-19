@@ -86,8 +86,7 @@ public class SongsAdapter extends LibraryAdapter implements TrackListAdapter {
 						cursor.getLong(mArtistIdColIdx),
 						cursor.getString(mArtistColIdx),
 						cursor.getLong(mAlbumIdColIdx),
-						cursor.getString(mAlbumColIdx),
-						cursor.getLong(mDurationColIdx)));
+						cursor.getString(mAlbumColIdx)));
 			} while (cursor.moveToNext());
 		}
 		return trackList;
@@ -103,8 +102,7 @@ public class SongsAdapter extends LibraryAdapter implements TrackListAdapter {
 					cursor.getLong(mArtistIdColIdx),
 					cursor.getString(mArtistColIdx),
 					cursor.getLong(mAlbumIdColIdx),
-					cursor.getString(mAlbumColIdx),
-					cursor.getLong(mDurationColIdx));
+					cursor.getString(mAlbumColIdx));
 		}
 		return track;
 	}

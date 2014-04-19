@@ -54,4 +54,13 @@ public class MusicDialogFragment extends DialogFragment {
         mActivity.hidePlayer();
     }
 
+    /**
+     * Run {@param action} on the UI thread if this fragment is attached to an Activity.
+     */
+    protected void safeRunOnUiThread(Runnable action) {
+        if (mActivity != null) {
+            mActivity.runOnUiThread(action);
+        }
+    }
+
 }

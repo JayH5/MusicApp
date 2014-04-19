@@ -1,8 +1,5 @@
 package za.jamie.soundstage.appwidgets;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.models.Track;
-import za.jamie.soundstage.service.MusicService;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,6 +9,10 @@ import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso.LoadedFrom;
 import com.squareup.picasso.Target;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.models.Track;
+import za.jamie.soundstage.service.MusicService;
 
 public class AppWidgetHelper implements Target {
 
@@ -30,6 +31,9 @@ public class AppWidgetHelper implements Target {
 	}
 	
 	public void updateTrack(Track track) {
+        if (track == null) {
+            return;
+        }
     	for (int appWidgetId : getAppWidgetIds()) {
     		final RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
 	    	views.setTextViewText(R.id.app_widget_track, track.getTitle());
@@ -89,9 +93,9 @@ public class AppWidgetHelper implements Target {
     	}
     }
     
-    public void update(Track track, boolean isPlaying, boolean shuffled,
-    		int repeatMode, int appWidgetId) {    	
-    	final RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
+    public void update(Track track, boolean isPlaying, boolean shuffled, int repeatMode,
+                       int appWidgetId) {
+    	RemoteViews views = AppWidget.getRemoteViews(mContext, mAppWidgetManager, appWidgetId);
     	
     	// Update metadata
     	if (track != null) {

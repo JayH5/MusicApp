@@ -36,23 +36,22 @@ public class MusicServiceStub extends IMusicService.Stub {
 	}
 
 	@Override
-	public void registerMusicPlayerCallback(IMusicPlayerCallback callback)
-			throws RemoteException {
-		
+	public void registerMusicPlayerCallback(IMusicPlayerCallback callback) throws RemoteException {
 		mService.get().registerMusicPlayerCallback(callback);
 	}
 
 	@Override
-	public void unregisterMusicPlayerCallback(IMusicPlayerCallback callback)
-			throws RemoteException {
-		
+	public void unregisterMusicPlayerCallback(IMusicPlayerCallback callback) throws RemoteException {
 		mService.get().unregisterMusicPlayerCallback(callback);
 	}
 
-	@Override
-	public void open(List<Track> tracks, int position) 
-			throws RemoteException {
+    @Override
+    public void requestMusicPlayerUpdate(IMusicPlayerCallback callback) throws RemoteException {
+        mService.get().requestMusicPlayerUpdate(callback);
+    }
 
+	@Override
+	public void open(List<Track> tracks, int position) throws RemoteException {
 		mService.get().open(tracks, position);
 	}
 
@@ -67,23 +66,17 @@ public class MusicServiceStub extends IMusicService.Stub {
 	}
 
 	@Override
-	public void enqueue(MusicItem item, int action) 
-			throws RemoteException {
-
+	public void enqueue(MusicItem item, int action) throws RemoteException {
 		mService.get().enqueue(item, action);
 	}
 
 	@Override
-	public void registerPlayQueueCallback(IPlayQueueCallback callback)
-			throws RemoteException {
-		
+	public void registerPlayQueueCallback(IPlayQueueCallback callback) throws RemoteException {
 		mService.get().registerPlayQueueCallback(callback);
 	}
 
 	@Override
-	public void unregisterPlayQueueCallback(IPlayQueueCallback callback)
-			throws RemoteException {
-		
+	public void unregisterPlayQueueCallback(IPlayQueueCallback callback) throws RemoteException {
 		mService.get().unregisterPlayQueueCallback(callback);
 	}
 

@@ -42,7 +42,7 @@ import za.jamie.soundstage.utils.AppUtils;
 
 
 public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener,
-		MusicPlayer.PlayerEventListener {
+		MediaPlayerHelper.MediaPlayerListener {
 
 	private static final String TAG = "MusicService";
 	
@@ -89,7 +89,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     // Audio playback objects
     private AudioManager mAudioManager;
-    private MusicPlayer mPlayer;
+    private MediaPlayerHelper mPlayer;
     
     // Use alarm manager to shut down service after time
     private AlarmManager mAlarmManager;
@@ -157,8 +157,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         super.onCreate();
 
         // Initialize the player
-        mPlayer = new MusicPlayer(this);
-        mPlayer.setPlayerEventListener(this);
+        mPlayer = new MediaPlayerHelper(this);
+        mPlayer.setMediaPlayerListener(this);
         
         final Intent shutdownIntent = new Intent(this, MusicService.class);
         shutdownIntent.setAction(SHUTDOWN);
@@ -242,11 +242,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         Log.d(TAG, "Destroying service.");
 
         mPlayQueue.closeDb();
-        
-        setAudioEffectsEnabled(false);
 
         // Release the player
-        mPlayer.stopFade();
         mPlayer.release();
 
         // Remove the audio focus listener and lock screen controls
@@ -315,18 +312,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         return START_STICKY;
     }
 
-    private void setAudioEffectsEnabled(boolean enable) {
-        final Intent intent = new Intent();
-        if (enable) {
-        	intent.setAction(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
-        } else {
-        	intent.setAction(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
-        }
-        intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, mPlayer.getAudioSessionId());
-        intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
-        sendBroadcast(intent);
-    }
-
     private void restoreState() {
     	int id = mCardId;
         if (mPreferences.contains(PREF_CARD_ID)) {
@@ -347,7 +332,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             // Get the saved seek position
             long seekPosition = mPreferences.getLong(PREF_SEEK_POSITION, 0);
             // If it is invalid, just start from the beginning
-            if (seekPosition < 0 || seekPosition > mPlayer.duration()) {
+            if (seekPosition < 0 || seekPosition > mPlayer.getDuration()) {
             	seekPosition = 0;
             }
             seek(seekPosition);
@@ -466,6 +451,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     private void syncSeekPosition() {
     	final long seekPosition = position();
+        final long duration = mPlayer.getDuration();
     	final long timestamp = System.currentTimeMillis();
     	synchronized (mMusicPlayerCallbackList) {
     		int i = mMusicPlayerCallbackList.beginBroadcast();
@@ -473,7 +459,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    		i--;
 	    		try {
 	    			mMusicPlayerCallbackList.getBroadcastItem(i)
-	    					.onPositionSync(seekPosition, timestamp);
+	    					.onPositionSync(seekPosition, duration, timestamp);
 	    		} catch (RemoteException e) {
 	    			Log.w(TAG, "syncPosition()", e);
 	    		}
@@ -489,6 +475,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void onTrackChanged() {
     	final Track currentTrack = getCurrentTrack();
     	final long position = position();
+        final long duration = mPlayer.getDuration();
     	final long timestamp = System.currentTimeMillis();
     	synchronized(mMusicPlayerCallbackList) {
     		int i = mMusicPlayerCallbackList.beginBroadcast();
@@ -498,7 +485,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			final IMusicPlayerCallback callback =
 	    					mMusicPlayerCallbackList.getBroadcastItem(i);
 	    			callback.onTrackChanged(currentTrack);
-	    			callback.onPositionSync(position, timestamp);
+	    			callback.onPositionSync(position, duration, timestamp);
 				} catch (RemoteException e) {
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
@@ -545,6 +532,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private void onPlayStateChanged() {
     	final boolean isPlaying = isPlaying();
     	final long position = position();
+        final long duration = mPlayer.getDuration();
     	final long timestamp = System.currentTimeMillis();
     	synchronized(mMusicPlayerCallbackList) {
 	    	int i = mMusicPlayerCallbackList.beginBroadcast();
@@ -554,7 +542,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	    			final IMusicPlayerCallback callback =
 	    					mMusicPlayerCallbackList.getBroadcastItem(i);
 	    			callback.onPlayStateChanged(isPlaying);
-	    			callback.onPositionSync(position, timestamp);
+	    			callback.onPositionSync(position, duration, timestamp);
 				} catch (RemoteException e) {
 					Log.w(TAG, "Remote error while performing track changed callback.", e);
 				}
@@ -625,7 +613,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 			callback.onPlayStateChanged(isPlaying());
 			callback.onShuffleStateChanged(isShuffleEnabled());
 			callback.onRepeatModeChanged(getRepeatMode());
-			callback.onPositionSync(position(), System.currentTimeMillis());
+			callback.onPositionSync(position(), mPlayer.getDuration(), System.currentTimeMillis());
 		} catch (RemoteException e) {
 			Log.w(TAG, "deliverMusicStatus()", e);
 		}
@@ -634,12 +622,15 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	// Reckon this is threadsafe looking at source of RemoteCallbackList
 	public void registerMusicPlayerCallback(IMusicPlayerCallback callback) {
 		mMusicPlayerCallbackList.register(callback);
-		deliverMusicStatus(callback);
 	}
 	
 	public void unregisterMusicPlayerCallback(IMusicPlayerCallback callback) {
 		mMusicPlayerCallbackList.unregister(callback);
 	}
+
+    public synchronized void requestMusicPlayerUpdate(IMusicPlayerCallback callback) {
+        deliverMusicStatus(callback);
+    }
 	
 	private void deliverPlayQueue(IPlayQueueCallback callback) {
 		try {
@@ -688,15 +679,15 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         	// Get the duration of the current track, if we're more than 2sec into
         	// the track and we're not going to repeat the current track, go to the
         	// next track
-        	final long duration = mPlayer.duration();
+        	final long duration = mPlayer.getDuration();
         	if (mRepeatMode != REPEAT_CURRENT && duration > 2000
-        			&& mPlayer.position() >= duration - 2000) {
+        			&& mPlayer.getCurrentPosition() >= duration - 2000) {
         			
         		gotoNext();
         	}
 
         	mPlayer.start();
-        	mPlayer.fadeUp();
+        	mPlayer.getVolumeHandler().fadeUp();
             
             // Update the play state
             if (!mIsSupposedToBePlaying) {
@@ -715,7 +706,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     private void pause(boolean transientLossOfFocus) {
     	mPausedByTransientLossOfFocus = transientLossOfFocus;
-        mPlayer.stopFadeUp();
+        mPlayer.getVolumeHandler().stopFadeUp();
         if (mIsSupposedToBePlaying) {
             mPlayer.pause();
             gotoIdleState();
@@ -738,7 +729,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      */
     private void stop(boolean gotoIdle) {
         if (mPlayer.isInitialized()) {
-        	mPlayer.stop();
+        	mPlayer.reset();
         }
         if (gotoIdle) {
             gotoIdleState();
@@ -758,7 +749,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         if (gotoNextInternal()) {
 	        openAndPlay();	
         } else {
-        	seek(mPlayer.duration());
+        	seek(mPlayer.getDuration());
         }
     }
 
@@ -795,10 +786,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	if (mPlayer.isInitialized()) {
     		if (position < 0) {
     			position = 0;
-    		} else if (position > mPlayer.duration()) {
-    			position = mPlayer.duration();
+    		} else if (position > mPlayer.getDuration()) {
+    			position = mPlayer.getDuration();
     		}
-    		return mPlayer.seek(position);
+    		mPlayer.seekTo(position);
+            return position;
     	}
         return -1;
     }
@@ -908,7 +900,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      */
     public synchronized long position() {
     	if (mPlayer.isInitialized()) {
-    		return mPlayer.position();
+    		return mPlayer.getCurrentPosition();
     	}
         return -1;
     }
@@ -1198,7 +1190,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             pause(focusLoss);            
             break;
         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-            mPlayer.fadeDown();
+            mPlayer.getVolumeHandler().fadeDown();
             break;
         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
             pause(isPlaying());
@@ -1206,10 +1198,10 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         case AudioManager.AUDIOFOCUS_GAIN:
             if (!isPlaying() && mPausedByTransientLossOfFocus) {
                 mPausedByTransientLossOfFocus = false;
-                mPlayer.mute();
+                mPlayer.getVolumeHandler().mute();
                 play();
             } else {
-            	mPlayer.fadeUp();
+            	mPlayer.getVolumeHandler().fadeUp();
             }
             break;
         default:

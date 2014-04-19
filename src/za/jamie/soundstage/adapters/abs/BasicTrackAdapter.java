@@ -85,8 +85,7 @@ public abstract class BasicTrackAdapter extends BasicCursorAdapter
 						cursor.getLong(getArtistIdColIdx()),
 						cursor.getString(getArtistColIdx()),
 						cursor.getLong(getAlbumIdColIdx()),
-						cursor.getString(getAlbumColIdx()),
-						cursor.getLong(getDurationColIdx())));
+						cursor.getString(getAlbumColIdx())));
 			} while (cursor.moveToNext());
 		}
 		return trackList;
@@ -103,8 +102,7 @@ public abstract class BasicTrackAdapter extends BasicCursorAdapter
                     cursor.getLong(getArtistIdColIdx()),
                     cursor.getString(getArtistColIdx()),
                     cursor.getLong(getAlbumIdColIdx()),
-                    cursor.getString(getAlbumColIdx()),
-                    cursor.getLong(getDurationColIdx()));
+                    cursor.getString(getAlbumColIdx()));
 		}
 		return track;
 	}

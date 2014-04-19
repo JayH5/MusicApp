@@ -1,12 +1,13 @@
 package za.jamie.soundstage.service;
 
+import android.content.Context;
+import android.os.Bundle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import za.jamie.soundstage.models.Track;
-import android.content.Context;
-import android.os.Bundle;
 
 public class PlayQueue {
 	private final List<Track> mTrackList;
@@ -62,9 +63,7 @@ public class PlayQueue {
 	 * @param shuffle True to shuffle the queue, false to use the ordering 
 	 * 	described by the collection of tracks.
 	 */
-	public boolean open(List<Track> trackList, int position, 
-			boolean shuffle) {
-
+	public boolean open(List<Track> trackList, int position, boolean shuffle) {
 		boolean queueChanged = false;
 		if (!trackList.equals(mTrackList)) {
 			clear();
@@ -103,12 +102,10 @@ public class PlayQueue {
 	public void shuffle(int shuffleOn) {
 		// Initialize the map
 		mShuffleMap.clear();
-		final int len = size();
-		for (int i = 0; i < len; i++) {
-			if (i == shuffleOn) {
-				continue;
+		for (int i = 0, n = size(); i < n; i++) {
+			if (i != shuffleOn) {
+                mShuffleMap.add(i);
 			}
-			mShuffleMap.add(i);
 		}
 
 		Collections.shuffle(mShuffleMap);

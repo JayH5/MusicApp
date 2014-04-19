@@ -1,9 +1,10 @@
 package za.jamie.soundstage.fragments;
 
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.service.MusicConnection;
 import android.app.Activity;
 import android.app.Fragment;
+
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.service.MusicConnection;
 
 public class MusicFragment extends Fragment {
 
@@ -53,5 +54,14 @@ public class MusicFragment extends Fragment {
 	protected void hidePlayer() {
 		mActivity.hidePlayer();
 	}
+
+    /**
+     * Run {@param action} on the UI thread if this fragment is attached to an Activity.
+     */
+    protected void safeRunOnUiThread(Runnable action) {
+        if (mActivity != null) {
+            mActivity.runOnUiThread(action);
+        }
+    }
 
 }

@@ -10,6 +10,7 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.view.ContextThemeWrapper;
@@ -42,7 +43,7 @@ public class MusicPlayerFragment extends MusicFragment {
 	private static final int REPEAT_INTERVAL = 260;
 	
 	// Handle elapsed time text updates
-    private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private boolean mSeeking = false;
 	
 	// Play control buttons
@@ -80,12 +81,18 @@ public class MusicPlayerFragment extends MusicFragment {
 	private long mTimeSyncStamp;
 
     private int mImageSize;
+
+    private boolean isSynced = false;
 	
 	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
 			new MusicConnection.ConnectionCallbacks() {
 		@Override
 		public void onConnected() {
-			getMusicConnection().registerMusicPlayerCallback(mCallback);
+            MusicConnection connection = getMusicConnection();
+			connection.registerMusicPlayerCallback(mCallback);
+            if (!isSynced) {
+                isSynced = connection.requestMusicPlayerUpdate(mCallback);
+            }
 		}
 
 		@Override
@@ -107,12 +114,14 @@ public class MusicPlayerFragment extends MusicFragment {
         mImageSize = AppUtils.smallestScreenWidth(res)
                 - res.getDimensionPixelOffset(R.dimen.menudrawer_offset);
 	}
-	
-	@Override
-	public void onResume() {
-		super.onResume();
-		updateTime(calculatePosition());
-	}
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (!isSynced) {
+            isSynced = getMusicConnection().requestMusicPlayerUpdate(mCallback);
+        }
+    }
 	
 	@Override
 	public void onStop() {
@@ -319,15 +328,7 @@ public class MusicPlayerFragment extends MusicFragment {
 				    .placeholder(mAlbumArt.getDrawable())
                     .error(R.drawable.placeholder_grey)
 				    .into(mAlbumArt);
-			
-			updateDuration(track.getDuration());
 		}
-    }
-    
-    private void updateDuration(long duration) {
-    	mDuration = duration;
-    	mTotalTime.setDuration(duration);
-    	mSeekBarAnimator.setDuration(duration);
     }
     
     private void updatePlayState(boolean isPlaying) {
@@ -335,7 +336,6 @@ public class MusicPlayerFragment extends MusicFragment {
     	if (isPlaying) {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_pause);
 			mElapsedTime.clearAnimation();
-            updateTime(calculatePosition());
 		} else {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_play);
 			if (isAdded()) { // Sometimes this is called before fragment is attached, causing NPE
@@ -345,10 +345,24 @@ public class MusicPlayerFragment extends MusicFragment {
             stopTime();
 		}
     }
-    
-    private void updateTime(long position, long timeStamp) {
-    	syncTime(position, timeStamp);
-    	updateTime(position);
+
+    private void updateTime(long position, long duration, long timeStamp) {
+    	// Store the sync information
+        mTimeSync = position;
+        mDuration = duration;
+        mTimeSyncStamp = timeStamp;
+
+        // Update the duration indicators
+        mTotalTime.setDuration(duration);
+        mSeekBarAnimator.setDuration(duration);
+
+        updateTime(position);
+    }
+
+    private void updateTime(long position) {
+        // Update the elapsed time indicators
+        updateSeekBar(position);
+        updateElapsedTime(position);
     }
     
     private long calculatePosition() {
@@ -357,19 +371,9 @@ public class MusicPlayerFragment extends MusicFragment {
     
     private void seek(long position) {
         getMusicConnection().seek(position);
-        updateTime(position, System.currentTimeMillis());
+        updateTime(position, mDuration, System.currentTimeMillis());
     }
 
-    private void syncTime(long position, long timeStamp) {
-    	mTimeSync = position;
-    	mTimeSyncStamp = timeStamp;
-    }
-    
-    private void updateTime(long position) {
-    	updateSeekBar(position);
-    	updateElapsedTime(position);    	
-    }
-    
     private void stopTime() {
     	mSeekBarAnimator.cancel();
     	mHandler.removeCallbacks(mTimeRefresh);
@@ -397,15 +401,14 @@ public class MusicPlayerFragment extends MusicFragment {
     
     private void updateElapsedTime(long position) {
     	if (position < 0) {
-    		mElapsedTime.setDuration(0);
+    		position = 0;
     	} else if (position > mDuration) {
-    		mElapsedTime.setDuration(mDuration);
-    	} else {
-    		mElapsedTime.setDuration(position);
-    		if (!mSeeking && mIsPlaying) {
-    			mHandler.postDelayed(mTimeRefresh, 1000 - (position % 1000)); // Update again on the next second
-    		}
+    		position = mDuration;
     	}
+        mElapsedTime.setDuration(position);
+        if (!mSeeking && mIsPlaying) {
+            mHandler.postDelayed(mTimeRefresh, 1000 - (position % 1000)); // Update again on the next second
+        }
     }
     
     private void updateShuffleState(boolean shuffleEnabled) {
@@ -481,76 +484,55 @@ public class MusicPlayerFragment extends MusicFragment {
     };
 	
 	private final IMusicPlayerCallback mCallback = new IMusicPlayerCallback.Stub() {
-		
 		@Override
 		public void onTrackChanged(final Track track) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-
+			safeRunOnUiThread(new Runnable() {
 				@Override
 				public void run() {
 					updateTrack(track);
-					
 				}
-				
 			});
 		}
 		
 		@Override
-		public void onPositionSync(final long position, final long timeStamp)
+		public void onPositionSync(final long position, final long duration, final long timeStamp)
 				throws RemoteException {
-			
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updateTime(position, timeStamp);
-					
-				}
-				
-			});
+            safeRunOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updateTime(position, duration, timeStamp);
+                }
+            });
 		}
 		
 		@Override
-		public void onPlayStateChanged(final boolean isPlaying) throws RemoteException {			
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updatePlayState(isPlaying);
-					
-				}
-				
-			});
-			
+		public void onPlayStateChanged(final boolean isPlaying) throws RemoteException {
+            safeRunOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updatePlayState(isPlaying);
+                }
+            });
 		}
 
 		@Override
-		public void onShuffleStateChanged(final boolean shuffleEnabled)
-				throws RemoteException {
-			
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updateShuffleState(shuffleEnabled);
-					
-				}
-				
-			});
+		public void onShuffleStateChanged(final boolean shuffleEnabled)	throws RemoteException {
+            safeRunOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updateShuffleState(shuffleEnabled);
+                }
+            });
 		}
 
 		@Override
 		public void onRepeatModeChanged(final int repeatMode) throws RemoteException {
-			getActivity().runOnUiThread(new Runnable() {
-
-				@Override
-				public void run() {
-					updateRepeatMode(repeatMode);
-					
-				}
-				
-			});
-			
+            safeRunOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updateRepeatMode(repeatMode);
+                }
+            });
 		}
 	};
 
