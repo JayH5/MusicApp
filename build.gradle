@@ -62,7 +62,7 @@ repositories {
 dependencies {
     compile fileTree('libs')
     compile project(':drag-sort-listview:library')
-    compile 'com.squareup.okhttp:okhttp:1.5.3'
+    compile 'com.squareup.okhttp:okhttp:1.5.4'
     compile 'net.simonvt.menudrawer:menudrawer:3.0.5'
     compile 'com.android.support:support-v13:19.1.+'
 }
