@@ -12,7 +12,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
-import android.media.audiofx.AudioEffect;
 import android.net.Uri;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
@@ -970,26 +969,17 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	final int playPosition = mPlayQueue.getPosition();
     	switch(action) {
     	case NEXT:
-            int insertPosition = playPosition + 1;
-    		if (!isShuffleEnabled() && insertPosition < mPlayQueue.size()) {
-    			mPlayQueue.addAll(insertPosition, list);
-    		} else {
-    			mPlayQueue.addAll(list);
-    		}
+            mPlayQueue.addAllNext(list);
     		break;
     	case NOW:
-    		if (!isShuffleEnabled() && playPosition + 1 < mPlayQueue.size()) {
-    			mPlayQueue.addAll(playPosition + 1, list);
-    		} else {
-    			mPlayQueue.addAll(list);
-    		}
+            mPlayQueue.addAllNext(list);
     		if (mPlayQueue.moveToNext()) {
     			openCurrentAndNext();
     			play();
     		}
     		break;
     	case LAST:
-    		mPlayQueue.addAll(list);
+    		mPlayQueue.addAllLast(list);
     		break;
     	case PLAY:
     		open(list, 0);
@@ -1006,10 +996,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         List<Track> tracks = MusicItemStore.fetchMusicItem(getContentResolver(), item);
     	enqueue(tracks, action);
     }
-
-
-    
-
 
      /**
      * Sets the position of a track in the queue

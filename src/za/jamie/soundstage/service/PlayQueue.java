@@ -369,19 +369,21 @@ public class PlayQueue {
 	 * @param track The track to add to the queue.
 	 */
 	public void add(int position, Track track) {
-		if (mShuffled) {
-			throw new IllegalStateException("Cannot add tracks to a specfic "
-				+ "position with a shuffled queue.");
+        if (position < 0 || position > size()) {
+            return;
+        }
+
+        if (mShuffled) {
+            throw new IllegalStateException("Cannot add track to a specific position within a "
+                    + "shuffled queue.");
 		}
 
-		if (isPositionValid(position)) {
-			mTrackList.add(position, track);
-			mDatabase.add(position, track);
-			if (position <= mPosition) {
-				mPosition++;
-				positionChanged();
-			}
-		}
+        mTrackList.add(position, track);
+        mDatabase.add(position, track);
+        if (position <= mPosition) {
+            mPosition++;
+            positionChanged();
+        }
 	}
 
 	/**
@@ -391,10 +393,8 @@ public class PlayQueue {
 	 */
 	public void addAll(List<Track> tracks) {
 		if (mShuffled) {
-			// TODO: Test this algorithm. Would be super cool if it worked
 			final int len = size();
-			List<Integer> remainingTracks = 
-					mShuffleMap.subList(mPosition, len - 1);
+			List<Integer> remainingTracks = mShuffleMap.subList(mPosition, len - 1);
 
 			for (int i = 0; i < tracks.size(); i++) {
 				remainingTracks.add(i + len);
@@ -416,21 +416,75 @@ public class PlayQueue {
 	 * @param tracks The Collection of Tracks to add to the queue.
 	 */
 	public void addAll(int position, List<Track> tracks) {
-		if (mShuffled) {
-			throw new IllegalStateException("Cannot add tracks to a specfic "
-				+ "position with a shuffled queue.");
+		if (position < 0 || position > size()) {
+            return;
+        }
+
+        if (mShuffled) {
+			throw new IllegalStateException("Cannot add tracks to a specific position within a "
+                    + "shuffled queue.");
 		}
 
-		if (isPositionValid(position)) {
-			mDatabase.addAll(position, tracks);
-			mTrackList.addAll(position, tracks);
+        mDatabase.addAll(position, tracks);
+        mTrackList.addAll(position, tracks);
 
-			if (position <= mPosition) {
-				mPosition += tracks.size();
-				positionChanged();
-			}
-		}
+        if (position <= mPosition) {
+            mPosition += tracks.size();
+            positionChanged();
+        }
 	}
+
+    /**
+     * Add the given track list to the tracklist after the current position and, if shuffled, to
+     * the shuffle map (after shuffling).
+     * @param tracks the list of tracks to add
+     */
+    public void addAllNext(List<Track> tracks) {
+        int position = isEmpty() ? 0 : getPosition() + 1;
+        int insertPosition = position;
+        if (mShuffled) {
+            if (position > 0) {
+                insertPosition = mShuffleMap.get(position - 1) + 1;
+            }
+
+            int tracksLen = tracks.size();
+            for (int i = 0, n = mShuffleMap.size(); i < n; i++) {
+                int trackPos = mShuffleMap.get(i);
+                if (trackPos >= insertPosition) {
+                    mShuffleMap.set(i, trackPos + tracksLen);
+                }
+            }
+
+            // Add tracks to shuffle map
+            for (int i = 0; i < tracksLen; i++) {
+                mShuffleMap.add(position + i, insertPosition + i);
+            }
+            // Shuffle order in range of shuffle map
+            Collections.shuffle(mShuffleMap.subList(position, position + tracksLen));
+        }
+
+        mDatabase.addAll(insertPosition, tracks);
+        mTrackList.addAll(insertPosition, tracks);
+    }
+
+    /**
+     * Add the given track list to the end of the tracklist and, if shuffled, to the end of the
+     * shuffle map (after shuffling).
+     * @param tracks the list of tracks to add
+     */
+    public void addAllLast(List<Track> tracks) {
+        int len = size();
+        if (mShuffled) {
+            int tracksLen = tracks.size();
+            for (int i = 0; i < tracksLen; i++) {
+                mShuffleMap.add(len + i);
+            }
+            Collections.shuffle(mShuffleMap.subList(len, len + tracksLen));
+        }
+
+        mDatabase.addAll(len, tracks);
+        mTrackList.addAll(tracks);
+    }
 
 	/**
 	 * Removes and returns the Track at the specified position.
