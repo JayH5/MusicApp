@@ -23,10 +23,7 @@ import android.content.Intent;
 import android.view.KeyEvent;
 
 /**
- * Receives broadcasted intents. In particular, we are interested in the
- * android.media.AUDIO_BECOMING_NOISY and android.intent.action.MEDIA_BUTTON intents, which is
- * broadcast, for example, when the user disconnects the headphones. This class works because we are
- * declaring it in a &lt;receiver&gt; tag in AndroidManifest.xml.
+ * Receives broadcasted intents from media button key events.
  */
 public class MediaButtonReceiver extends BroadcastReceiver {
     @Override
@@ -36,28 +33,34 @@ public class MediaButtonReceiver extends BroadcastReceiver {
             if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
                 return;
             }
-
+            
+            String action;
             switch (keyEvent.getKeyCode()) {
                 case KeyEvent.KEYCODE_HEADSETHOOK:
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                    context.startService(new Intent(MusicService.ACTION_TOGGLE_PLAYBACK));
+                    action = MusicService.ACTION_TOGGLE_PLAYBACK;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY:
-                    context.startService(new Intent(MusicService.ACTION_PLAY));
+                    action = MusicService.ACTION_PLAY;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:
-                    context.startService(new Intent(MusicService.ACTION_PAUSE));
+                    action = MusicService.ACTION_PAUSE;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_STOP:
-                    context.startService(new Intent(MusicService.ACTION_STOP));
+                    action = MusicService.ACTION_STOP;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_NEXT:
-                    context.startService(new Intent(MusicService.ACTION_NEXT));
+                    action = MusicService.ACTION_NEXT;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                    context.startService(new Intent(MusicService.ACTION_PREVIOUS));
+                    action = MusicService.ACTION_PREVIOUS;
                     break;
+                default:
+                    return;
             }
+            Intent serviceIntent = new Intent(context, MusicService.class);
+            serviceIntent.setAction(action);
+            context.startService(serviceIntent);
         }
     }
 }
