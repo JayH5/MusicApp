@@ -44,6 +44,8 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 		MediaPlayerHelper.MediaPlayerListener {
 
 	private static final String TAG = "MusicService";
+
+    public static final boolean DEBUG = false;
 	
 	// Intent actions for external control
 	public static final String ACTION_TOGGLE_PLAYBACK =
@@ -128,8 +130,9 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public boolean onUnbind(Intent intent) {
     	mIsBound = false;
 
-    	Log.d(TAG, "Unbind!");
-    	if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
+        if (DEBUG) Log.d(TAG, "Unbind!");
+
+        if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
             // Something is currently playing, or will be playing once
             // an in-progress action requesting audio focus ends, so don't stop
             // the service now.
@@ -238,7 +241,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public void onDestroy() {
         super.onDestroy();
         
-        Log.d(TAG, "Destroying service.");
+        if (DEBUG) Log.d(TAG, "Destroying service.");
 
         mPlayQueue.closeDb();
 
@@ -268,7 +271,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
             return;
         }
 
-        Log.d(TAG, "Nothing is playing anymore, releasing notification");
+        if (DEBUG) Log.d(TAG, "Nothing is playing anymore, releasing notification");
         hideNotification();
         mAudioManager.abandonAudioFocus(this);
 
@@ -278,14 +281,14 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     }
     
     private void scheduleDelayedShutdown() {
-        Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
+        if (DEBUG) Log.v(TAG, "Scheduling shutdown in " + IDLE_DELAY + " ms");
         mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 SystemClock.elapsedRealtime() + IDLE_DELAY, mShutdownIntent);
         mShutdownScheduled = true;
     }
 
     private void cancelShutdown() {
-        Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
+        if (DEBUG) Log.d(TAG, "Cancelling delayed shutdown, scheduled = " + mShutdownScheduled);
         if (mShutdownScheduled) {
             mAlarmManager.cancel(mShutdownIntent);
             mShutdownScheduled = false;
@@ -356,7 +359,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
      * countdown to calling {@code #stopForeground(true)}
      */
     private void gotoIdleState() {
-    	Log.d(TAG, "Going to idle state.");
+    	if (DEBUG) Log.d(TAG, "Going to idle state.");
         // Post a delayed message to stop service
     	scheduleDelayedShutdown();
         
@@ -1141,7 +1144,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     
     @Override
 	public void onTrackWentToNext() {
-		Log.d(TAG, "Track went to next");
+		if (DEBUG) Log.d(TAG, "Track went to next");
 		if (gotoNextInternal()) {
 			onTrackChanged();
 			setNextTrack();
@@ -1155,7 +1158,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 	 */
 	@Override
 	public void onTrackEnded() {
-		Log.d(TAG, "Track ended");
+		if (DEBUG) Log.d(TAG, "Track ended");
 		gotoIdleState();
 	}
 

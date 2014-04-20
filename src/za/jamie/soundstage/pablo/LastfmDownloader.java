@@ -33,8 +33,7 @@ public class LastfmDownloader extends OkHttpDownloader {
 	public Response load(Uri uri, boolean localCacheOnly) throws IOException {
 		// First check local album art
         String type = UriUtils.getFirstPathSegment(uri);
-        Log.d(TAG, "Type= " + type);
-        if (type.equals("album")) {
+        if ("album".equals(type)) {
             String id = uri.getLastPathSegment();
             if (id != null && id.matches("\\d+")) {
                 Uri albumArtUri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, Long.parseLong(id));
