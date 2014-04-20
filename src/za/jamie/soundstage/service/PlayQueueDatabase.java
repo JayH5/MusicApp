@@ -13,6 +13,9 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import za.jamie.soundstage.models.Track;
 
@@ -79,7 +82,9 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
     		+ "=" + TABLE_NAME_TRACK_SET + "." + MediaStore.Audio.Media._ID
     		+ " ORDER BY " + COLUMN_NAME_QUEUE_POSITION;
     
-	public PlayQueueDatabase(Context context) {
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public PlayQueueDatabase(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
 
@@ -134,6 +139,19 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	private void dropTable(SQLiteDatabase db, String tableName) {
 		db.execSQL("DROP TABLE IF EXISTS " + tableName);
 	}
+
+    @Override
+    public void close() {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                Log.w(TAG, "Timed out waiting for play queue writes to complete!");
+            }
+        } catch (InterruptedException e) {
+            Log.w(TAG, "Interrupted while completing play queue database writes!", e);
+        }
+        super.close();
+    }
 	
 	public List<Track> getTrackList() {
 		SQLiteDatabase db = getReadableDatabase();
@@ -183,14 +201,12 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	public void open(final List<Track> trackList) {
 		new AsyncTask<Void, Void, Void>() {
-
 			@Override
 			protected Void doInBackground(Void... params) {
 				open(getWritableDatabase(), trackList);
 				return null;
 			}
-			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void open(SQLiteDatabase db, List<Track> trackList) {		
@@ -224,15 +240,12 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	public void add(final int position, final Track track) {
 		new AsyncTask<Void, Void, Void>() {
-
 			@Override
 			protected Void doInBackground(Void... params) {
-				add(getWritableDatabase(), position, track);				
-				
+				add(getWritableDatabase(), position, track);
 				return null;
 			}
-			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void add(SQLiteDatabase db, int position, Track track) {
@@ -276,15 +289,12 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	public void addAll(final int position, final List<Track> tracks) {
 		new AsyncTask<Void, Void, Void>() {
-
 			@Override
 			protected Void doInBackground(Void... params) {
-				addAll(getWritableDatabase(), position, tracks);				
-				
+				addAll(getWritableDatabase(), position, tracks);
 				return null;
 			}
-			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void addAll(SQLiteDatabase db, int position, List<Track> tracks) {
@@ -335,14 +345,12 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	public void remove(final int position) {
 		new AsyncTask<Void, Void, Void>() {
-
 			@Override
 			protected Void doInBackground(Void... params) {
 				remove(getWritableDatabase(), position);
 				return null;
 			}
-			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void remove(SQLiteDatabase db, int position) {
@@ -378,14 +386,12 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 	
 	public void move(final int from, final int to) {
 		new AsyncTask<Void, Void, Void>() {
-
 			@Override
 			protected Void doInBackground(Void... params) {
 				move(getWritableDatabase(), from, to);
 				return null;
 			}
-			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void move(SQLiteDatabase db, int from, int to) {
@@ -434,7 +440,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 				return null;
 			}
 			
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void saveShuffleMap(SQLiteDatabase db, List<Integer> shuffleMap) {
@@ -477,7 +483,7 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 				saveState(getWritableDatabase(), key, value);
 				return null;
 			}
-		}.execute();
+		}.executeOnExecutor(executor);
 	}
 	
 	private void saveState(SQLiteDatabase db, String key, int value) {
@@ -501,4 +507,5 @@ public class PlayQueueDatabase extends SQLiteOpenHelper {
 		
 		return bundle;
 	}
+
 }
