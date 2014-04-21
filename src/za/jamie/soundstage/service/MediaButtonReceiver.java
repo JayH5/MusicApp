@@ -16,7 +16,6 @@
 
 package za.jamie.soundstage.service;
 
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -28,7 +27,7 @@ import android.view.KeyEvent;
 public class MediaButtonReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(Intent.ACTION_MEDIA_BUTTON)) {
+        if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
             KeyEvent keyEvent = (KeyEvent) intent.getExtras().get(Intent.EXTRA_KEY_EVENT);
             if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
                 return;
@@ -63,4 +62,5 @@ public class MediaButtonReceiver extends BroadcastReceiver {
             context.startService(serviceIntent);
         }
     }
+
 }
