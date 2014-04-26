@@ -3,7 +3,6 @@ package za.jamie.soundstage.appwidgets;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -73,8 +72,8 @@ public class AppWidget extends AppWidgetProvider {
     }
     
     private static PendingIntent buildActionIntent(Context context, String action) {
-        Intent intent = new Intent(action);
-        intent.setComponent(new ComponentName(context, MusicService.class));
+        Intent intent = new Intent(context, MusicService.class);
+        intent.setAction(action);
         return PendingIntent.getService(context, 0, intent, 0);
     }
     
