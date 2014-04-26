@@ -764,7 +764,6 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
         } else {
         	seek(0);
             play();
-            syncSeekPosition();
         }
     }
     
@@ -792,6 +791,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     			position = mPlayer.getDuration();
     		}
     		mPlayer.seekTo(position);
+            syncSeekPosition();
             return position;
     	}
         return -1;
