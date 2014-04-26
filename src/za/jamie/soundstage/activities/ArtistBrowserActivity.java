@@ -1,11 +1,5 @@
 package za.jamie.soundstage.activities;
 
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
-import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
-import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
-import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -17,13 +11,22 @@ import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
+import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
+import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
+import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
+
 public class ArtistBrowserActivity extends MusicActivity implements 
 		ArtistSummaryFragment.OnArtistFoundListener, 
 		ArtistTrackListFragment.ArtistTrackListListener {
 	
 	private static final String TAG_SUMMARY_FRAG = "artist_summary";
+    private static final String STATE_URI = "state_uri";
 	
 	private long mArtistId;
+    private Uri mUri;
 	
 	private ArtistSummaryFragment mSummaryFragment;
 	
@@ -48,19 +51,29 @@ public class ArtistBrowserActivity extends MusicActivity implements
 			indicator.setViewPager(viewPager);
 		}		
 
-		Uri uri = getIntent().getData();
-		mArtistId = ContentUris.parseId(uri);
+		if (savedInstanceState != null) {
+            mUri = savedInstanceState.getParcelable(STATE_URI);
+        } else {
+            mUri = getIntent().getData();
+        }
+		mArtistId = ContentUris.parseId(mUri);
 
         // Set up the summary fragment
 		final FragmentManager fm = getFragmentManager();
 		mSummaryFragment = (ArtistSummaryFragment) fm.findFragmentByTag(TAG_SUMMARY_FRAG);
 		if (mSummaryFragment == null) {
-			mSummaryFragment = ArtistSummaryFragment.newInstance(uri);
+			mSummaryFragment = ArtistSummaryFragment.newInstance(mUri);
 			fm.beginTransaction()
 				.add(R.id.summaryFrame, mSummaryFragment, TAG_SUMMARY_FRAG)
 				.commit();
 		}
 	}
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(STATE_URI, mUri);
+    }
 	
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {

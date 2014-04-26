@@ -32,8 +32,10 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 	
 	//private static final String TAG = "PlaylistBrowserActivity";
 	
-	public static final String EXTRA_NAME = "extra_name";
-	public static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
+	//public static final String EXTRA_NAME = "extra_name";
+	//public static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
+
+    private static final String STATE_PLAYLIST_ID = "state_playlist_id";
 	
 	private static final String TAG_LIST_FRAGMENT = "playlist_track_list";
 	
@@ -50,7 +52,11 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 		
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 		
-		mPlaylistId = ContentUris.parseId(getIntent().getData());
+		if (savedInstanceState != null) {
+            mPlaylistId = savedInstanceState.getLong(STATE_PLAYLIST_ID);
+        } else {
+            mPlaylistId = ContentUris.parseId(getIntent().getData());
+        }
 
         final FragmentManager fm = getFragmentManager();
         mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAGMENT);
@@ -63,6 +69,12 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 		
 		getLoaderManager().initLoader(0, null, this);
 	}
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(STATE_PLAYLIST_ID, mPlaylistId);
+    }
 	
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {

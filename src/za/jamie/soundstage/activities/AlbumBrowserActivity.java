@@ -31,6 +31,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	
 	//private static final String TAG = "AlbumBrowserActivity";
 	private static final String TAG_LIST_FRAG = "album_track_list";
+    private static final String STATE_ALBUM_ID = "state_album_id";
 	
 	private long mAlbumId;
 	
@@ -45,7 +46,11 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 
-		mAlbumId = ContentUris.parseId(getIntent().getData());
+		if (savedInstanceState != null) { // Some phones throw away the intent here...
+            mAlbumId = savedInstanceState.getLong(STATE_ALBUM_ID);
+        } else {
+            mAlbumId = ContentUris.parseId(getIntent().getData());
+        }
 
 		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
@@ -56,6 +61,12 @@ public class AlbumBrowserActivity extends MusicActivity implements
 					.commit();
 		}		
 	}
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(STATE_ALBUM_ID, mAlbumId);
+    }
 	
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {
