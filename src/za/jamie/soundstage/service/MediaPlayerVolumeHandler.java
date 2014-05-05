@@ -19,7 +19,7 @@ public class MediaPlayerVolumeHandler extends Handler {
     private static final int MSG_FADEUP = 2;
     private static final int MSG_MUTE = 3;
 
-    private float mVolume;
+    private float mVolume = 1.0f;
 
     private MediaPlayer mPlayer;
 
