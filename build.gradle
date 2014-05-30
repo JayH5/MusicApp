@@ -12,22 +12,11 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    buildToolsVersion "19.1"
 
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 19
-    }
-    buildTypes {
-        release {
-            runProguard true
-            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
-        }
-    }
-    productFlavors {
-        defaultFlavor {
-            proguardFile 'proguard-rules.txt'
-        }
     }
 
     sourceSets {
@@ -62,7 +51,7 @@ repositories {
 dependencies {
     compile fileTree('libs')
     compile project(':drag-sort-listview:library')
-    compile 'com.squareup.okhttp:okhttp:1.5.4'
+    compile 'com.squareup.okhttp:okhttp:1.6.0'
     compile 'net.simonvt.menudrawer:menudrawer:3.0.5'
     compile 'com.android.support:support-v13:19.1.+'
 }
