@@ -13,7 +13,9 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -21,6 +23,7 @@ import android.util.Log;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
+import com.squareup.picasso.Target;
 
 import java.util.HashSet;
 import java.util.List;
@@ -118,6 +121,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     private final RemoteCallbackList<IPlayQueueCallback> mPlayQueueCallbackList =
     		new RemoteCallbackList<IPlayQueueCallback>();   
     
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -1075,11 +1079,11 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	
     	Uri albumArtUri = SoundstageUris.albumImage(currentTrack);
     	final int notificationDimen = R.dimen.notification_expanded_height;
-    	Pablo.with(this)
+        RequestCreator request = Pablo.with(this)
     		.load(albumArtUri)
     		.resizeDimen(notificationDimen, notificationDimen)
-    		.centerCrop()
-    		.into(mNotificationHelper);
+    		.centerCrop();
+        enqueuePicassoRequest(request, mNotificationHelper);
     }
     
     private void hideNotification() {
@@ -1112,15 +1116,15 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     	Picasso pablo = Pablo.with(this);
     	if (mShowNotification) {
     		final int notificationDimen = R.dimen.notification_expanded_height;
-    		pablo.load(uri)
+    		RequestCreator request = pablo.load(uri)
     			.resizeDimen(notificationDimen, notificationDimen)
-    			.centerCrop()
-    			.into(mNotificationHelper);
+    			.centerCrop();
+            enqueuePicassoRequest(request, mNotificationHelper);
     	}
         int size = AppUtils.smallestScreenWidth(getResources());
         RequestCreator request = pablo.load(uri).resize(size, size).centerCrop();
-    	request.into(mRemoteControlClient);
-    	request.into(mAppWidgetHelper);
+        enqueuePicassoRequest(request, mRemoteControlClient);
+        enqueuePicassoRequest(request, mAppWidgetHelper);
     	
     	mLastAlbumId = track.getAlbumId();
     }
@@ -1132,11 +1136,20 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
         int size = AppUtils.smallestScreenWidth(getResources());
         Uri uri = SoundstageUris.albumImage(track);
-    	Pablo.with(this)
+    	RequestCreator request = Pablo.with(this)
     		.load(uri)
     		.resize(size, size)
-    		.centerCrop()
-    		.into(mAppWidgetHelper);
+    		.centerCrop();
+        enqueuePicassoRequest(request, mAppWidgetHelper);
+    }
+
+    private void enqueuePicassoRequest(final RequestCreator request, final Target target) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                request.into(target);
+            }
+        });
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

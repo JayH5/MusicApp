@@ -3,8 +3,8 @@ package za.jamie.soundstage.pablo;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
-import android.util.Log;
 
 import com.squareup.picasso.OkHttpDownloader;
 
@@ -38,13 +38,14 @@ public class LastfmDownloader extends OkHttpDownloader {
             if (id != null && id.matches("\\d+")) {
                 Uri albumArtUri = ContentUris.withAppendedId(ALBUM_ART_BASE_URI, Long.parseLong(id));
 
-                InputStream in = null;
+                AssetFileDescriptor afd = null;
                 try {
-                    in = mContentResolver.openInputStream(albumArtUri);
+                    afd = mContentResolver.openAssetFileDescriptor(albumArtUri, "r");
                 } catch (FileNotFoundException ignored) { }
 
-                if (in != null) {
-                    return new Response(in, true);
+                if (afd != null) {
+                    InputStream in = new AssetFileDescriptor.AutoCloseInputStream(afd);
+                    return new Response(in, true, afd.getLength());
                 }
             }
         }
