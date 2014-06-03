@@ -49,6 +49,7 @@ public class AlbumsAdapter extends LibraryAdapter {
         Resources res = mContext.getResources();
         mHeaderHeight = res.getDimensionPixelSize(R.dimen.spacer_album_grid);
         mImageSize = calculateImageSize(res);
+        mGradient = new AlbumGridGradient(mContext.getResources(), mImageSize, mImageSize);
 	}
 
     private int calculateImageSize(Resources res) {
@@ -92,20 +93,14 @@ public class AlbumsAdapter extends LibraryAdapter {
 		long id = cursor.getLong(mIdColIdx);
 		Uri uri = SoundstageUris.albumImage(id, album, artist);
 
-        if (mColumnWidth > 0) {
-            if (mGradient == null) {
-                mGradient = new AlbumGridGradient(mContext.getResources(), mImageSize, mImageSize);
-            }
+        Pablo.with(mContext)
+                .load(uri)
+                .resize(mImageSize, mImageSize)
+                .centerCrop()
+                .transform(mGradient)
+                .placeholder(R.drawable.placeholder_grey)
+                .into(albumArtImage);
 
-            Pablo.with(mContext)
-                    .load(uri)
-                    .resize(mImageSize, mImageSize)
-                    .centerCrop()
-                    .transform(mGradient)
-                    .placeholder(R.drawable.placeholder_grey)
-                    .into(albumArtImage);
-        }
-		
 		if (mFlipHelper != null) {
 			MusicItem item = new MusicItem(id, album, MusicItem.TYPE_ALBUM);
 			mFlipHelper.bindFlippedViewButtons(view, item);
