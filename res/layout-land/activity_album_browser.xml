@@ -3,15 +3,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal" >
-    
+
     <fragment
         android:name="za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment"
         android:id="@+id/summary_fragment"
         android:layout_width="@dimen/summary_album_image_size"
         android:layout_height="match_parent"
         android:layout_margin="8dp" />
-    
-    <FrameLayout 
+
+    <FrameLayout
         android:id="@+id/list_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

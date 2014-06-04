@@ -46,8 +46,8 @@ public class ArtistAlbumListFragment extends MusicListFragment implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-        mAdapter = new ArtistAlbumListAdapter(getActivity(),
-        		R.layout.list_item_artist_album, null, 0);
+        mAdapter =
+                new ArtistAlbumListAdapter(getActivity(), R.layout.list_item_artist_album, null, 0);
 
         ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper((MusicActivity) getActivity(), flipper);
@@ -67,7 +67,8 @@ public class ArtistAlbumListFragment extends MusicListFragment implements
 			Bundle savedInstanceState) {
 		View v = super.onCreateView(inflater, parent, savedInstanceState);
 
-		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
+		ViewGroup list = (ViewGroup) v.findViewById(android.R.id.list);
+        mSpacerView = inflater.inflate(R.layout.list_item_spacer, list, false);
 
 		return v;
 	}

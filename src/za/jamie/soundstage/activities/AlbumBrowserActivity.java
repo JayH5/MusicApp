@@ -26,24 +26,24 @@ import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.models.MusicItem;
 
-public class AlbumBrowserActivity extends MusicActivity implements 
+public class AlbumBrowserActivity extends MusicActivity implements
 		AlbumTrackListFragment.AlbumStatisticsCallback {
-	
+
 	//private static final String TAG = "AlbumBrowserActivity";
 	private static final String TAG_LIST_FRAG = "album_track_list";
     private static final String STATE_ALBUM_ID = "state_album_id";
-	
+
 	private long mAlbumId;
-	
+
 	private TrackListFragment mTrackListFragment;
-	
+
 	private SortedMap<MusicItem, Integer> mArtists;
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_album_browser);
-		
+        setContentView(R.layout.activity_album_browser);
+
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
 
 		if (savedInstanceState != null) { // Some phones throw away the intent here...
@@ -55,11 +55,11 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		final FragmentManager fm = getFragmentManager();
 		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
 		if (mTrackListFragment == null) {
-			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);			
-			fm.beginTransaction()
-					.add(R.id.list_frame, mTrackListFragment, TAG_LIST_FRAG)
-					.commit();
-		}		
+			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);
+            fm.beginTransaction()
+                    .add(R.id.list_frame, mTrackListFragment, TAG_LIST_FRAG)
+                    .commit();
+		}
 	}
 
     @Override
@@ -67,15 +67,15 @@ public class AlbumBrowserActivity extends MusicActivity implements
         super.onSaveInstanceState(outState);
         outState.putLong(STATE_ALBUM_ID, mAlbumId);
     }
-	
+
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {
 		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, LibraryActivity.SECTION_ALBUMS);
         upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mAlbumId);
-		
+
 		return super.navigateUpTo(upIntent);
 	}
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -85,7 +85,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			return super.onCreateOptionsMenu(menu);
 		}
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
@@ -105,16 +105,16 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		if (album == null) {
 			return;
 		}
-		
+
 		// Set the title and subtitle in the actionbar
 		final ActionBar actionBar = getActionBar();
 		actionBar.setTitle(album.title);
-		String subtitle = album.isCompilation() ? getString(R.string.various_artists) : 
+		String subtitle = album.isCompilation() ? getString(R.string.various_artists) :
 				album.artists.firstKey().getTitle();
 		actionBar.setSubtitle(subtitle);
-		
+
 		mArtists = album.artists;
-		
+
 		final FragmentManager fm = getFragmentManager();
 		AlbumSummaryFragment frag =
 				(AlbumSummaryFragment) fm.findFragmentById(R.id.summary_fragment);
@@ -122,7 +122,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			frag.loadSummary(album);
 		}
 	}
-	
+
 	public void browseArtist() {
 		if (mArtists != null) {
 			if (mArtists.size() == 1) {
@@ -132,40 +132,40 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			}
 		}
 	}
-	
+
 	public void shuffleAlbum() {
 		if (mTrackListFragment != null) {
 			mTrackListFragment.shuffleAll();
 		}
 	}
-	
+
 	private void launchArtistBrowser(long artistId) {
 		Uri data = ContentUris.withAppendedId(
 				MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, artistId);
-		
+
 		Intent intent = new Intent(Intent.ACTION_VIEW);
 		intent.setDataAndType(data, MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE);
-		
+
 		startActivity(intent);
 	}
-	
+
 	private AlertDialog buildArtistListDialog(List<MusicItem> artists) {
-		final ListAdapter adapter = new ArrayAdapter<MusicItem>(this, 
-				R.layout.list_item_one_line_basic, R.id.title, artists) {		
+		final ListAdapter adapter = new ArrayAdapter<MusicItem>(this,
+				R.layout.list_item_one_line_basic, R.id.title, artists) {
 			@Override
 			public long getItemId(int position) {
 				return getItem(position).getId();
 			}
 		};
-		
+
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setAdapter(adapter, new DialogInterface.OnClickListener() {		
+		builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				launchArtistBrowser(adapter.getItemId(which));
 			}
 		});
-		
+
 		builder.setTitle("Browse artists");
 		return builder.create();
 	}

@@ -29,29 +29,29 @@ import za.jamie.soundstage.models.PlaylistStatistics;
 
 public class PlaylistBrowserActivity extends MusicActivity implements LoaderCallbacks<Cursor>,
         PlaylistTrackListFragment.PlaylistStatisticsCallback {
-	
+
 	//private static final String TAG = "PlaylistBrowserActivity";
-	
+
 	//public static final String EXTRA_NAME = "extra_name";
 	//public static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
 
     private static final String STATE_PLAYLIST_ID = "state_playlist_id";
-	
+
 	private static final String TAG_LIST_FRAGMENT = "playlist_track_list";
-	
+
 	private long mPlaylistId;
 
     private TrackListFragment mTrackListFragment;
 
     private SortedSet<MusicItem> mArtists;
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_album_browser);
-		
+        setContentView(R.layout.activity_album_browser);
+
 		getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
-		
+
 		if (savedInstanceState != null) {
             mPlaylistId = savedInstanceState.getLong(STATE_PLAYLIST_ID);
         } else {
@@ -66,7 +66,7 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 				.add(R.id.list_frame, mTrackListFragment, TAG_LIST_FRAGMENT)
 				.commit();
 		}
-		
+
 		getLoaderManager().initLoader(0, null, this);
 	}
 
@@ -75,12 +75,12 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
         super.onSaveInstanceState(outState);
         outState.putLong(STATE_PLAYLIST_ID, mPlaylistId);
     }
-	
+
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {
 		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, LibraryActivity.SECTION_PLAYLISTS);
         upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mPlaylistId);
-		
+
 		return super.navigateUpTo(upIntent);
 	}
 

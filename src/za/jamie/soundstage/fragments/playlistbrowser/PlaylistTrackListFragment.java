@@ -24,7 +24,7 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
 
 	//private static final String TAG = "TrackListFragment";
     private static final String ARG_PLAYLIST_ID = "arg_playlist_id";
-	
+
 	private PlaylistTrackAdapter mAdapter;
 	private long mPlaylistId;
 
@@ -33,11 +33,11 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
     private View mStatsHeader;
 
     private FlippingViewHelper mFlipHelper;
-	
-	public static PlaylistTrackListFragment newInstance(long playlistId) {		
+
+	public static PlaylistTrackListFragment newInstance(long playlistId) {
 		final Bundle args = new Bundle();
 		args.putLong(ARG_PLAYLIST_ID, playlistId);
-		
+
 		PlaylistTrackListFragment frag = new PlaylistTrackListFragment();
 		frag.setArguments(args);
 		return frag;
@@ -48,23 +48,22 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
         super.onAttach(activity);
         mCallback = (PlaylistStatisticsCallback) activity;
     }
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		mAdapter = new PlaylistTrackAdapter(getActivity(), 
-				R.layout.list_item_two_line, null, 0);
-		
+
+		mAdapter = new PlaylistTrackAdapter(getActivity(), R.layout.list_item_two_line, null, 0);
+
 		setListAdapter(mAdapter);
-		
+
 		mPlaylistId = getArguments().getLong(ARG_PLAYLIST_ID);
 
         ViewFlipper flipper = new ViewFlipper(getActivity(), R.id.list_item, R.id.flipped_view);
         mFlipHelper = new FlippingViewHelper(getMusicActivity(), flipper);
         mAdapter.setFlippingViewHelper(mFlipHelper);
 	}
-	
+
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -94,7 +93,8 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
         View v = super.onCreateView(inflater, parent, savedInstanceState);
 
         if (AppUtils.isPortrait(getResources())) {
-            mStatsHeader = inflater.inflate(R.layout.list_item_playlist_summary, null, false);
+            ViewGroup list = (ViewGroup) v.findViewById(android.R.id.list);
+            mStatsHeader = inflater.inflate(R.layout.list_item_playlist_summary, list, false);
         }
 
         return v;

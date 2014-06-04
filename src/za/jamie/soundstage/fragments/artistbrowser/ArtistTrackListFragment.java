@@ -46,8 +46,7 @@ public class ArtistTrackListFragment extends TrackListFragment implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		mAdapter = new ArtistTrackListAdapter(getActivity(),
-				R.layout.list_item_two_line, null, 0);
+		mAdapter = new ArtistTrackListAdapter(getActivity(), R.layout.list_item_two_line, null, 0);
 		mAdapter.registerDataSetObserver(new DataSetObserver() {
 			@Override
 			public void onChanged() {
@@ -75,7 +74,8 @@ public class ArtistTrackListFragment extends TrackListFragment implements
 			Bundle savedInstanceState) {
 		View v = super.onCreateView(inflater, parent, savedInstanceState);
 
-		mSpacerView = inflater.inflate(R.layout.list_item_spacer, null, false);
+		ViewGroup list = (ViewGroup) v.findViewById(android.R.id.list);
+        mSpacerView = inflater.inflate(R.layout.list_item_spacer, list, false);
 
 		return v;
 	}

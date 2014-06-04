@@ -1,11 +1,7 @@
 package za.jamie.soundstage.models;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import android.util.LongSparseArray;
+
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -30,7 +26,7 @@ public class PlaylistStatistics {
     public static class Builder {
         private int numTracks;
         private SortedSet<MusicItem> artists = new TreeSet<MusicItem>();
-        private Map<Long, Album> albums = new HashMap<Long, Album>();
+        private LongSparseArray<Album> albums = new LongSparseArray<Album>();
         private long duration;
 
         public Builder() {
@@ -63,7 +59,10 @@ public class PlaylistStatistics {
         }
 
         public PlaylistStatistics create() {
-            SortedSet<Album> sortedAlbums = new TreeSet<Album>(albums.values());
+            SortedSet<Album> sortedAlbums = new TreeSet<Album>();
+            for (int i = 0, n = albums.size(); i < n; i++) {
+                sortedAlbums.add(albums.valueAt(i));
+            }
             return new PlaylistStatistics(sortedAlbums, artists, numTracks, duration);
         }
     }
