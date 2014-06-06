@@ -17,7 +17,8 @@ public final class MusicLoaders {
         final String[] projection = {
                 Albums._ID,
                 Albums.ALBUM,
-                Albums.ARTIST
+                Albums.ARTIST,
+                Albums.ALBUM_ART
         };
         return new CursorLoader(context, Albums.EXTERNAL_CONTENT_URI, projection, null, null,
                 Albums.DEFAULT_SORT_ORDER);

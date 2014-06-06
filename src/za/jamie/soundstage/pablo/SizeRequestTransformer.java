@@ -12,7 +12,7 @@ public class SizeRequestTransformer implements Picasso.RequestTransformer {
 
     @Override
     public Request transformRequest(Request request) {
-        if (request.hasSize()) {
+        if (request.hasSize() && request.uri.getScheme().equals("soundstage")) {
             Uri uri = request.uri.buildUpon()
                     .appendQueryParameter("width", String.valueOf(request.targetWidth))
                     .appendQueryParameter("height", String.valueOf(request.targetHeight))

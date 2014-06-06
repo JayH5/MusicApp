@@ -5,12 +5,15 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.io.File;
 
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.abs.LibraryAdapter;
@@ -20,23 +23,23 @@ import za.jamie.soundstage.pablo.AlbumGridGradient;
 import za.jamie.soundstage.pablo.Pablo;
 import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.utils.AppUtils;
-import za.jamie.soundstage.utils.TextUtils;
 
 public class AlbumsAdapter extends LibraryAdapter {
 
 	private int mIdColIdx;
 	private int mAlbumColIdx;
 	private int mArtistColIdx;
-	
+    private int mAlbumArtColIdx;
+
 	private FlippingViewHelper mFlipHelper;
     private AlbumGridGradient mGradient;
-	
+
 	private int mNumColumns;
     private int mHeaderHeight;
     private int mImageSize;
     private int mColumnWidth;
 	private GridView.LayoutParams mItemLayoutParams;
-	
+
 	private final Context mContext;
 
 	public AlbumsAdapter(Context context, int layout, int headerLayout,
@@ -58,7 +61,7 @@ public class AlbumsAdapter extends LibraryAdapter {
                 - res.getDimensionPixelOffset(R.dimen.list_padding_fastscroll)) / 2.0f)
                 - res.getDimensionPixelOffset(R.dimen.grid_spacing);
     }
-	
+
 	public void setFlippingViewHelper(FlippingViewHelper helper) {
 		mFlipHelper = helper;
 	}
@@ -68,11 +71,12 @@ public class AlbumsAdapter extends LibraryAdapter {
 		mIdColIdx = cursor.getColumnIndex(MediaStore.Audio.Albums._ID);
 		mAlbumColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
 		mArtistColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
+        mAlbumArtColIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART);
 	}
 
 	@Override
 	protected String getSection(Context context, Cursor cursor) {
-		return TextUtils.headerFor(cursor.getString(mAlbumColIdx));
+		return za.jamie.soundstage.utils.TextUtils.headerFor(cursor.getString(mAlbumColIdx));
 	}
 
 	@Override
@@ -80,18 +84,24 @@ public class AlbumsAdapter extends LibraryAdapter {
 		if (view.getLayoutParams().height != mColumnWidth) {
 			view.setLayoutParams(mItemLayoutParams);
 		}
-		
+
 		TextView albumText = (TextView) view.findViewById(R.id.title);
 		TextView artistText = (TextView) view.findViewById(R.id.subtitle);
 		ImageView albumArtImage = (ImageView) view.findViewById(R.id.image);
-		
+
 		String album = cursor.getString(mAlbumColIdx);
 		String artist = cursor.getString(mArtistColIdx);
 		albumText.setText(album);
 		artistText.setText(artist);
 
 		long id = cursor.getLong(mIdColIdx);
-		Uri uri = SoundstageUris.albumImage(id, album, artist);
+        String albumArt = cursor.getString(mAlbumArtColIdx);
+        Uri uri;
+        if (!TextUtils.isEmpty(albumArt)) {
+            uri = Uri.fromFile(new File(albumArt));
+        } else {
+            uri = SoundstageUris.albumImage(id, album, artist);
+        }
 
         Pablo.with(mContext)
                 .load(uri)
@@ -182,5 +192,5 @@ public class AlbumsAdapter extends LibraryAdapter {
     public boolean isEnabled(int position) {
         return position < mNumColumns ? false : super.isEnabled(position - mNumColumns);
     }
-	
+
 }
