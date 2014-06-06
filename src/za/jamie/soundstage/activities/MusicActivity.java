@@ -22,6 +22,7 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
@@ -29,15 +30,15 @@ import android.widget.SearchView;
 import android.widget.Toast;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
-	
+
 	//private static final String TAG_PLAYER = "player";
 	private static final String TAG_PLAY_QUEUE = "play_queue";
 	private static final String STATE_MENUDRAWER = "menudrawer";
-	
+
 	public static final String ACTION_SHOW_PLAYER = "za.jamie.soundstage.ACTION_SHOW_PLAYER";
-	
+
 	protected MenuDrawer mMenuDrawer;
-	
+
 	private MusicPlayerFragment mPlayer;
 	private PlayQueueFragment mPlayQueue;
 
@@ -54,9 +55,9 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
             }
         }
     };
-	
+
 	private final MusicConnection mConnection = new MusicConnection();
-	
+
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -136,7 +137,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
             bindService(serviceIntent, mConnection, 0);
         }
     }
-	
+
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
@@ -159,14 +160,14 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         mConnection.registerActivityStop(getComponentName());
         unregisterReceiver(mToastReceiver);
     }
-	
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
         mDestroyed = true;
 		unbindService(mConnection);
 	}
-	
+
 	@Override
     public void onBackPressed() {
 		final int drawerState = mMenuDrawer.getDrawerState();
@@ -176,7 +177,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         }
 		super.onBackPressed();
     }
-	
+
 	@Override
     protected void onRestoreInstanceState(Bundle inState) {
         super.onRestoreInstanceState(inState);
@@ -188,26 +189,33 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         super.onSaveInstanceState(outState);
         outState.putParcelable(STATE_MENUDRAWER, mMenuDrawer.saveState());
     }
-    
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-    	getMenuInflater().inflate(R.menu.search, menu);
+        MenuInflater inflater = getMenuInflater();
+
+        // Add default menu options
+        inflater.inflate(R.menu.base, menu);
+        menu.findItem(R.id.action_settings).setIntent(new Intent(this, SettingsActivity.class));
+
+        // Add search button
+    	inflater.inflate(R.menu.search, menu);
         menu.findItem(R.id.menu_search).setIntent(new Intent(this, SearchActivity.class));
         return true;
     }
 
 	@Override
-	public void onDrawerStateChange(int oldState, int newState) {		
+	public void onDrawerStateChange(int oldState, int newState) {
 		if (newState == MenuDrawer.STATE_CLOSED || oldState == MenuDrawer.STATE_CLOSED) {
 			mMenuDrawer.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 		}
 	}
-	
+
 	@Override
 	public void onDrawerSlide(float openRatio, int offsetPixels) {
 		// Complete interface
 	}
-	
+
 	/**
 	 * Gets the {@link MusicConnection} instance associated with this MusicActivity that can
 	 * be used to access the MusicService's controls.
@@ -216,21 +224,21 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	public MusicConnection getMusicConnection() {
 		return mConnection;
 	}
-	
+
 	/**
 	 * Open the drawer with the player in it
 	 */
 	public void showPlayer() {
 		mMenuDrawer.openMenu();
 	}
-	
+
 	/**
 	 * Close the drawer with the player in it
 	 */
 	public void hidePlayer() {
 		mMenuDrawer.closeMenu();
 	}
-	
+
 	/**
 	 * Check with the player if anything is currently playing.
 	 * @return true if something is playing
@@ -238,14 +246,14 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	public boolean isPlaying() {
 		return mPlayer.isPlaying();
 	}
-	
+
 	private PendingIntent getNotificationIntent() {
 		// Bring back activity as it was with player showing
 		Intent intent = new Intent(this, this.getClass());
 		intent.setAction(ACTION_SHOW_PLAYER)
 			.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		
+
 		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
 

@@ -2,10 +2,13 @@
 <resources>
 
     <string name="app_name">Soundstage</string>
-    
+
+    <string name="label_settings">Settings</string>
+    <string name="label_search">Search</string>
+
     <string name="menu_settings">Settings</string>
     <string name="menu_search">Search music</string>
-    
+
     <!-- Album browser menu items -->
     <string name="menu_browse_artist">Browse artist</string>
     <string name="menu_browse_artist_condensed">Artist</string>
@@ -13,9 +16,9 @@
     <string name="menu_shuffle_album_condensed">Shuffle</string>
 
     <string name="browse_all_tracks">Browse by tracks</string>
-    
-    <string name="various_artists">Various artists</string>    
-    
+
+    <string name="various_artists">Various artists</string>
+
     <string name="library_section_albums">Albums</string>
     <string name="library_section_artists">Artists</string>
     <string name="library_section_songs">Songs</string>
@@ -24,10 +27,10 @@
     <string name="title_activity_library">LibraryActivity</string>
     <string name="title_activity_album_browser">AlbumBrowserActivity</string>
     <string name="title_activity_artist_browser">ArtistBrowserActivity</string>
-    
+
     <string name="title_play_queue">Play Queue</string>
     <string name="title_music_player">Now Playing</string>
-    
+
     <string name="play_queue_save_queue">Save as playlist</string>
     <string name="play_queue_close">Close</string>
     <string name="play_queue_save">Save</string>
@@ -36,19 +39,19 @@
     <string name="play_queue_already_exists">The playlist \"%s\" already exists. Please choose a different name.</string>
     <string name="play_queue_saved">The playlist \"%s\" was saved.</string>
     <string name="play_queue_error">There was an error saving the playlist.</string>
-    
+
     <!-- TextUtils string formatting -->
     <string name="year_delimiter" formatted="false"> - </string>
-    
+
     <string-array name="duration_units">
         <item>sec</item>
         <item>min</item>
         <item>hrs</item>
         <item>day</item>
     </string-array>
-    
+
     <string name="duration_delimiter" formatted="false">:</string>
-    
+
     <plurals name="tracks">
         <item quantity="one">1 track</item>
         <item quantity="other">%d tracks</item>
@@ -61,11 +64,13 @@
         <item quantity="one">1 artist</item>
         <item quantity="other">%d artists</item>
     </plurals>
-    
+
     <string name="track_number_missing">--</string>
-    
+
     <string name="image_unavailable">Image unavailable</string>
 
     <string name="disc_number">Disc %d</string>
+
+    <string name="error_no_equaliser">No equaliser found.</string>
 
 </resources>
