@@ -16,20 +16,20 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
     </style>
-    
+
     <style name="ListItemText.Title" parent="ListItemText">
-        <item name="android:textSize">@dimen/title_text_size</item> 
+        <item name="android:textSize">@dimen/title_text_size</item>
         <item name="android:textColor">?android:textColorPrimary</item>
         <item name="android:maxLines">2</item>
         <item name="android:ellipsize">end</item>
     </style>
-    
+
     <style name="ListItemText.Subtitle" parent="ListItemText">
         <item name="android:textSize">@dimen/subtitle_text_size</item>
         <item name="android:textColor">?android:textColorSecondary</item>
         <item name="android:singleLine">true</item>
     </style>
-    
+
     <style name="ListItemText.TrackNumber" >
         <item name="android:layout_width">@dimen/track_number_width</item>
         <item name="android:layout_height">match_parent</item>
@@ -40,7 +40,7 @@
         <item name="android:singleLine">true</item>
         <item name="android:maxLength">2</item>
     </style>
-    
+
     <!-- Google Now styled summary fragments -->
     <style name="NowText">
         <item name="android:layout_width">wrap_content</item>
@@ -51,7 +51,7 @@
         <item name="android:textColor">@color/now_dark_grey_text</item>
         <item name="android:textAllCaps">true</item>
     </style>
-    
+
     <!-- Styles for the music player -->
     <style name="MusicPlayerTitleText" parent="ListItemText">
         <item name="android:fontFamily">sans-serif-light</item>
@@ -60,20 +60,20 @@
         <item name="android:maxLines">2</item>
         <item name="android:ellipsize">end</item>
     </style>
-    
+
     <style name="MusicPlayerSubtitleText" parent="ListItemText">
         <item name="android:textSize">@dimen/title_text_size</item>
         <item name="android:textColor">?android:textColorSecondary</item>
         <item name="android:singleLine">true</item>
         <item name="android:ellipsize">end</item>
     </style>
-    
+
     <style name="MusicPlayerDurationText" parent="ListItemText">
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="android:textColor">?android:textColorSecondary</item>
         <item name="android:textSize">@dimen/music_player_duration_text_size</item>
     </style>
-    
+
     <!-- GridView -->
     <style name="GridViewHeader">
         <item name="android:background">@color/now_grey_border_upper</item>
@@ -83,7 +83,7 @@
         <item name="android:textSize">64sp</item>
         <item name="android:gravity">bottom|right</item>
     </style>
-    
+
     <!-- Gridview text styles -->
     <style name="GridViewText.Title" parent="ListItemText.Title">
         <item name="android:shadowColor">@color/blackish</item>
@@ -92,14 +92,14 @@
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">?android:textColorPrimaryInverse</item>
     </style>
-    
+
     <style name="GridViewText.Subtitle" parent="ListItemText.Subtitle">
         <item name="android:shadowColor">@color/blackish_trans</item>
         <item name="android:shadowDy">2</item>
         <item name="android:shadowRadius">1.5</item>
         <item name="android:textColor">?android:textColorSecondaryInverse</item>
     </style>
-    
+
     <style name="SeekText">
         <item name="android:shadowColor">@color/blackish</item>
         <item name="android:shadowDy">2</item>
@@ -107,7 +107,7 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">36sp</item>
     </style>
-    
+
     <!-- Notification bar event text -->
     <style name="NotificationText">
         <item name="android:layout_width">match_parent</item>
@@ -116,7 +116,7 @@
         <item name="android:fadingEdge">horizontal</item>
         <item name="android:singleLine">true</item>
     </style>
-    
+
     <!-- Notification bar actions -->
     <style name="NotificationAction">
         <item name="android:layout_width">@dimen/notification_action_width</item>
@@ -143,26 +143,26 @@
         <item name="android:src">@drawable/btn_notification_remove</item>
         <item name="android:visibility">gone</item>
     </style>
-    
+
     <style name="TransparentImageButton">
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_weight">1</item>
         <item name="android:background">?android:selectableItemBackground</item>
     </style>
-    
+
     <style name="PlayerTheme.TextAppearance.ActionBar.Title" parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title">
         <!--<item name="android:textSize">@dimen/actionbar_title_font_size</item>-->
         <item name="android:textColor">@android:color/holo_blue_dark</item>
         <item name="android:textStyle">bold</item>
     </style>
-    
+
     <style name="PlayerTheme.ActionBar" parent="@android:style/Widget.Holo.ActionBar">
         <item name="android:titleTextStyle">@style/PlayerTheme.TextAppearance.ActionBar.Title</item>
         <item name="android:displayOptions">useLogo|showTitle</item>
         <item name="android:background">@drawable/ab_hairline</item>
     </style>
-    
+
     <style name="FlippedViewText">
         <item name="android:fontFamily">sans-serif-light</item>
         <item name="android:textColor">@android:color/white</item>
@@ -175,6 +175,18 @@
         <item name="android:progressDrawable">@drawable/holodarkblue_scrubber_progress_horizontal_holo_light</item>
         <item name="android:indeterminateDrawable">@drawable/holodarkblue_scrubber_progress_horizontal_holo_light</item>
         <item name="android:thumb">@drawable/holodarkblue_scrubber_control_selector_holo_light</item>
+    </style>
+
+    <style name="ButtonPlayStoreWhite" parent="android:Widget.Holo.Light.Button">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">@dimen/button_height_play_store</item>
+        <item name="android:background">@drawable/btn_grey_border</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <style name="ButtonPlayStoreWhite.Big">
+        <item name="android:layout_height">@dimen/button_height_play_store_big</item>
     </style>
 
 </resources>

@@ -19,7 +19,7 @@
        	android:layout_alignParentRight="true"
        	android:layout_alignParentTop="true"
        	android:layout_toRightOf="@+id/albumThumb" >
-        
+
        	<LinearLayout
        	    android:layout_width="match_parent"
        	    android:layout_height="wrap_content"
@@ -28,49 +28,50 @@
        	    android:layout_alignParentTop="true"
        	    android:gravity="center_horizontal"
        	    android:orientation="vertical" >
-            
+
            	<TextView
            		android:id="@+id/albumTracks"
            		android:layout_weight="1"
            		style="@style/NowText" />
-        
+
        		<TextView
            		android:id="@+id/albumDuration"
            		android:layout_weight="1"
            		style="@style/NowText" />
-       		
+
        		<TextView
            		android:id="@+id/albumYear"
            		android:layout_weight="1"
            		style="@style/NowText" />
-           
+
        	</LinearLayout>
-        
-        
+
+
        	<LinearLayout
            	android:id="@+id/album_detail_buttons"
            	android:layout_width="match_parent"
-           	android:layout_height="@dimen/button_bar_height"
-           	android:gravity="center_vertical"
-           	android:divider="?android:attr/dividerVertical"
-           	android:dividerPadding="@dimen/button_bar_divider_padding"
-           	android:showDividers="middle"
+           	android:layout_height="wrap_content"
+            android:paddingTop="@dimen/album_summary_btn_margin_virt"
+            android:paddingBottom="@dimen/album_summary_btn_margin_virt"
+            android:paddingLeft="@dimen/album_summary_btn_margin_hori"
+            android:paddingRight="@dimen/album_summary_btn_margin_hori"
            	android:orientation="horizontal"
-           	android:layout_alignParentLeft="true"
        		android:layout_alignParentBottom="true" >
-           
+
            	<ImageButton
                	android:id="@+id/browse_artist_button"
                	android:src="@drawable/btn_browse_artist"
-               	style="@style/TransparentImageButton" />
-           
+                style="@style/ButtonPlayStoreWhite.Big"
+                android:layout_marginRight="@dimen/album_summary_btn_spacing"/>
+
            	<ImageButton
                	android:id="@+id/shuffle_button"
                	android:src="@drawable/btn_shuffle"
-               	style="@style/TransparentImageButton" />
-           
+               	style="@style/ButtonPlayStoreWhite.Big"
+                android:layout_marginLeft="@dimen/album_summary_btn_spacing"/>
+
        	</LinearLayout>
-        
+
     </RelativeLayout>
-    
+
 </RelativeLayout>
