@@ -33,21 +33,21 @@ public class MusicFragment extends Fragment {
     protected MusicActivity getMusicActivity() {
         return mActivity;
     }
-	
+
 	/**
 	 * See {@link MusicActivity#getMusicConnection()}
 	 */
 	protected MusicConnection getMusicConnection() {
 		return mActivity.getMusicConnection();
 	}
-	
+
 	/**
 	 * See {@link MusicActivity#showPlayer()}
 	 */
 	protected void showPlayer() {
 		mActivity.showPlayer();
 	}
-	
+
 	/**
 	 * See {@link MusicActivity#hidePlayer()}
 	 */

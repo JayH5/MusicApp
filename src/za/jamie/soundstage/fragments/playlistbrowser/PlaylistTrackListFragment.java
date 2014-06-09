@@ -14,12 +14,13 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlaylistTrackAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.fragments.MusicListFragment;
+import za.jamie.soundstage.fragments.TrackListHost;
 import za.jamie.soundstage.models.PlaylistStatistics;
 import za.jamie.soundstage.providers.MusicLoaders;
 import za.jamie.soundstage.utils.AppUtils;
 
-public class PlaylistTrackListFragment extends TrackListFragment implements
+public class PlaylistTrackListFragment extends MusicListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
 	//private static final String TAG = "TrackListFragment";
@@ -28,7 +29,7 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
 	private PlaylistTrackAdapter mAdapter;
 	private long mPlaylistId;
 
-    private PlaylistStatisticsCallback mCallback;
+    private PlaylistTrackListHost mCallback;
 
     private View mStatsHeader;
 
@@ -46,7 +47,7 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        mCallback = (PlaylistStatisticsCallback) activity;
+        mCallback = (PlaylistTrackListHost) activity;
     }
 
 	@Override
@@ -112,6 +113,11 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
         mFlipHelper.initFlipper(lv);
     }
 
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        mCallback.playAt(mStatsHeader == null ? position : position - 1);
+    }
+
     public PlaylistStatistics getPlaylistStatistics() {
         final Cursor cursor = mAdapter.getCursor();
         if (cursor != null && cursor.moveToFirst()) {
@@ -144,7 +150,7 @@ public class PlaylistTrackListFragment extends TrackListFragment implements
      * Interface for delivery of collected playlist statistics. The Activity that adds this fragment
      * must implement this interface.
      */
-    public interface PlaylistStatisticsCallback {
+    public interface PlaylistTrackListHost extends TrackListHost {
         void deliverPlaylistStatistics(PlaylistStatistics stats);
     }
 

@@ -10,7 +10,6 @@ import static android.provider.MediaStore.Audio.Artists;
 import static android.provider.MediaStore.Audio.Media;
 import static android.provider.MediaStore.Audio.Playlists;
 
-
 public final class MusicLoaders {
 
     public static Loader<Cursor> albums(Context context) {
@@ -60,7 +59,7 @@ public final class MusicLoaders {
     }
 
     public static Loader<Cursor> songs(Context context) {
-        final String[] projection = new String[] {
+        final String[] projection = {
                 Media._ID,
                 Media.TITLE,
                 Media.ARTIST_ID,
@@ -76,7 +75,7 @@ public final class MusicLoaders {
     }
 
     public static Loader<Cursor> artistSongs(Context context, long artistId) {
-        final String[] projection = new String[] {
+        final String[] projection = {
                 Media._ID,
                 Media.TITLE,
                 Media.ARTIST_ID,
@@ -92,7 +91,7 @@ public final class MusicLoaders {
     }
 
     public static Loader<Cursor> albumSongs(Context context, long albumId) {
-        final String[] projection = new String[] {
+        final String[] projection = {
                 Media._ID,
                 Media.TITLE,
                 Media.ARTIST_ID,
@@ -110,7 +109,7 @@ public final class MusicLoaders {
     }
 
     public static Loader<Cursor> playlistSongs(Context context, long playlistId) {
-        final String[] projection = new String[] {
+        final String[] projection = {
                 Media._ID,
                 Media.TITLE,
                 Media.ARTIST_ID,

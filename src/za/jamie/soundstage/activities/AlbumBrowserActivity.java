@@ -20,22 +20,22 @@ import java.util.List;
 import java.util.SortedMap;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumSummaryFragment;
 import za.jamie.soundstage.fragments.albumbrowser.AlbumTrackListFragment;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.models.MusicItem;
 
 public class AlbumBrowserActivity extends MusicActivity implements
-		AlbumTrackListFragment.AlbumStatisticsCallback {
+        AlbumTrackListFragment.AlbumTrackListHost, AlbumSummaryFragment.AlbumSummaryHost {
 
 	//private static final String TAG = "AlbumBrowserActivity";
 	private static final String TAG_LIST_FRAG = "album_track_list";
     private static final String STATE_ALBUM_ID = "state_album_id";
 
 	private long mAlbumId;
+    private String mAlbum;
 
-	private TrackListFragment mTrackListFragment;
+	private AlbumTrackListFragment mTrackListFragment;
 
 	private SortedMap<MusicItem, Integer> mArtists;
 
@@ -53,7 +53,7 @@ public class AlbumBrowserActivity extends MusicActivity implements
         }
 
 		final FragmentManager fm = getFragmentManager();
-		mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
+		mTrackListFragment = (AlbumTrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAG);
 		if (mTrackListFragment == null) {
 			mTrackListFragment = AlbumTrackListFragment.newInstance(mAlbumId);
             fm.beginTransaction()
@@ -90,10 +90,10 @@ public class AlbumBrowserActivity extends MusicActivity implements
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
 		case R.id.menu_browse_artist:
-			browseArtist();
+			browseArtists();
 			return true;
 		case R.id.menu_shuffle:
-			shuffleAlbum();
+			shuffleAll();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -106,9 +106,11 @@ public class AlbumBrowserActivity extends MusicActivity implements
 			return;
 		}
 
+        mAlbum = album.title;
+
 		// Set the title and subtitle in the actionbar
 		final ActionBar actionBar = getActionBar();
-		actionBar.setTitle(album.title);
+		actionBar.setTitle(mAlbum);
 		String subtitle = album.isCompilation() ? getString(R.string.various_artists) :
 				album.artists.firstKey().getTitle();
 		actionBar.setSubtitle(subtitle);
@@ -123,19 +125,14 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		}
 	}
 
-	public void browseArtist() {
+    @Override
+	public void browseArtists() {
 		if (mArtists != null) {
 			if (mArtists.size() == 1) {
 				launchArtistBrowser(mArtists.firstKey().getId());
 			} else {
 				buildArtistListDialog(new ArrayList<MusicItem>(mArtists.keySet())).show();
 			}
-		}
-	}
-
-	public void shuffleAlbum() {
-		if (mTrackListFragment != null) {
-			mTrackListFragment.shuffleAll();
 		}
 	}
 
@@ -169,4 +166,16 @@ public class AlbumBrowserActivity extends MusicActivity implements
 		builder.setTitle("Browse artists");
 		return builder.create();
 	}
+
+    @Override
+    public void playAt(int position) {
+        getMusicConnection().open(new MusicItem(mAlbumId, mAlbum, MusicItem.TYPE_ALBUM), position);
+        showPlayer();
+    }
+
+    @Override
+    public void shuffleAll() {
+        getMusicConnection().shuffle(new MusicItem(mAlbumId, mAlbum, MusicItem.TYPE_ALBUM));
+        showPlayer();
+    }
 }

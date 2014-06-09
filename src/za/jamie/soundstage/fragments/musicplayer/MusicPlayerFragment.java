@@ -11,7 +11,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.RemoteException;
+import android.os.Message;
+import android.os.Messenger;
 import android.provider.MediaStore;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -25,7 +26,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import za.jamie.soundstage.IMusicPlayerCallback;
+import java.lang.ref.WeakReference;
+
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.MusicFragment;
 import za.jamie.soundstage.models.Track;
@@ -34,6 +36,7 @@ import za.jamie.soundstage.pablo.SoundstageUris;
 import za.jamie.soundstage.service.MusicConnection;
 import za.jamie.soundstage.service.MusicService;
 import za.jamie.soundstage.utils.AppUtils;
+import za.jamie.soundstage.utils.MessengerUtils;
 import za.jamie.soundstage.widgets.DurationTextView;
 import za.jamie.soundstage.widgets.RepeatingImageButton;
 
@@ -41,74 +44,79 @@ public class MusicPlayerFragment extends MusicFragment {
 
 	// Rate at which the repeat listeners for the seek buttons refresh in ms
 	private static final int REPEAT_INTERVAL = 260;
-	
+
 	// Handle elapsed time text updates
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private boolean mSeeking = false;
-	
+
 	// Play control buttons
 	private ImageButton mPlayPauseButton;
 	private RepeatingImageButton mPreviousButton;
 	private RepeatingImageButton mNextButton;
-	
+
 	// Shuffle/repeat buttons
 	private ImageButton mShuffleButton;
 	private ImageButton mRepeatButton;
-	
+
 	// UI elements for metadata
 	private TextView mTrackText;
 	private TextView mAlbumText;
 	private TextView mArtistText;
 	private ImageView mAlbumArt;
-	
+
 	// UI elements for seeking
 	private DurationTextView mElapsedTime;
 	private DurationTextView mTotalTime;
-	private long mDuration;
-	
+	private int mDuration;
+
 	private DurationTextView mBigElapsedTime;
 	private DurationTextView mBigTotalTime;
 	private LinearLayout mSeekInfoHolder;
-	
+
 	// Seek bar
-	private long mSeekStartPosition = 0;
+	private int mSeekStartPosition = 0;
     private ObjectAnimator mSeekBarAnimator;
     private Animator mBigSeekAnimator;
-    
+
     private boolean mIsPlaying = false;
-	
-	private long mTimeSync;
+
+	private int mTimeSync;
 	private long mTimeSyncStamp;
 
     private int mImageSize;
 
     private boolean isSynced = false;
-	
-	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
-			new MusicConnection.ConnectionCallbacks() {
+
+    private Messenger mPlayerClient;
+
+	private final MusicConnection.ConnectionObserver mConnectionObserver =
+			new MusicConnection.ConnectionObserver() {
 		@Override
 		public void onConnected() {
             MusicConnection connection = getMusicConnection();
-			connection.registerMusicPlayerCallback(mCallback);
+			connection.registerPlayerClient(mPlayerClient);
             if (!isSynced) {
-                isSynced = connection.requestMusicPlayerUpdate(mCallback);
+                isSynced = connection.requestPlayerUpdate(mPlayerClient);
             }
 		}
 
 		@Override
 		public void onDisconnected() {
-			
+
 		}
 	};
-	
+
 	public MusicPlayerFragment() {}
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
+        Handler playerClientHandler = new PlayerClientHandler(this);
+        mPlayerClient = new Messenger(playerClientHandler);
+
 		// Register connection observer
-		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
+		getMusicConnection().registerConnectionObserver(mConnectionObserver);
 
         Resources res = getResources();
         mImageSize = AppUtils.smallestScreenWidth(res)
@@ -119,56 +127,55 @@ public class MusicPlayerFragment extends MusicFragment {
     public void onStart() {
         super.onStart();
         if (!isSynced) {
-            isSynced = getMusicConnection().requestMusicPlayerUpdate(mCallback);
+            isSynced = getMusicConnection().requestPlayerUpdate(mPlayerClient);
         }
     }
-	
+
 	@Override
 	public void onStop() {
-		super.onStop();		
+		super.onStop();
 		mHandler.removeCallbacksAndMessages(null);
 	}
-	
+
 	@Override
 	public void onDestroy() {
         super.onDestroy();
-        
-        // Remove all our callbacks
-        getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
-        getMusicConnection().unregisterMusicPlayerCallback(mCallback);
+
+        getMusicConnection().unregisterPlayerClient(mPlayerClient);
+        getMusicConnection().unregisterConnectionObserver(mConnectionObserver);
 	}
-	
+
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
     		Bundle savedInstanceState) {
-		
+
 		// create ContextThemeWrapper from the original Activity Context with the custom theme
-		final Context themedContext = new ContextThemeWrapper(getActivity(), 
+		final Context themedContext = new ContextThemeWrapper(getActivity(),
 				android.R.style.Theme_Holo);
 		// clone the inflater using the ContextThemeWrapper
 		LayoutInflater localInflater = inflater.cloneInContext(themedContext);
-		// inflate using the cloned inflater, not the passed in default	
+		// inflate using the cloned inflater, not the passed in default
         final View v = localInflater.inflate(R.layout.fragment_music_player, container, false);
-        
+
         // YAAAAAAYYYY Android. I just love typing.
         // Playback controls
         mPlayPauseButton = (ImageButton) v.findViewById(R.id.action_button_play);
         mPreviousButton = (RepeatingImageButton) v.findViewById(R.id.action_button_previous);
         mNextButton = (RepeatingImageButton) v.findViewById(R.id.action_button_next);
-        
-        mPlayPauseButton.setOnClickListener(mButtonListener);        
+
+        mPlayPauseButton.setOnClickListener(mButtonListener);
         mPreviousButton.setOnClickListener(mButtonListener);
         mPreviousButton.setRepeatListener(mSeekButtonListener, REPEAT_INTERVAL);
         mNextButton.setOnClickListener(mButtonListener);
         mNextButton.setRepeatListener(mSeekButtonListener, REPEAT_INTERVAL);
-        
+
         // Shuffle/repeat
         mShuffleButton = (ImageButton) v.findViewById(R.id.action_button_shuffle);
         mRepeatButton = (ImageButton) v.findViewById(R.id.action_button_repeat);
-        
+
         mShuffleButton.setOnClickListener(mButtonListener);
         mRepeatButton.setOnClickListener(mButtonListener);
-        
+
         // Metadata info
         mTrackText = (TextView) v.findViewById(R.id.music_player_track_name);
         mAlbumText = (TextView) v.findViewById(R.id.music_player_album_name);
@@ -176,14 +183,14 @@ public class MusicPlayerFragment extends MusicFragment {
         mArtistText = (TextView) v.findViewById(R.id.music_player_artist_name);
         mArtistText.setOnClickListener(mMetaListener);
         mAlbumArt = (ImageView) v.findViewById(R.id.music_player_album_art);
-        
+
         SeekBar seekBar = (SeekBar) v.findViewById(R.id.seek_bar);
         seekBar.setOnSeekBarChangeListener(mSeekListener);
         mSeekBarAnimator = ObjectAnimator.ofInt(seekBar, "progress", 0, 1000);
-        
+
         mElapsedTime = (DurationTextView) v.findViewById(R.id.elapsedTime);
         mTotalTime = (DurationTextView) v.findViewById(R.id.totalTime);
-        
+
         // UI that appears when seeking with seek bar
         mSeekInfoHolder = (LinearLayout) v.findViewById(R.id.seek_info_holder);
         mBigElapsedTime = (DurationTextView) v.findViewById(R.id.big_elapsed_time);
@@ -219,7 +226,7 @@ public class MusicPlayerFragment extends MusicFragment {
                     }
                 });
     }
-	
+
 	/*
 	 * Listener for long presses on ffwd/rewind buttons. Skip ahead/back
 	 */
@@ -239,7 +246,7 @@ public class MusicPlayerFragment extends MusicFragment {
     /*
      * Listener for seek bar input. Displays extra UI when seeking
      */
-    private final SeekBar.OnSeekBarChangeListener mSeekListener = 
+    private final SeekBar.OnSeekBarChangeListener mSeekListener =
             new SeekBar.OnSeekBarChangeListener() {
 
         @Override
@@ -255,7 +262,7 @@ public class MusicPlayerFragment extends MusicFragment {
             if (!fromuser) {
                 return;
             }
-            final long seekPosition = (long) (mDuration * (progress / 1000.0f));
+            final int seekPosition = (int) (mDuration * (progress / 1000.0f));
             mBigElapsedTime.setDuration(seekPosition);
             seek(seekPosition);
         }
@@ -273,10 +280,10 @@ public class MusicPlayerFragment extends MusicFragment {
             }
         }
     };
-	
+
 	/**
      * Used to scan backwards in time through the current track
-     * 
+     *
      * @param repeatCount The repeat count
      */
     private void scan(long duration, int repeatCount, boolean backward) {
@@ -292,7 +299,7 @@ public class MusicPlayerFragment extends MusicFragment {
             	duration = 50000 + (duration - 5000) * 40;
             }
             duration = backward ? -duration : duration;
-            final long seekPosition = mSeekStartPosition + duration;
+            final int seekPosition = mSeekStartPosition + (int) duration;
             if (seekPosition < 0) {
                 getMusicConnection().previous();
             } else if (seekPosition > mDuration) {
@@ -306,20 +313,20 @@ public class MusicPlayerFragment extends MusicFragment {
             }
         }
     }
-    
+
     /*
      * When a new track comes in from the server all the UI must get updated
      */
     private void updateTrack(Track track) {
     	if (track != null) {
 			mTrackText.setText(track.getTitle());
-			
+
 			mAlbumText.setText(track.getAlbum());
 			mAlbumText.setTag(track.getAlbumId()); // bit sneaky
-			
+
 			mArtistText.setText(track.getArtist());
 			mArtistText.setTag(track.getArtistId());
-			
+
 			final Uri uri = SoundstageUris.albumImage(track);
 			Pablo.with(getActivity())
 				    .load(uri)
@@ -328,9 +335,18 @@ public class MusicPlayerFragment extends MusicFragment {
 				    .placeholder(mAlbumArt.getDrawable())
                     .error(R.drawable.placeholder_grey)
 				    .into(mAlbumArt);
+
 		}
     }
-    
+
+    private void updateDuration(int duration) {
+        if (duration > 0) {
+            mDuration = duration;
+            mTotalTime.setDuration(duration);
+            mSeekBarAnimator.setDuration(duration);
+        }
+    }
+
     private void updatePlayState(boolean isPlaying) {
     	mIsPlaying = isPlaying;
     	if (isPlaying) {
@@ -339,53 +355,50 @@ public class MusicPlayerFragment extends MusicFragment {
 		} else {
 			mPlayPauseButton.setImageResource(R.drawable.btn_playback_play);
 			if (isAdded()) { // Sometimes this is called before fragment is attached, causing NPE
-				mElapsedTime.startAnimation(AnimationUtils.loadAnimation(getActivity(), 
+				mElapsedTime.startAnimation(AnimationUtils.loadAnimation(getActivity(),
 						R.anim.fade_in_out));
 			}
             stopTime();
 		}
     }
 
-    private void updateTime(long position, long duration, long timeStamp) {
-    	// Store the sync information
+    private void updateTime(int position, long timeStamp) {
+        // Store the sync information
         mTimeSync = position;
-        mDuration = duration;
         mTimeSyncStamp = timeStamp;
-
-        // Update the duration indicators
-        mTotalTime.setDuration(duration);
-        mSeekBarAnimator.setDuration(duration);
 
         updateTime(position);
     }
 
-    private void updateTime(long position) {
+    private void updateTime(int position) {
         // Update the elapsed time indicators
         updateSeekBar(position);
         updateElapsedTime(position);
     }
-    
-    private long calculatePosition() {
-   		return mIsPlaying ? mTimeSync + (System.currentTimeMillis() - mTimeSyncStamp) : mTimeSync;    	
+
+    private int calculatePosition() {
+   		long position = mIsPlaying ?
+                mTimeSync + (System.currentTimeMillis() - mTimeSyncStamp) : mTimeSync;
+        return (int) position;
     }
-    
-    private void seek(long position) {
+
+    private void seek(int position) {
         getMusicConnection().seek(position);
-        updateTime(position, mDuration, System.currentTimeMillis());
+        updateTime(position, System.currentTimeMillis());
     }
 
     private void stopTime() {
     	mSeekBarAnimator.cancel();
     	mHandler.removeCallbacks(mTimeRefresh);
     }
-    
-    private void updateSeekBar(long position) {
+
+    private void updateSeekBar(int position) {
     	if (mIsPlaying && !mSeeking && !mSeekBarAnimator.isStarted()) {
     		mSeekBarAnimator.start();
     	}
     	mSeekBarAnimator.setCurrentPlayTime(position);
     }
-    
+
     private void beginSeek() {
     	mSeeking = true;
     	updateTime(calculatePosition());
@@ -393,13 +406,13 @@ public class MusicPlayerFragment extends MusicFragment {
     		stopTime();
     	}
     }
-    
+
     private void endSeek() {
     	mSeeking = false;
     	updateTime(calculatePosition());
     }
-    
-    private void updateElapsedTime(long position) {
+
+    private void updateElapsedTime(int position) {
     	if (position < 0) {
     		position = 0;
     	} else if (position > mDuration) {
@@ -410,12 +423,12 @@ public class MusicPlayerFragment extends MusicFragment {
             mHandler.postDelayed(mTimeRefresh, 1000 - (position % 1000)); // Update again on the next second
         }
     }
-    
+
     private void updateShuffleState(boolean shuffleEnabled) {
-    	mShuffleButton.setImageResource(shuffleEnabled ? 
+    	mShuffleButton.setImageResource(shuffleEnabled ?
     			R.drawable.btn_playback_shuffle_all : R.drawable.btn_shuffle);
     }
-    
+
     private void updateRepeatMode(int repeatMode) {
     	switch (repeatMode) {
     	case MusicService.REPEAT_NONE:
@@ -429,9 +442,9 @@ public class MusicPlayerFragment extends MusicFragment {
     		break;
     	}
     }
-    
+
     private final View.OnClickListener mButtonListener = new View.OnClickListener() {
-		
+
 		@Override
 		public void onClick(View v) {
 			if (v == mPlayPauseButton) {
@@ -443,33 +456,33 @@ public class MusicPlayerFragment extends MusicFragment {
 			} else if (v == mShuffleButton) {
 				getMusicConnection().toggleShuffle();
 			} else if (v == mRepeatButton) {
-				getMusicConnection().cycleRepeatMode();
+				getMusicConnection().cycleRepeat();
 			}
-			
+
 		}
 	};
-	
+
 	private final View.OnClickListener mMetaListener = new View.OnClickListener() {
-		
+
 		@Override
 		public void onClick(View v) {
 			if (v == mArtistText) {
 				final Uri data = ContentUris.withAppendedId(
-						MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI, 
+						MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
 						(Long) mArtistText.getTag());
 				startActivity(new Intent(Intent.ACTION_VIEW)
 						.setDataAndType(data, MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE));
 			} else if (v == mAlbumText) {
 				final Uri data = ContentUris.withAppendedId(
-						MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, 
+						MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
 						(Long) mAlbumText.getTag());
 				startActivity(new Intent(Intent.ACTION_VIEW)
 						.setDataAndType(data, MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE));
-			}			
+			}
 		}
 
 	};
-	
+
 	public boolean isPlaying() {
 		return mIsPlaying;
 	}
@@ -482,58 +495,42 @@ public class MusicPlayerFragment extends MusicFragment {
             }
         }
     };
-	
-	private final IMusicPlayerCallback mCallback = new IMusicPlayerCallback.Stub() {
-		@Override
-		public void onTrackChanged(final Track track) throws RemoteException {
-			safeRunOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					updateTrack(track);
-				}
-			});
-		}
-		
-		@Override
-		public void onPositionSync(final long position, final long duration, final long timeStamp)
-				throws RemoteException {
-            safeRunOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    updateTime(position, duration, timeStamp);
-                }
-            });
-		}
-		
-		@Override
-		public void onPlayStateChanged(final boolean isPlaying) throws RemoteException {
-            safeRunOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    updatePlayState(isPlaying);
-                }
-            });
-		}
 
-		@Override
-		public void onShuffleStateChanged(final boolean shuffleEnabled)	throws RemoteException {
-            safeRunOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    updateShuffleState(shuffleEnabled);
-                }
-            });
-		}
+    private static class PlayerClientHandler extends Handler {
 
-		@Override
-		public void onRepeatModeChanged(final int repeatMode) throws RemoteException {
-            safeRunOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    updateRepeatMode(repeatMode);
-                }
-            });
-		}
-	};
+        final WeakReference<MusicPlayerFragment> mPlayer;
+
+        PlayerClientHandler(MusicPlayerFragment player) {
+            mPlayer = new WeakReference<MusicPlayerFragment>(player);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final MusicPlayerFragment player = mPlayer.get();
+            if (player == null) {
+                return;
+            }
+
+            switch(msg.what) {
+                case MusicService.MSG_UPDATE_TRACK:
+                    player.updateTrack((Track) MessengerUtils.readParcelable(player.getActivity(),
+                            msg, "track"));
+                    player.updateDuration(msg.getData().getInt("duration"));
+                    break;
+                case MusicService.MSG_SYNC_POSITION:
+                    player.updateTime(msg.arg1, MessengerUtils.readTimestamp(msg));
+                    break;
+                case MusicService.MSG_UPDATE_PLAY_STATE:
+                    player.updatePlayState(msg.arg1 > 0);
+                    break;
+                case MusicService.MSG_UPDATE_SHUFFLE_STATE:
+                    player.updateShuffleState(msg.arg1 > 0);
+                    break;
+                case MusicService.MSG_UPDATE_REPEAT_MODE:
+                    player.updateRepeatMode(msg.arg1);
+                    break;
+            }
+        }
+    }
 
 }

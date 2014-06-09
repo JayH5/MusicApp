@@ -15,41 +15,43 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistAlbumListFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistSummaryFragment;
 import za.jamie.soundstage.fragments.artistbrowser.ArtistTrackListFragment;
+import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.utils.AppUtils;
 import za.jamie.soundstage.widgets.PagerSlidingTabStrip;
 
-public class ArtistBrowserActivity extends MusicActivity implements 
-		ArtistSummaryFragment.OnArtistFoundListener, 
-		ArtistTrackListFragment.ArtistTrackListListener {
-	
+public class ArtistBrowserActivity extends MusicActivity implements
+		ArtistSummaryFragment.OnArtistFoundListener,
+        ArtistTrackListFragment.ArtistTrackListHost {
+
 	private static final String TAG_SUMMARY_FRAG = "artist_summary";
     private static final String STATE_URI = "state_uri";
-	
+
 	private long mArtistId;
+    private String mArtist;
     private Uri mUri;
-	
+
 	private ArtistSummaryFragment mSummaryFragment;
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_artist_browser);
-		
+
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_HOME);
-		
+
 		// Set up the view pager and its indicator
 		ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
 		viewPager.setAdapter(new SectionsPagerAdapter(
 				getFragmentManager()));
-		
+
 		int orientation = getResources().getConfiguration().orientation;
 		if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			AppUtils.loadActionBarTabs(actionBar, viewPager);
 		} else {
 			PagerSlidingTabStrip indicator = (PagerSlidingTabStrip) findViewById(R.id.tabStrip);
 			indicator.setViewPager(viewPager);
-		}		
+		}
 
 		if (savedInstanceState != null) {
             mUri = savedInstanceState.getParcelable(STATE_URI);
@@ -74,17 +76,30 @@ public class ArtistBrowserActivity extends MusicActivity implements
         super.onSaveInstanceState(outState);
         outState.putParcelable(STATE_URI, mUri);
     }
-	
+
 	@Override
 	public boolean navigateUpTo(Intent upIntent) {
-		upIntent.putExtra(LibraryActivity.EXTRA_SECTION, 
+		upIntent.putExtra(LibraryActivity.EXTRA_SECTION,
         		LibraryActivity.SECTION_ARTISTS);
         upIntent.putExtra(LibraryActivity.EXTRA_ITEM_ID, mArtistId);
-		
+
 		return super.navigateUpTo(upIntent);
 	}
-	
-	public class SectionsPagerAdapter extends FragmentPagerAdapter {
+
+    @Override
+    public void playAt(int position) {
+        getMusicConnection()
+                .open(new MusicItem(mArtistId, mArtist, MusicItem.TYPE_ARTIST), position);
+        showPlayer();
+    }
+
+    @Override
+    public void shuffleAll() {
+        getMusicConnection().shuffle(new MusicItem(mArtistId, mArtist, MusicItem.TYPE_ARTIST));
+        showPlayer();
+    }
+
+    public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
 		public SectionsPagerAdapter(FragmentManager fm) {
 			super(fm);
@@ -105,7 +120,7 @@ public class ArtistBrowserActivity extends MusicActivity implements
 		public int getCount() {
 			return 2;
 		}
-		
+
 		@Override
 		public CharSequence getPageTitle(int position) {
 			switch(position) {
@@ -121,12 +136,13 @@ public class ArtistBrowserActivity extends MusicActivity implements
 
 	@Override
 	public void onArtistFound(String artist) {
-		getActionBar().setTitle(artist);		
+        mArtist = artist;
+		getActionBar().setTitle(mArtist);
 	}
 
 	@Override
 	public void onDurationCalculated(long duration) {
-		mSummaryFragment.setDuration(duration);		
+		mSummaryFragment.setDuration(duration);
 	}
 
 }

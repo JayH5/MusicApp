@@ -62,6 +62,10 @@ public class MediaPlayerHelper {
         mContext.sendBroadcast(intent);
     }
 
+    public int getAudioSessionId() {
+        return mCurrentMediaPlayer.getAudioSessionId();
+    }
+
     public boolean setDataSource(Uri uri) {
         mIsInitialized = setDataSourceImpl(mCurrentMediaPlayer, uri);
         if (mIsInitialized) {
@@ -138,12 +142,12 @@ public class MediaPlayerHelper {
     }
 
     /** Get the current playback position. */
-    public long getCurrentPosition() {
+    public int getCurrentPosition() {
         return mCurrentMediaPlayer.getCurrentPosition();
     }
 
     /** Get the duration of the current file. */
-    public long getDuration() {
+    public int getDuration() {
         return mCurrentMediaPlayer.getDuration();
     }
 

@@ -20,7 +20,7 @@ import static android.provider.MediaStore.Audio.Playlists.Members;
  */
 public final class MusicItemStore {
     private static final Uri URI = Media.EXTERNAL_CONTENT_URI;
-    private static final String[] PROJECTION = new String[] {
+    private static final String[] PROJECTION = {
             Media._ID,
             Media.TITLE,
             Media.ARTIST_ID,
@@ -63,6 +63,15 @@ public final class MusicItemStore {
         }
         final Cursor cursor = resolver.query(uri, PROJECTION, selection, selectionArgs, sortOrder);
 
+        return buildTrackList(cursor);
+    }
+
+    public static List<Track> fetchAllMusic(ContentResolver resolver) {
+        final String selection = Media.IS_MUSIC + "=?";
+        final String[] selectionArgs = { "1" };
+        final String sortOrder = Media.DEFAULT_SORT_ORDER;
+
+        Cursor cursor = resolver.query(URI, PROJECTION, selection, selectionArgs, sortOrder);
         return buildTrackList(cursor);
     }
 

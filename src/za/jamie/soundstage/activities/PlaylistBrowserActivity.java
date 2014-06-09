@@ -21,27 +21,25 @@ import java.util.List;
 import java.util.SortedSet;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.TrackListFragment;
 import za.jamie.soundstage.fragments.playlistbrowser.PlaylistSummaryFragment;
 import za.jamie.soundstage.fragments.playlistbrowser.PlaylistTrackListFragment;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.PlaylistStatistics;
 
 public class PlaylistBrowserActivity extends MusicActivity implements LoaderCallbacks<Cursor>,
-        PlaylistTrackListFragment.PlaylistStatisticsCallback {
+        PlaylistTrackListFragment.PlaylistTrackListHost,
+        PlaylistSummaryFragment.PlaylistSummaryHost {
 
 	//private static final String TAG = "PlaylistBrowserActivity";
-
-	//public static final String EXTRA_NAME = "extra_name";
-	//public static final String EXTRA_PLAYLIST_ID = "extra_playlist_id";
 
     private static final String STATE_PLAYLIST_ID = "state_playlist_id";
 
 	private static final String TAG_LIST_FRAGMENT = "playlist_track_list";
 
 	private long mPlaylistId;
+    private String mPlaylist;
 
-    private TrackListFragment mTrackListFragment;
+    private PlaylistTrackListFragment mTrackListFragment;
 
     private SortedSet<MusicItem> mArtists;
 
@@ -59,7 +57,7 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
         }
 
         final FragmentManager fm = getFragmentManager();
-        mTrackListFragment = (TrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAGMENT);
+        mTrackListFragment = (PlaylistTrackListFragment) fm.findFragmentByTag(TAG_LIST_FRAGMENT);
 		if (mTrackListFragment == null) {
             mTrackListFragment = PlaylistTrackListFragment.newInstance(mPlaylistId);
 			fm.beginTransaction()
@@ -95,8 +93,8 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 		if (data != null && data.moveToFirst()) {
-			getActionBar().setTitle(
-					data.getString(data.getColumnIndexOrThrow(MediaStore.Audio.Playlists.NAME)));
+            mPlaylist = data.getString(data.getColumnIndexOrThrow(MediaStore.Audio.Playlists.NAME));
+			getActionBar().setTitle(mPlaylist);
 		}
 	}
 
@@ -105,6 +103,7 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
 		// Nothing to do...
 	}
 
+    @Override
     public void browseArtists() {
         if (mArtists != null) {
             if (mArtists.size() == 1) {
@@ -146,12 +145,6 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
         return builder.create();
     }
 
-    public void shufflePlaylist() {
-        if (mTrackListFragment != null) {
-            mTrackListFragment.shuffleAll();
-        }
-    }
-
     @Override
     public void deliverPlaylistStatistics(PlaylistStatistics stats) {
         if (stats == null) {
@@ -165,5 +158,19 @@ public class PlaylistBrowserActivity extends MusicActivity implements LoaderCall
         if (frag != null) {
             frag.loadSummary(stats);
         }
+    }
+
+    @Override
+    public void playAt(int position) {
+        getMusicConnection()
+                .open(new MusicItem(mPlaylistId, mPlaylist, MusicItem.TYPE_PLAYLIST), position);
+        showPlayer();
+    }
+
+    @Override
+    public void shuffleAll() {
+        getMusicConnection()
+                .shuffle(new MusicItem(mPlaylistId, mPlaylist, MusicItem.TYPE_PLAYLIST));
+        showPlayer();
     }
 }

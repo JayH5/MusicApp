@@ -16,17 +16,18 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.artistbrowser.ArtistTrackListAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.fragments.MusicListFragment;
+import za.jamie.soundstage.fragments.TrackListHost;
 import za.jamie.soundstage.providers.MusicLoaders;
 
-public class ArtistTrackListFragment extends TrackListFragment implements
+public class ArtistTrackListFragment extends MusicListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String EXTRA_ARTIST_ID = "extra_artist_id";
 
 	private ArtistTrackListAdapter mAdapter;
 
-	private ArtistTrackListListener mCallback;
+	private ArtistTrackListHost mCallback;
 	private View mSpacerView;
 
 	private long mArtistId;
@@ -50,7 +51,7 @@ public class ArtistTrackListFragment extends TrackListFragment implements
 		mAdapter.registerDataSetObserver(new DataSetObserver() {
 			@Override
 			public void onChanged() {
-				if (mCallback != null) {
+                if (mCallback != null) {
 					mCallback.onDurationCalculated(calculateDuration());
 				}
 			}
@@ -92,13 +93,13 @@ public class ArtistTrackListFragment extends TrackListFragment implements
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		super.onListItemClick(l, v, position - 1, id);
+        mCallback.playAt(position - 1);
     }
 
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		mCallback = (ArtistTrackListListener) activity;
+		mCallback = (ArtistTrackListHost) activity;
 	}
 
 	private long calculateDuration() {
@@ -132,7 +133,7 @@ public class ArtistTrackListFragment extends TrackListFragment implements
         mAdapter.swapCursor(null);
     }
 
-    public interface ArtistTrackListListener {
+    public interface ArtistTrackListHost extends TrackListHost {
 		void onDurationCalculated(long duration);
 	}
 

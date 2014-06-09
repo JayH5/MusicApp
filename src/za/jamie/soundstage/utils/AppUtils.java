@@ -93,4 +93,5 @@ public final class AppUtils {
         DisplayMetrics dm = res.getDisplayMetrics();
         return Math.min(dm.widthPixels, dm.heightPixels);
     }
+
 }

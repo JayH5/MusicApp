@@ -1,19 +1,7 @@
 package za.jamie.soundstage.activities;
 
-import net.simonvt.menudrawer.MenuDrawer;
-import net.simonvt.menudrawer.MenuDrawer.Type;
-import net.simonvt.menudrawer.Position;
-import za.jamie.soundstage.R;
-import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
-import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
-import za.jamie.soundstage.service.MusicConnection;
-import za.jamie.soundstage.service.MusicConnection.ConnectionCallbacks;
-import za.jamie.soundstage.service.MusicService;
-
 import android.app.Activity;
 import android.app.FragmentManager;
-import android.app.PendingIntent;
-import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,11 +11,19 @@ import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.SearchView;
 import android.widget.Toast;
+
+import net.simonvt.menudrawer.MenuDrawer;
+import net.simonvt.menudrawer.MenuDrawer.Type;
+import net.simonvt.menudrawer.Position;
+
+import za.jamie.soundstage.R;
+import za.jamie.soundstage.fragments.musicplayer.MusicPlayerFragment;
+import za.jamie.soundstage.fragments.musicplayer.PlayQueueFragment;
+import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicService;
 
 public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateChangeListener {
 
@@ -56,7 +52,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
         }
     };
 
-	private final MusicConnection mConnection = new MusicConnection();
+    private final MusicConnection mConnection = new MusicConnection();
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -112,12 +108,12 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
     }
 
     private void initService() {
-        mConnection.requestConnectionCallbacks(new ConnectionCallbacks() {
+        mConnection.registerConnectionObserver(new MusicConnection.ConnectionObserver() {
             @Override
             public void onConnected() {
                 if (mStartedButNotRegistered) {
                     mStartedButNotRegistered =
-                            !mConnection.registerActivityStarted(getComponentName());
+                            !mConnection.registerActivityStart(getComponentName());
                 }
             }
 
@@ -149,7 +145,7 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
     @Override
     protected void onStart() {
         super.onStart();
-        mStartedButNotRegistered = !mConnection.registerActivityStarted(getComponentName());
+        mStartedButNotRegistered = !mConnection.registerActivityStart(getComponentName());
         registerReceiver(mToastReceiver, mToastFilter);
     }
 
@@ -245,16 +241,6 @@ public class MusicActivity extends Activity implements MenuDrawer.OnDrawerStateC
 	 */
 	public boolean isPlaying() {
 		return mPlayer.isPlaying();
-	}
-
-	private PendingIntent getNotificationIntent() {
-		// Bring back activity as it was with player showing
-		Intent intent = new Intent(this, this.getClass());
-		intent.setAction(ACTION_SHOW_PLAYER)
-			.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-		return PendingIntent.getActivity(this, 0, intent, 0);
 	}
 
 }

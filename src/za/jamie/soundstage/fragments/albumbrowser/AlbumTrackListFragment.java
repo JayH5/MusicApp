@@ -15,12 +15,13 @@ import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.albumbrowser.AlbumTrackListAdapter;
 import za.jamie.soundstage.adapters.utils.FlippingViewHelper;
 import za.jamie.soundstage.animation.ViewFlipper;
-import za.jamie.soundstage.fragments.TrackListFragment;
+import za.jamie.soundstage.fragments.MusicListFragment;
+import za.jamie.soundstage.fragments.TrackListHost;
 import za.jamie.soundstage.models.AlbumStatistics;
 import za.jamie.soundstage.providers.MusicLoaders;
 import za.jamie.soundstage.utils.AppUtils;
 
-public class AlbumTrackListFragment extends TrackListFragment implements
+public class AlbumTrackListFragment extends MusicListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String EXTRA_ALBUM_ID = "extra_album_id";
@@ -29,7 +30,7 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 
 	private AlbumTrackListAdapter mAdapter;
 
-	private AlbumStatisticsCallback mCallback;
+	private AlbumTrackListHost mCallback;
 
 	// Header view (the album stats fragment) is the list header in portrait
 	private View mStatsHeader;
@@ -94,15 +95,12 @@ public class AlbumTrackListFragment extends TrackListFragment implements
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		mCallback = (AlbumStatisticsCallback) activity;
-	}
-
-	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-        if (mStatsHeader != null) {
-			position--;
+        try {
+            mCallback = (AlbumTrackListHost) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() +
+                    " must implement AlbumTrackListHost");
         }
-        super.onListItemClick(l, v, mAdapter.getCursorPosition(position), id);
 	}
 
 	public AlbumStatistics getAlbumStatistics() {
@@ -150,13 +148,18 @@ public class AlbumTrackListFragment extends TrackListFragment implements
         mAdapter.swapCursor(null);
     }
 
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        int pos = mAdapter.getCursorPosition(position);
+        mCallback.playAt(mStatsHeader == null ? pos : pos - 1);
+    }
 
 	/**
 	 * Interface for delivery of collected album statistics. The Activity that adds this fragment
 	 * must implement this interface.
 	 *
 	 */
-	public interface AlbumStatisticsCallback {
+	public interface AlbumTrackListHost extends TrackListHost {
 		void deliverAlbumStatistics(AlbumStatistics stats);
 	}
 

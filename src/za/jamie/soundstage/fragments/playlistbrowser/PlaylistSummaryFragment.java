@@ -1,5 +1,6 @@
 package za.jamie.soundstage.fragments.playlistbrowser;
 
+import android.app.Activity;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,15 +8,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.SortedSet;
 
 import za.jamie.soundstage.R;
-import za.jamie.soundstage.activities.AlbumBrowserActivity;
-import za.jamie.soundstage.activities.PlaylistBrowserActivity;
 import za.jamie.soundstage.fragments.MusicFragment;
+import za.jamie.soundstage.fragments.TrackListHost;
 import za.jamie.soundstage.models.MusicItem;
 import za.jamie.soundstage.models.PlaylistStatistics;
 import za.jamie.soundstage.utils.AppUtils;
@@ -25,6 +24,19 @@ import za.jamie.soundstage.utils.TextUtils;
  * Created by jamie on 2014/02/09.
  */
 public class PlaylistSummaryFragment extends MusicFragment {
+
+    private PlaylistSummaryHost mHost;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mHost = (PlaylistSummaryHost) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() +
+                    " must implement PlaylistSummaryHost");
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent,
@@ -62,7 +74,7 @@ public class PlaylistSummaryFragment extends MusicFragment {
                 browseArtistButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ((PlaylistBrowserActivity) getActivity()).browseArtists();
+                        mHost.browseArtists();
                     }
                 });
 
@@ -71,10 +83,17 @@ public class PlaylistSummaryFragment extends MusicFragment {
                 shuffleButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ((PlaylistBrowserActivity) getActivity()).shufflePlaylist();
+                        mHost.shuffleAll();
                     }
                 });
             }
         }
+    }
+
+    public interface PlaylistSummaryHost extends TrackListHost {
+        /**
+         * The implementer should launch a browser for the playlist artists.
+         */
+        void browseArtists();
     }
 }

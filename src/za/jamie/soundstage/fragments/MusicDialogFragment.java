@@ -1,9 +1,10 @@
 package za.jamie.soundstage.fragments;
 
-import za.jamie.soundstage.activities.MusicActivity;
-import za.jamie.soundstage.service.MusicConnection;
 import android.app.Activity;
 import android.app.DialogFragment;
+
+import za.jamie.soundstage.activities.MusicActivity;
+import za.jamie.soundstage.service.MusicConnection;
 
 public class MusicDialogFragment extends DialogFragment {
 

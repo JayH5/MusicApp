@@ -5,27 +5,21 @@ import android.animation.AnimatorInflater;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Message;
-import android.os.RemoteException;
-import android.provider.MediaStore;
+import android.os.Messenger;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -36,65 +30,74 @@ import android.widget.Toast;
 
 import com.mobeta.android.dslv.DragSortListView;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
-import za.jamie.soundstage.IPlayQueueCallback;
 import za.jamie.soundstage.R;
 import za.jamie.soundstage.adapters.PlayQueueAdapter;
 import za.jamie.soundstage.fragments.MusicDialogFragment;
 import za.jamie.soundstage.models.Track;
 import za.jamie.soundstage.service.MusicConnection;
+import za.jamie.soundstage.service.MusicService;
+import za.jamie.soundstage.utils.MessengerUtils;
 import za.jamie.soundstage.utils.PlaylistUtils;
 
-public class PlayQueueFragment extends MusicDialogFragment implements 
+public class PlayQueueFragment extends MusicDialogFragment implements
 		AdapterView.OnItemClickListener, DragSortListView.DragSortListener {
-	
-	private static final String STATE_LIST_POSITION = "state_list_position";
+
+	private static final String TAG = "PlayQueueFragment";
+
+    /* The minimum size of a track list before it is deserialized asynchronously. */
+    private static final int THRESHOLD_ASYNC_QUEUE_LOAD = 100;
+
+    private static final String STATE_LIST_POSITION = "state_list_position";
 	private static final String STATE_LIST_OFFSET = "state_list_offset";
     private static final String STATE_SAVE_MODE = "state_save_mode";
-	
+
 	private static final int SCROLL_OFFSET = 35;
 	private static final int SCROLL_DURATION = 250; // 250ms
-	
+
 	private PlayQueueAdapter mAdapter;
 	private DragSortListView mDslv;
-	
+
 	private TextView mMessageView;
     private TextView mErrorMessageView;
     private EditText mNameField;
 
     private boolean mIsShuffled;
     private boolean mSaveMode;
-	
+
 	private int mSavedPosition = -1;
 	private int mSavedOffset = -1;
-	
-	private final MusicConnection.ConnectionCallbacks mConnectionCallback = 
-			new MusicConnection.ConnectionCallbacks() {
+
+	private final MusicConnection.ConnectionObserver mConnectionObserver =
+			new MusicConnection.ConnectionObserver() {
 		@Override
 		public void onConnected() {
-			getMusicConnection().registerPlayQueueCallback(mCallback);
-		}
-
-		@Override
-		public void onDisconnected() {
-			
+            MusicConnection connection = getMusicConnection();
+			connection.registerQueueClient(mQueueClient);
+            connection.requestQueueUpdate(mQueueClient);
 		}
 	};
-	
-	public static PlayQueueFragment newInstance() {		
+
+    private Messenger mQueueClient;
+
+	public static PlayQueueFragment newInstance() {
 		return new PlayQueueFragment();
 	}
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		mAdapter = new PlayQueueAdapter(getActivity(), R.layout.list_item_play_queue,
 				R.layout.list_item_play_queue_selected, null);
-		
-		getMusicConnection().requestConnectionCallbacks(mConnectionCallback);
-		
+
+        Handler queueClientHandler = new QueueClientHandler(this);
+        mQueueClient = new Messenger(queueClientHandler);
+
+		getMusicConnection().registerConnectionObserver(mConnectionObserver);
+
 		if (savedInstanceState != null) {
 			mSavedPosition = savedInstanceState.getInt(STATE_LIST_POSITION, -1);
 			mSavedOffset = savedInstanceState.getInt(STATE_LIST_OFFSET, -1);
@@ -102,7 +105,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
             mSaveMode = savedInstanceState.getBoolean(STATE_SAVE_MODE);
 		}
 	}
-	
+
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
@@ -113,30 +116,30 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 		}
         outState.putBoolean(STATE_SAVE_MODE, mSaveMode);
 	}
-	
+
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		
+
 		final View v = inflater.inflate(R.layout.fragment_play_queue, container, false);
-		
+
 		mDslv = (DragSortListView) v.findViewById(R.id.dslv);
 		mDslv.setDragSortListener(this);
 		mDslv.setOnItemClickListener(this);
 		mDslv.setAdapter(mAdapter);
-		
+
 		ImageButton goToPositionButton = (ImageButton) v.findViewById(R.id.scrollToPosition);
 		goToPositionButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				scrollToPosition();				
+				scrollToPosition();
 			}
 		});
-		
+
 		mMessageView = (TextView) v.findViewById(R.id.play_queue_is_shuffled);
         mErrorMessageView = (TextView) v.findViewById(R.id.play_queue_error_message);
         mNameField = (EditText) v.findViewById(R.id.play_queue_name_field);
-		
+
 		return v;
 	}
 
@@ -149,7 +152,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
             switchToListMode();
         }
     }
-	
+
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		Dialog dialog = super.onCreateDialog(savedInstanceState);
@@ -157,26 +160,26 @@ public class PlayQueueFragment extends MusicDialogFragment implements
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         return dialog;
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		getMusicConnection().releaseConnectionCallbacks(mConnectionCallback);
-		getMusicConnection().unregisterPlayQueueCallback(mCallback);
+        getMusicConnection().unregisterQueueClient(mQueueClient);
+		getMusicConnection().unregisterConnectionObserver(mConnectionObserver);
 	}
-	
+
 	public void scrollToPosition() {
 		final int queuePosition = mAdapter.getQueuePosition();
 		if (queuePosition > -1) {
 			mDslv.smoothScrollToPositionFromTop(queuePosition, SCROLL_OFFSET, SCROLL_DURATION);
 		}
 	}
-	
+
 	@Override
 	public void remove(int which) {
 		mAdapter.remove(which);
-		getMusicConnection().removeTrack(which);
-		
+		getMusicConnection().removeQueueItem(which);
+
 		if (mAdapter.getCount() == 0) {
 			getDialog().dismiss();
 		}
@@ -198,7 +201,7 @@ public class PlayQueueFragment extends MusicDialogFragment implements
 
 	@Override
 	public void drag(int from, int to) {
-		mDslv.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);		
+		mDslv.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
 	}
 
     private void switchToListMode() {
@@ -315,33 +318,8 @@ public class PlayQueueFragment extends MusicDialogFragment implements
         mSaveMode = false;
         mNameField.setText("");
     }
-	
-	private final IPlayQueueCallback mCallback = new IPlayQueueCallback.Stub() {
-		@Override
-		public void deliverTrackList(final List<Track> trackList, final int position, 
-				final boolean isShuffled) throws RemoteException {
-			safeRunOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					receiveTrackList(trackList, position, isShuffled);
-				}
-			});
-			
-		}
 
-		@Override
-		public void onPositionChanged(final int position) throws RemoteException {
-			safeRunOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-                    receivePositionChange(position);
-				}
-			});
-		}
-
-    };
-
-    private void receiveTrackList(List<Track> tracks, int position, boolean isShuffled) {
+    private void receivePlayQueue(List<Track> tracks, int position, boolean isShuffled) {
         if (mAdapter == null) {
             return;
         }
@@ -415,6 +393,78 @@ public class PlayQueueFragment extends MusicDialogFragment implements
                 message = getString(R.string.play_queue_error);
             }
             onPlaylistSaved(result.arg1 == 0, message);
+            result.recycle();
+        }
+    }
+
+    private void receivePlayQueueAsync(Message msg) {
+        new LoadPlayQueueTask(msg).execute();
+    }
+
+    private class LoadPlayQueueTask extends AsyncTask<Void, Void, List<Track>> {
+
+        final Message mMsg;
+
+        LoadPlayQueueTask(Message msg) {
+            // Have to copy the Message because it will probably be recycled
+            mMsg = Message.obtain(msg);
+        }
+
+        @Override
+        protected List<Track> doInBackground(Void... params) {
+            return MessengerUtils.readParcelableList(getActivity(), mMsg, "queue");
+        }
+
+        @Override
+        protected void onPostExecute(List<Track> result) {
+            if (result != null) {
+                int position = mMsg.getData().getInt("position");
+                boolean isShuffled = mMsg.getData().getBoolean("isShuffled");
+                receivePlayQueue(result, position, isShuffled);
+            } else {
+                Log.w(TAG, "Received play queue was null, retrying");
+                // Retry?
+                //getMusicConnection().requestQueueUpdate(mQueueClient);
+            }
+            mMsg.recycle();
+        }
+    }
+
+    private static class QueueClientHandler extends Handler {
+
+        final WeakReference<PlayQueueFragment> mQueue;
+
+        public QueueClientHandler(PlayQueueFragment queue) {
+            mQueue = new WeakReference<PlayQueueFragment>(queue);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final PlayQueueFragment fragment = mQueue.get();
+            if (fragment == null) {
+                return;
+            }
+
+            switch (msg.what) {
+                case MusicService.MSG_QUEUE_DELIVER:
+                    // If the queue is long we load it asynchronously because deserializing is slow
+                    if (msg.arg1 < THRESHOLD_ASYNC_QUEUE_LOAD) {
+                        List<Track> queue = MessengerUtils
+                                .readParcelableList(fragment.getActivity(), msg, "queue");
+                        int position = msg.getData().getInt("position");
+                        boolean isShuffled = msg.getData().getBoolean("isShuffled");
+                        fragment.receivePlayQueue(queue, position, isShuffled);
+                    } else {
+                        fragment.receivePlayQueueAsync(msg);
+                    }
+                    break;
+                case MusicService.MSG_QUEUE_CHANGE:
+                    // TODO
+                    break;
+                case MusicService.MSG_QUEUE_POSITION_CHANGE:
+                    fragment.receivePositionChange(msg.arg1);
+                    break;
+            }
         }
     }
 }
