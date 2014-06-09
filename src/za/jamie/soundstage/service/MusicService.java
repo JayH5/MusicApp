@@ -596,7 +596,7 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
 
     public void getAudioSessionId(Messenger replyTo) {
         try {
-            MessengerUtils.send(replyTo, mPlayer.getAudioSessionId());
+            MessengerUtils.send(replyTo, MSG_AUDIO_SESSION_ID, getAudioSessionId());
         } catch (RemoteException e) {
             Log.w(TAG, "getAudioSessionId()", e);
         }
@@ -912,6 +912,13 @@ public class MusicService extends Service implements AudioManager.OnAudioFocusCh
     public int getDuration() {
         if (mPlayer.isInitialized()) {
             return mPlayer.getDuration();
+        }
+        return -1;
+    }
+
+    public int getAudioSessionId() {
+        if (mPlayer.isInitialized()) {
+            return mPlayer.getAudioSessionId();
         }
         return -1;
     }

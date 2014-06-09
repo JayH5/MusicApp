@@ -16,7 +16,7 @@ public class MusicFragment extends Fragment {
         try {
             mActivity = (MusicActivity) activity;
         } catch (ClassCastException e) {
-            throw new RuntimeException("MusicFragment needs a MusicActivity as its parent.");
+            throw new RuntimeException("MusicFragment needs a MusicActivity as its parent");
         }
 	}
 
