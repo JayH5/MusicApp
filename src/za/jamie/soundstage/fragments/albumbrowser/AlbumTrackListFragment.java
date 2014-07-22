@@ -150,8 +150,8 @@ public class AlbumTrackListFragment extends MusicListFragment implements
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        int pos = mAdapter.getCursorPosition(position);
-        mCallback.playAt(mStatsHeader == null ? pos : pos - 1);
+        int pos = mStatsHeader == null ? position : position - 1;
+        mCallback.playAt(mAdapter.getCursorPosition(pos));
     }
 
 	/**
