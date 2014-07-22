@@ -8,6 +8,7 @@ import android.net.Uri;
 
 import com.squareup.picasso.OkHttpDownloader;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +17,10 @@ import java.util.Map;
 import za.jamie.soundstage.utils.UriUtils;
 
 public class LastfmDownloader extends OkHttpDownloader {
-	
+
 	private static final String TAG = "LastfmDownloader";
-	
-	private static final Uri ALBUM_ART_BASE_URI = 
+
+	private static final Uri ALBUM_ART_BASE_URI =
 			Uri.parse("content://media/external/audio/albumart");
 
     private final ContentResolver mContentResolver;
@@ -28,6 +29,11 @@ public class LastfmDownloader extends OkHttpDownloader {
         super(context);
 		mContentResolver = context.getContentResolver();
 	}
+
+    public LastfmDownloader(Context context, File cacheDir) {
+        super(cacheDir);
+        mContentResolver = context.getContentResolver();
+    }
 
 	@Override
 	public Response load(Uri uri, boolean localCacheOnly) throws IOException {
@@ -65,7 +71,7 @@ public class LastfmDownloader extends OkHttpDownloader {
         }
         return null;
 	}
-	
+
 	private static Map<String, Uri> getLastfmImageUris(Response lastfmQueryResponse)
             throws IOException {
 		Map<String, Uri> uris = null;
