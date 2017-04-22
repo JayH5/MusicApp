@@ -1,8 +1,10 @@
 Soundstage
 ==========
 
+> This is a music player app I spent a while developing in my free time during university. I never finished it and haven't worked on it since ~2014... it was in a private repository for a long time... but here it is now!
+
 The player that brings your music centre stage.
-![Play screen](/screenshots/2013-11-01 13.50.26.png)
+![Play screen](screenshots/2013-11-01 13.50.26.png)
 
 
 Dependencies
